@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <title>دستیار لانچو</title>
+  <link rel="icon" href="data:,">
   <link rel="preload" href="./assets/Vazirmatn.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./widget.css">
   <script type="module" src="./widget.js"></script>
@@ -30,7 +31,8 @@
         <p id="welcome-description" class="sr-only">درباره ساخت فروشگاه و امکانات لانچو بپرس.</p>
       </section>
       <div id="messages" class="messages" role="log" aria-label="پیام‌های گفتگو" aria-live="polite" aria-relevant="additions"></div>
-      <div id="waiting" class="waiting" role="status" hidden><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>دستیار در حال پاسخ‌دادن است…</span></div>
+      <div id="waiting" class="waiting" role="status" hidden><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>در حال نوشتن…</span></div>
+      <section id="workflow" aria-label="مراحل ساخت فروشگاه" hidden></section>
       <nav class="starters" aria-label="پیشنهادهای گفتگو">
         <button class="primary-starter" type="button" data-question="برای ساخت فروشگاه با لانچو از کجا شروع کنم؟">ساخت فروشگاه</button>
         <button type="button" data-question="لانچو چه امکاناتی دارد؟">امکانات</button>

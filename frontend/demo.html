@@ -4,20 +4,28 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>نمونه دستیار لانچو</title>
+  <link rel="icon" href="data:,">
   <style>
     @font-face{font-family:Vazirmatn;src:url('./assets/Vazirmatn.woff2') format('woff2');font-weight:100 900;font-display:swap}
     :root{color-scheme:light;--bg:#eef6f3;--surface:#fff;--text:#152a56;--muted:#546889;--border:#dbe6e5;--blue:#143ef2}
     :root[data-theme=dark]{color-scheme:dark;--bg:#060d1f;--surface:#0b1730;--text:#eef6f3;--muted:#8fa0bc;--border:#24334d}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/2 Vazirmatn,Tahoma,sans-serif;min-height:100vh}header{padding:24px 6vw;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}.wordmark{font:800 20px/1.5 Vazirmatn,sans-serif;letter-spacing:3px}main{max-width:760px;margin:72px auto;padding:0 24px 120px}.eyebrow{font-size:12px;color:var(--muted)}h1{font-size:clamp(28px,5vw,44px);line-height:1.6;margin:16px 0}p{color:var(--muted)}.install{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;margin-top:32px}h2{font-size:17px;margin:0 0 12px}pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;color:var(--muted)}select{font:inherit;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:8px 12px;min-height:44px}select:focus-visible{outline:2px solid var(--blue);outline-offset:3px}.note{font-size:12px;margin-bottom:0}a{color:var(--blue)}
   </style>
-  <script defer src="./loader.js" data-theme="light" data-position="right"></script>
+  <style>button{font:inherit;min-height:44px;padding:8px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);cursor:pointer}</style>
+  <script defer src="./loader.js" data-theme="light" data-position="right" data-demo="true"></script>
 </head>
 <body>
   <header><span class="wordmark" lang="en">LAUNCHO</span><label>تم <select id="theme" aria-label="تم نمونه و دستیار"><option value="light">روشن</option><option value="dark">تیره</option><option value="auto">همگام با دستگاه</option></select></label></header>
   <main>
-    <span class="eyebrow">نمونه تعاملی دستیار لانچو</span>
+    <span class="eyebrow">حالت نمایشی — بدون درخواست AI، ساخت فروشگاه یا پرداخت واقعی</span>
     <h1>یک سؤال،<br>یک قدم نزدیک‌تر به شروع.</h1>
-    <p>دکمه آبی پایین صفحه را بزن و گفتگو را شروع کن. این نمونه به API همین سرور متصل است.</p>
+    <p>دکمه پایین صفحه را بزن و مسیر ساخت فروشگاه را بررسی کن. اطلاعات فقط در حافظه همین صفحه می‌ماند.</p>
+    <section id="template-picker" class="install" hidden>
+      <h2>شبیه‌سازی بازگشت انتخاب از سایت میزبان</h2>
+      <p>این مثال از قالب عمومی الماس سایت لانچو استفاده می‌کند؛ کاتالوگ مستقل نیست.</p>
+      <a href="https://launcho.ir/#templates" target="_blank" rel="noopener">مشاهده بخش فعلی قالب‌های لانچو</a>
+      <p><button id="choose-template" type="button">انتخاب این قالب — الماس</button></p>
+    </section>
     <section class="install"><h2>نصب با یک خط کد</h2><p>آدرس سرور خودت را جایگزین کن و این تگ را در سایت قرار بده.</p><pre><code>&lt;script defer src="https://YOUR-SERVER/widget/loader.js"
   data-theme="auto" data-position="right"&gt;&lt;/script&gt;</code></pre><p class="note">پیام‌ها تا وقتی این صفحه باز است باقی می‌مانند. مدل در هر درخواست فقط پیام جاری را دریافت می‌کند.</p></section>
   </main>
@@ -30,6 +38,16 @@
     }
     selector.addEventListener('change', applyTheme);
     systemTheme.addEventListener('change', applyTheme);
+    window.addEventListener('launcho:templates:open', () => {
+      document.getElementById('template-picker').hidden = false;
+      window.LaunchoWidget.close();
+      document.getElementById('template-picker').scrollIntoView({block:'center'});
+      document.getElementById('choose-template').focus();
+    });
+    document.getElementById('choose-template').addEventListener('click', () => {
+      window.LaunchoWidget.selectTemplate({id:'almas',name:'الماس',image:new URL('./assets/template-almas.webp',location.href).href});
+      document.getElementById('template-picker').hidden = true;
+    });
   </script>
 </body>
 </html>

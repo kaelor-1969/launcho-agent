@@ -15,6 +15,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
 from playwright.async_api import async_playwright, expect
+from widget_workflow_browser import run_workflow_checks
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "artifacts" / "widget"
@@ -90,13 +91,10 @@ async def main():
                             await route.fulfill(json={"reply": "این پاسخ فقط برای آزمون رابط است.\nمتن فارسی با API و English خوانا می‌ماند.\n<script>alert('xss')</script>"})
 
                     await page.route("**/api/chat", api)
-                    await page.goto(host_url if mobile else base + "/widget/demo.html")
+                    await page.goto(host_url)
                     await expect(page.locator("#launcho-widget")).to_have_count(1)
                     assert await page.locator("iframe").count() == 0, "Iframe must load lazily"
-                    if mobile:
-                        await page.evaluate("LaunchoWidget.setTheme('" + theme + "')")
-                    else:
-                        await page.locator("#theme").select_option(theme)
+                    await page.evaluate("LaunchoWidget.setTheme('" + theme + "')")
                     launcher = page.locator("#launcho-widget button")
                     await launcher.click()
                     chat = page.frame_locator("#launcho-widget iframe")
@@ -183,8 +181,6 @@ async def main():
                     assert await chat.locator("#scroll-area").evaluate("el => el.scrollWidth <= el.clientWidth")
 
                     # Explicit host themes, system auto theme, configurable position.
-                    if not mobile:
-                        await page.locator("#theme").select_option("auto")
                     await page.evaluate("LaunchoWidget.configure({theme:'auto', position:'left'})")
                     await page.emulate_media(color_scheme="dark")
                     await expect(chat.locator("html")).to_have_attribute("data-theme", "dark")
@@ -205,8 +201,8 @@ async def main():
                         await expect(launcher).to_be_focused()
                     assert not errors, errors
                     if not mobile and theme == "light":
-                        timeout_result = await page.evaluate("""async () => {
-                            const {sendMessage} = await import('./api.js');
+                        timeout_result = await page.evaluate("""async base => {
+                            const {sendMessage} = await import(base+'/widget/api.js');
                             const realFetch=window.fetch, realTimer=window.setTimeout;
                             let timeout;
                             window.setTimeout=(callback, ms) => {timeout=ms;return realTimer(callback,0);};
@@ -216,7 +212,7 @@ async def main():
                             try {await sendMessage('/api/chat','timeout test');return {failed:false};}
                             catch(error){return {failed:true,timeout,message:error.message};}
                             finally {window.fetch=realFetch;window.setTimeout=realTimer;}
-                        }""")
+                        }""", base)
                         assert timeout_result["failed"] and timeout_result["timeout"] == 45000
                         assert "دریافت پاسخ طول کشید" in timeout_result["message"]
                     results.append({"viewport": "mobile" if mobile else "desktop", "theme": theme, "cross_origin": mobile, "requests": len(requests), "status": "passed"})
@@ -224,8 +220,8 @@ async def main():
                         # A short, explicitly mocked exchange for comparing the supplied design.
                         preview = await context.new_page()
                         await preview.route("**/api/chat", lambda route: route.fulfill(json={"reply": "از کجا شروع کنیم؟"}))
-                        await preview.goto(base + "/widget/demo.html")
-                        await preview.locator("#theme").select_option(theme)
+                        await preview.goto(host_url)
+                        await preview.evaluate("LaunchoWidget.setTheme('" + theme + "')")
                         await preview.locator("#launcho-widget button").click()
                         preview_chat = preview.frame_locator("#launcho-widget iframe")
                         await expect(preview_chat.locator("#message")).to_be_focused()
@@ -233,9 +229,10 @@ async def main():
                         await preview_chat.locator("#message").press("Enter")
                         await expect(preview_chat.locator(".assistant")).to_have_text("دستیار لانچو: از کجا شروع کنیم؟")
                         await expect(preview_chat.locator(".robot")).to_be_in_viewport()
-                        await expect(preview_chat.locator(".price-card")).to_be_in_viewport()
+                        await expect(preview_chat.locator(".starters")).to_be_visible()
                         await preview.locator("#launcho-widget .panel").screenshot(path=str(OUTPUT / f"reference-{theme}.png"), animations="disabled")
                     await context.close()
+            results.extend(await run_workflow_checks(browser, base))
             await browser.close()
         (OUTPUT / "report.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
         print(json.dumps(results, indent=2))

@@ -1,4 +1,5 @@
 import { sendMessage } from './api.js';
+import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js';
 
 const $ = (id) => document.getElementById(id);
 const input = $('message');
@@ -16,6 +17,8 @@ let pending = false;
 let failed = null;
 let composing = false;
 let followBottom = true;
+let structured = false;
+let demoMode = false;
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
 let theme = 'light';
 
@@ -30,7 +33,11 @@ function applyTheme(value) {
   document.documentElement.dataset.theme = value === 'auto' ? (systemTheme.matches ? 'dark' : 'light') : value;
 }
 systemTheme.addEventListener('change', () => applyTheme(theme));
-window.addEventListener('message', (event) => {
+function focusCurrent() {
+  if (workflowActive()) document.querySelector('#workflow h2')?.focus({preventScroll:true});
+  else input.focus({preventScroll:true});
+}
+window.addEventListener('message', async (event) => {
   const data = event.data;
   if (event.source !== window.parent || event.origin !== parentOrigin || !data || data.scope !== 'launcho' || data.channel !== channel) return;
   if (data.type === 'configure') {
@@ -41,14 +48,19 @@ window.addEventListener('message', (event) => {
       apiUrl = url.href;
     } catch { return; }
     configured = true;
+    structured = data.demo === true || typeof data.workflowUrl === 'string';
+    demoMode = data.demo === true;
+    await configureWorkflow(data, notify);
     applyTheme(data.theme);
     notify('configured');
     updateInput();
-    if (data.open) input.focus({ preventScroll: true });
+    if (data.open) focusCurrent();
   } else if (data.type === 'open' && configured) {
-    input.focus({ preventScroll: true });
+    focusCurrent();
   } else if (data.type === 'close' && configured) {
     input.blur();
+  } else if (data.type === 'template-selected' && configured) {
+    selectWorkflowTemplate(data.template);
   }
 });
 $('close').addEventListener('click', () => notify('close'));
@@ -97,7 +109,7 @@ function appendMessage(role, message) {
   $('messages').append(row);
 }
 async function submit(message, retry = false) {
-  if (pending || !configured) return;
+  if (pending || !configured || workflowActive()) return;
   message = message.trim();
   if (!message) return;
   if (Array.from(message).length > 5000) {
@@ -120,7 +132,7 @@ async function submit(message, retry = false) {
   updateInput();
   scrollToBottom();
   try {
-    const reply = await sendMessage(apiUrl, message);
+    const reply = demoMode ? 'برای بررسی مراحل در این نمونه، «ساخت فروشگاه» را انتخاب کن.' : await sendMessage(apiUrl, message);
     appendMessage('assistant', reply);
   } catch (error) {
     failed = message;
@@ -146,7 +158,13 @@ input.addEventListener('keydown', (event) => {
 });
 $('retry').addEventListener('click', () => { if (failed) submit(failed, true); });
 document.querySelectorAll('[data-question]').forEach((button) => {
-  button.addEventListener('click', () => submit(button.dataset.question));
+  button.addEventListener('click', () => {
+    if (button.classList.contains('primary-starter') && structured) startWorkflow();
+    else {
+      if (button.classList.contains('primary-starter')) document.querySelector('.starters').hidden = true;
+      submit(button.dataset.question);
+    }
+  });
 });
 // Follow content resizing only while the reader is near the end of the chat.
 new ResizeObserver(() => scrollToBottom()).observe($('messages'));

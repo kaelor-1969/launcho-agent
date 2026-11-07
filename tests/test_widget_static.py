@@ -22,6 +22,8 @@ class WidgetStaticTests(unittest.IsolatedAsyncioTestCase):
             ("widget.html", "text/html"), ("demo.html", "text/html"),
             ("widget.css", "text/css"), ("loader.js", "javascript"),
             ("widget.js", "javascript"), ("api.js", "javascript"),
+            ("workflow.js", "javascript"), ("workflow-api.js", "javascript"),
+            ("workflow-demo.js", "javascript"), ("assets/template-almas.webp", "image/webp"),
             ("assets/Vazirmatn.woff2", "font/woff2"), ("assets/OFL.txt", "text/plain"),
         ]:
             with self.subTest(filename=filename):

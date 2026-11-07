@@ -166,3 +166,22 @@ textarea::placeholder { color: var(--muted); font-size: 17px; font-weight: 550; 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Styles for new workflow views; existing chat appearance is preserved. */
+.flow-card { border: 1px solid var(--border); border-radius: var(--s4); padding: var(--s4); background: var(--surface); display: grid; gap: var(--s2); min-width: 0; }
+.flow-card h2 { margin: 0; font-size: 16px; }
+.flow-card p { margin: 0; overflow-wrap: anywhere; }
+.flow-card button, .flow-card input, .flow-card select { font: inherit; width: 100%; min-width: 0; min-height: 44px; border-radius: var(--s2); border: 1px solid var(--border); padding: var(--s2); color: var(--text); background: var(--input-bg); }
+.flow-card button:hover:not(:disabled) { background: var(--hover); }
+.flow-card button:disabled { opacity: .55; }
+.flow-card input:focus-visible, .flow-card select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.flow-card .primary { background: var(--blue); color: var(--on-primary); }
+.flow-card dl { margin: 0; display: grid; grid-template-columns: minmax(70px,1fr) minmax(0,2fr); gap: var(--s2); }
+.flow-card dt { color: var(--muted); }
+.flow-card dd { margin: 0; overflow-wrap: anywhere; unicode-bidi: plaintext; }
+.flow-card img { width: 100%; max-height: 140px; object-fit: cover; object-position: top; border-radius: var(--s2); }
+.demo-badge { font-size: 14px; color: var(--muted); border-bottom: 1px solid var(--border); padding: var(--s2) var(--s4); margin: 0; }
+.flow-status { color: var(--muted); }
+.flow-error { padding: var(--s3); margin-top: var(--s2); background: var(--danger-bg); color: var(--danger); border-radius: var(--s3); }
+.flow-error button { font: inherit; min-height: 44px; padding: var(--s2); border: 1px solid var(--border); border-radius: var(--s2); background: var(--surface); color: inherit; }
+.flow-card a { display: flex; align-items: center; min-height: 44px; color: var(--blue); }
