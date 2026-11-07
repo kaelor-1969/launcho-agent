@@ -51,7 +51,7 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
         await self.client.aclose()
     async def test_health(self):
         result=await self.client.get("/")
-        self.assertEqual(result.json(),{"status":"ok"})
+        self.assertEqual(result.json()["status"],"ok")
     async def test_chat(self):
         with patch("app.api.routes.get_ai_response",return_value="test reply"):
             result=await self.client.post("/api/chat",json={"message":"hello"})

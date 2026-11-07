@@ -45,7 +45,7 @@ class WidgetStaticTests(unittest.IsolatedAsyncioTestCase):
                 os.chdir(previous)
 
     async def test_health_and_chat_preserved(self):
-        self.assertEqual((await self.client.get("/")).json(), {"status": "ok"})
+        self.assertEqual((await self.client.get("/")).json()["status"], "ok")
         with patch("app.api.routes.get_ai_response", return_value="پاسخ آزمایشی") as model:
             response = await self.client.post("/api/chat", json={"message": "  سلام  "})
             self.assertEqual(response.json(), {"reply": "پاسخ آزمایشی"})
@@ -54,6 +54,16 @@ class WidgetStaticTests(unittest.IsolatedAsyncioTestCase):
     async def test_unknown_files_and_traversal_are_not_exposed(self):
         for path in ["/widget/not-found.js", "/widget/%2e%2e/.env", "/widget/%2e%2e/app/main.py"]:
             self.assertEqual((await self.client.get(path)).status_code, 404)
+
+    async def test_unexpected_chat_failure_is_safe(self):
+        with patch("app.api.routes.get_ai_response", side_effect=RuntimeError("private-detail")):
+            response = await self.client.post("/api/chat", json={"message": "hello"})
+        self.assertEqual(response.status_code, 500)
+        self.assertNotIn("private-detail", response.text)
+
+    async def test_legacy_static_mount_is_preserved(self):
+        response = await self.client.get("/static/.gitkeep")
+        self.assertEqual(response.status_code, 200)
 
     async def test_length_is_checked_after_trimming(self):
         with patch("app.api.routes.get_ai_response", return_value="ok") as model:

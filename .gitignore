@@ -1,18 +1,30 @@
-
+# اطلاعات محرمانه و تنظیمات محلی
 .env
-
-venv/
-.venv/
-artifacts/
-
-__pycache__/
-
-*.py[cod]
-
-.setup-backups/
-
 .env.*
 !.env.example
 *.pem
 *.key
-
+# محیط مجازی و کش پایتون
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.py[cod]
+# بکاپ، لاگ و خروجی ابزارها
+.setup-backups/
+*.bak
+*.log
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+artifacts/

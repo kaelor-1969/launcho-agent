@@ -1,4 +1,4 @@
-﻿# Launcho Agent
+# Launcho Agent
 
 دستیار فارسی لانچو با FastAPI، loader بدون build، چت ایزوله در iframe و رابط ساخت فروشگاه مبتنی بر view سرور.
 
@@ -91,8 +91,20 @@ $env:LAUNCHO_BROWSER_CHANNEL='chrome'
 
 ## استقرار
 
-فایل‌های frontend با mount موجود `/widget` ارائه می‌شوند و backend تغییر نکرده است. HTTPS، محدودسازی درخواست‌ها و دامنه مجاز را در استقرار تنظیم کنید. CSP سند iframe باید header واقعی `frame-ancestors` متناسب با دامنه‌های مجاز داشته باشد؛ `X-Frame-Options: SAMEORIGIN` نصب cross-origin را مسدود می‌کند. CSP میزبان باید سرور widget را در script-src و frame-src و استایل Shadow DOM را مجاز کند؛ سند iframe نیز font-src و connect-src مناسب لازم دارد. iframe/API پیش‌فرض هم‌origin‌اند؛ API خارجی به CORS همان سرور نیاز دارد. CORS موجود پروژه تغییر نکرده است.
+فایل‌های frontend با mount `/widget` ارائه می‌شوند. در ادغام با تغییرات جدید ریموت، مسیر `/static`، مدل‌های متمرکز درخواست/پاسخ، پاسخ سلامت توسعه‌یافته و مدیریت خطای HTTP 500 حفظ شدند؛ اعتبارسنجی trim و محدودیت پیام به مدل متمرکز منتقل شد. HTTPS، محدودسازی درخواست‌ها و دامنه مجاز را در استقرار تنظیم کنید. CSP سند iframe باید header واقعی `frame-ancestors` متناسب با دامنه‌های مجاز داشته باشد؛ `X-Frame-Options: SAMEORIGIN` نصب cross-origin را مسدود می‌کند. CSP میزبان باید سرور widget را در script-src و frame-src و استایل Shadow DOM را مجاز کند؛ سند iframe نیز font-src و connect-src مناسب لازم دارد. iframe/API پیش‌فرض هم‌origin‌اند؛ API خارجی به CORS همان سرور نیاز دارد. CORS موجود پروژه تغییر نکرده است.
 
 ## قواعد معماری موجود
 
 پایتون برای بک‌اند (D-001)، مونولیت ماژولار (D-002)، چند مدل نقش‌محور (D-003). اسناد decisions/architecture/budget که قبلاً در README ذکر شده بودند در این checkout موجود نیستند.
+
+## استقرار روی Render
+
+مخزن را به Render متصل و یک Blueprint از `render.yaml` ایجاد کنید. هنگام ساخت اولیه، کلید و شناسهٔ مدل را در داشبورد وارد کنید؛ کلید را در مخزن ننویسید.
+
+فرمان ساخت: `pip install -r requirements.txt`
+
+فرمان اجرا: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+مرجع تنظیمات: [مستندات رسمی Render](https://render.com/docs/blueprint-spec).
+
+وابستگی‌ها قفل نسخه ندارند؛ پیش از انتشار نهایی، نسخه‌های محیط آزموده‌شده را تثبیت کنید.
