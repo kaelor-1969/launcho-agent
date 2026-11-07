@@ -284,6 +284,7 @@ body { background: #F3F7FD; }
 .widget-toggle:not(:checked) ~ .design-panel { display: none; }
 .widget-toggle:focus-visible ~ .floating-button { outline: 3px solid #143EF2; outline-offset: 4px; }
 .icon-button { cursor: pointer; }
+.design-panel .starters { margin: 0; padding: 8px 16px 0; }
 textarea { direction: rtl; text-align: right; }
 @media (max-width: 480px) {
   .floating-button { right: calc(16px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); }
@@ -322,12 +323,12 @@ textarea { direction: rtl; text-align: right; }
         <div class="message-row role-user"><span class="avatar" aria-hidden="true"><svg><use href="#person"/></svg></span><p class="bubble user">می‌خوام فروشگاهم رو بسازم</p></div>
         <div class="message-row role-assistant"><span class="avatar" aria-hidden="true"><svg><use href="#bot-avatar"/></svg></span><p class="bubble assistant">حتماً، قدم‌به‌قدم پیش می‌ریم. اسم کسب‌وکارت چیه؟</p></div>
       </div>
+    </main>
       <nav class="starters" aria-label="پیشنهادهای گفتگو">
         <button class="primary-starter" type="button">ساخت فروشگاه</button>
         <button type="button">امکانات</button>
         <button class="price-card" type="button">تعرفه‌ها</button>
       </nav>
-    </main>
     <footer class="composer">
       <div role="group" aria-label="نوشتن پیام">
         <label class="sr-only" for="message">پیام شما</label>
