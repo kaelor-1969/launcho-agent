@@ -101,6 +101,28 @@ async def main():
                     await expect(chat.locator("html")).to_have_attribute("data-theme", theme)
                     await expect(chat.locator("#message")).to_be_focused()
                     await chat.locator("body").evaluate("() => document.fonts.ready")
+                    # Match the approved launcher gradient and keep starter actions
+                    # outside the scrolling message body in both themes/viewports.
+                    gradient = await launcher.evaluate("el => getComputedStyle(el).backgroundImage")
+                    assert gradient == "linear-gradient(135deg, rgb(23, 75, 255) 0%, rgb(8, 125, 223) 55%, rgb(0, 158, 174) 100%)", gradient
+                    assert await chat.locator("#scroll-area .starters").count() == 0
+                    starter_box = await chat.locator(".starters").bounding_box()
+                    input_box = await chat.locator(".input-row").bounding_box()
+                    for action in await chat.locator(".starters button").all():
+                        box = await action.bounding_box()
+                        assert box["y"] >= starter_box["y"]
+                        assert box["y"] + box["height"] <= input_box["y"]
+                        assert 0 <= box["x"] and box["x"] + box["width"] <= page.viewport_size["width"]
+                    await chat.locator("#messages").evaluate("""el => {
+                        const fixture = document.createElement('p');
+                        fixture.id = 'scroll-fixture'; fixture.textContent = 'آزمون پیمایش '.repeat(300);
+                        el.append(fixture);
+                    }""")
+                    await chat.locator("#scroll-area").evaluate("el => {el.scrollTop = el.scrollHeight;}")
+                    after_scroll = await chat.locator(".starters").bounding_box()
+                    assert abs(after_scroll["y"] - starter_box["y"]) < 1
+                    await chat.locator("#scroll-fixture").evaluate("el => el.remove()")
+                    await chat.locator("#scroll-area").evaluate("el => {el.scrollTop = 0;}")
                     await page.screenshot(path=str(OUTPUT / f"{'mobile' if mobile else 'desktop'}-{theme}-welcome.png"), animations="disabled")
                     await chat.get_by_role("button", name="ساخت فروشگاه", exact=False).click()
                     await expect(chat.locator(".assistant")).to_have_count(1)
@@ -167,6 +189,7 @@ async def main():
                         mode["value"] = "success"
                         await chat.locator("#retry").click()
                         await expect(chat.locator("#error")).to_be_hidden()
+                        await expect(chat.locator("#waiting")).to_be_hidden()
                         assert await chat.locator(".user").count() == users
 
                     # Long mixed content must wrap. A reader scrolled up stays there.

@@ -129,7 +129,7 @@ h1 { direction: rtl; font-size: 20px; line-height: 1.6; margin: 0; font-weight: 
 .dots i:nth-child(3) { animation-delay: .3s; }
 @keyframes pulse { 0%, 80%, 100% { opacity: .35; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 
-.starters { display: grid; grid-template-columns: 1.5fr .95fr 1fr; gap: var(--s2); margin-top: auto; padding-top: var(--s2); flex-shrink: 0; }
+.starters { display: grid; grid-template-columns: 1.5fr .95fr 1fr; gap: var(--s2); margin: 0; padding: var(--s2) var(--s4) 0; flex-shrink: 0; }
 .starters button { min-width: 0; min-height: 44px; padding: var(--s1) var(--s2); border: 1.5px solid var(--border); border-radius: var(--pill-radius); background: transparent; font-size: 17px; font-weight: 700; white-space: nowrap; transition: background var(--motion), border-color var(--motion); }
 .starters .primary-starter { border-color: var(--primary-start); color: var(--on-primary); background: linear-gradient(150deg, var(--primary-start), var(--primary-end)); }
 .starters button:hover:not(:disabled) { background: var(--hover); border-color: var(--focus); }
