@@ -1,0 +1,133 @@
+(() => {
+  'use strict';
+  if (window.LaunchoWidget) return;
+  const script = document.currentScript;
+  if (!script || !script.src) return;
+  const widgetUrl = new URL('./widget.html', script.src);
+  const widgetOrigin = widgetUrl.origin;
+  const channel = crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint32Array(4))).join('-');
+  const options = {
+    theme: ['light', 'dark', 'auto'].includes(script.dataset.theme) ? script.dataset.theme : 'auto',
+    position: script.dataset.position === 'left' ? 'left' : 'right',
+    apiUrl: new URL('../api/chat', script.src).href,
+  };
+  function validApi(value) {
+    try {
+      const url = new URL(value, script.src);
+      return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : null;
+    } catch { return null; }
+  }
+  if (script.dataset.apiUrl) options.apiUrl = validApi(script.dataset.apiUrl) || options.apiUrl;
+  let host, shadow, button, panel, frame, feedback, ready = false, opened = false;
+  const systemTheme = matchMedia('(prefers-color-scheme: dark)');
+  let loadTimer;
+  function post(type) {
+    if (!frame || !ready) return;
+    const data = { scope: 'launcho', channel, type };
+    if (type === 'configure') Object.assign(data, options, { open: opened });
+    frame.contentWindow.postMessage(data, widgetOrigin);
+  }
+  function viewport() {
+    if (!host) return;
+    const view = window.visualViewport;
+    host.style.setProperty('--viewport-height', `${view ? view.height : innerHeight}px`);
+    host.style.setProperty('--viewport-lift', `${view ? Math.max(0, innerHeight - view.height - view.offsetTop) : 0}px`);
+  }
+  function setOpen(value) {
+    opened = value;
+    if (!host) return;
+    panel.hidden = !opened;
+    button.setAttribute('aria-expanded', String(opened));
+    button.setAttribute('aria-label', opened ? 'بستن دستیار لانچو' : 'باز کردن دستیار لانچو');
+    button.dataset.open = String(opened);
+    if (opened && !frame) {
+      frame = document.createElement('iframe');
+      frame.title = 'گفتگو با دستیار لانچو';
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      widgetUrl.hash = new URLSearchParams({ parentOrigin: location.origin, channel }).toString();
+      frame.src = widgetUrl.href;
+      panel.append(frame);
+      loadTimer = setTimeout(() => {
+        if (!feedback.hidden) feedback.textContent = 'گفتگو بارگذاری نشد. اتصال اینترنت را بررسی و صفحه را تازه کن.';
+      }, 15000);
+    }
+    post(opened ? 'open' : 'close');
+    if (!opened) button.focus({ preventScroll: true });
+  }
+  function configure(next) {
+    if (!next || typeof next !== 'object') return;
+    if (['light', 'dark', 'auto'].includes(next.theme)) options.theme = next.theme;
+    if (['left', 'right'].includes(next.position)) options.position = next.position;
+    if (typeof next.apiUrl === 'string') options.apiUrl = validApi(next.apiUrl) || options.apiUrl;
+    if (host) {
+      host.dataset.position = options.position;
+      host.dataset.theme = options.theme === 'auto' ? (systemTheme.matches ? 'dark' : 'light') : options.theme;
+    }
+    post('configure');
+  }
+  window.LaunchoWidget = Object.freeze({
+    open: () => setOpen(true), close: () => setOpen(false),
+    setTheme: (theme) => configure({ theme }), configure,
+  });
+  window.addEventListener('message', (event) => {
+    const data = event.data;
+    if (!frame || event.source !== frame.contentWindow || event.origin !== widgetOrigin || !data || data.scope !== 'launcho' || data.channel !== channel) return;
+    if (data.type === 'ready') { ready = true; post('configure'); }
+    else if (data.type === 'configured' && ready) {
+      clearTimeout(loadTimer);
+      feedback.hidden = true;
+      frame.style.visibility = 'visible';
+    } else if (data.type === 'close' && ready) setOpen(false);
+  });
+  function mount() {
+    host = document.createElement('div');
+    host.id = 'launcho-widget';
+    host.dataset.position = options.position;
+    // Host CSS cannot turn the invisible wrapper into a page-sized click target.
+    host.style.setProperty('all', 'initial', 'important');
+    host.style.setProperty('position', 'fixed', 'important');
+    host.style.setProperty('width', '0', 'important');
+    host.style.setProperty('height', '0', 'important');
+    host.style.setProperty('z-index', '2147483000', 'important');
+    shadow = host.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        :host{--blue:#143ef2;--mid-blue:#0d8ae5;--turquoise:#00d8d1;--white:#fff;--surface:#f7f8ff;--ink:#152a56;--line:#cbdaf1;--button-line:#ffffff40;--button-shadow:0 5px 12px #008ca83b;--button-top:#00efdf;--button-bottom:#00bddd;--offset:24px;--gap:16px;--size:58px;--radius:32px;--frame-gradient:conic-gradient(var(--blue),var(--mid-blue),var(--turquoise),var(--mid-blue),var(--blue));--frame-duration:6s;--frame-width:3px;--shadow:0 14px 34px #22509838;--viewport-height:100dvh;--viewport-lift:0px}
+        :host([data-theme=dark]){--surface:#091525;--ink:#eef6f3;--line:#12394c;--shadow:0 12px 48px #0004}
+        *{box-sizing:border-box} [hidden]{display:none!important}
+        button{all:initial;box-sizing:border-box;position:fixed;bottom:calc(var(--offset) + env(safe-area-inset-bottom) + var(--viewport-lift));right:calc(var(--offset) + env(safe-area-inset-right));width:var(--size);height:var(--size);border-radius:50%;border:1px solid var(--button-line);background:linear-gradient(145deg,var(--button-top),var(--button-bottom));color:var(--white);box-shadow:var(--button-shadow);display:grid;place-items:center;cursor:pointer;transition:transform 180ms;pointer-events:auto}
+        button:hover{transform:translateY(-2px)}button:focus-visible{outline:3px solid var(--blue);outline-offset:4px}
+        svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}button .close{display:none}button[data-open=true]{box-shadow:var(--button-shadow),inset 0 0 0 2px var(--button-line)}
+        .panel{position:fixed;right:calc(var(--offset) + env(safe-area-inset-right));bottom:calc(var(--offset) + var(--size) + var(--gap) + env(safe-area-inset-bottom) + var(--viewport-lift));width:380px;max-width:calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right));height:450px;max-height:calc(var(--viewport-height) - var(--offset) - var(--offset) - var(--size) - var(--gap) - env(safe-area-inset-bottom) - env(safe-area-inset-top));padding:var(--frame-width);border:0;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);background:var(--surface);pointer-events:auto}
+        /* The iframe covers the center of the rotating gradient, leaving only the rim visible. */
+        .panel::before{content:'';position:absolute;inset:-100%;background:var(--frame-gradient);animation:launcho-border-spin var(--frame-duration) linear infinite;pointer-events:none}
+        @keyframes launcho-border-spin{to{transform:rotate(360deg)}}
+        iframe{z-index:1;border-radius:calc(var(--radius) - var(--frame-width));border:0;width:100%;height:100%;display:block;visibility:hidden;position:relative;background:transparent}
+        .feedback{position:absolute;z-index:1;inset:var(--frame-width);border-radius:calc(var(--radius) - var(--frame-width));background:var(--surface);display:grid;place-items:center;margin:0;padding:24px;text-align:center;font:14px/2 Tahoma,sans-serif;color:var(--ink);direction:rtl}
+        :host([data-position=left]) button,:host([data-position=left]) .panel{right:auto;left:calc(var(--offset) + env(safe-area-inset-left))}
+        @media(max-width:480px){:host{--offset:16px;--gap:12px}.panel{right:calc(12px + env(safe-area-inset-right));width:calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right))}:host([data-position=left]) .panel{left:calc(12px + env(safe-area-inset-left))}}
+        @media(prefers-reduced-motion:reduce){button{transition:none}.panel::before{animation:none}}
+      </style>
+      <div class="panel" id="launcho-panel" hidden><p class="feedback" role="status">در حال آماده‌سازی گفتگو…</p></div>
+      <button type="button" aria-label="باز کردن دستیار لانچو" aria-expanded="false" aria-controls="launcho-panel" data-open="false"><svg class="bubble" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M5 3h14a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4H9l-5 4v-4a4 4 0 0 1-4-4V7a5 5 0 0 1 5-4Z"/><g fill="#00cbd8" stroke="none"><circle cx="6" cy="10.5" r="1.3"/><circle cx="11.5" cy="10.5" r="1.3"/><circle cx="17" cy="10.5" r="1.3"/></g></svg><svg class="close" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button>`;
+    panel = shadow.querySelector('.panel');
+    feedback = shadow.querySelector('.feedback');
+    button = shadow.querySelector('button');
+    button.addEventListener('click', () => setOpen(!opened));
+    shadow.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && opened) { event.preventDefault(); setOpen(false); }
+    });
+    document.body.append(host);
+    viewport();
+    configure(options);
+    if (opened) setOpen(true);
+  }
+  window.addEventListener('resize', viewport, { passive: true });
+  systemTheme.addEventListener('change', () => { if (options.theme === 'auto') configure({ theme: 'auto' }); });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', viewport, { passive: true });
+    window.visualViewport.addEventListener('scroll', viewport, { passive: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, { once: true });
+  else mount();
+})();

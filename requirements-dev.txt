@@ -1,0 +1,3 @@
+-r requirements.txt
+httpx
+playwright>=1.40,<2
