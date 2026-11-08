@@ -132,6 +132,8 @@ async function submit(message, retry = false) {
   updateInput();
   scrollToBottom();
   try {
+    // Give the explicit demo a visible pending state, without calling an API.
+    if (demoMode) await new Promise(resolve => setTimeout(resolve, 700));
     const reply = demoMode ? 'برای بررسی مراحل در این نمونه، «ساخت فروشگاه» را انتخاب کن.' : await sendMessage(apiUrl, message);
     appendMessage('assistant', reply);
   } catch (error) {

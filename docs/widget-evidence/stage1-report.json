@@ -1,0 +1,476 @@
+[
+  {
+    "viewport": "desktop",
+    "width": 1280,
+    "height": 900,
+    "theme": "light",
+    "http_status": 200,
+    "panel": {
+      "x": 876,
+      "y": 352,
+      "width": 380,
+      "height": 450
+    },
+    "host": {
+      "overflow": false,
+      "fontLoaded": true
+    },
+    "widget": {
+      "overflow": false,
+      "direction": "rtl",
+      "fontLoaded": true,
+      "greeting": "سلام! چطور کمکت کنم؟",
+      "demoLabelInWidget": true
+    },
+    "controls": {
+      ".header": {
+        "visible": true,
+        "box": {
+          "x": 879,
+          "y": 355,
+          "width": 374,
+          "height": 60
+        },
+        "inside_viewport": true
+      },
+      "#close": {
+        "visible": true,
+        "box": {
+          "x": 1201,
+          "y": 363,
+          "width": 44,
+          "height": 44
+        },
+        "inside_viewport": true
+      },
+      ".starters": {
+        "visible": true,
+        "box": {
+          "x": 879,
+          "y": 661,
+          "width": 374,
+          "height": 52
+        },
+        "inside_viewport": true
+      },
+      "#message": {
+        "visible": true,
+        "box": {
+          "x": 898,
+          "y": 733,
+          "width": 280,
+          "height": 47
+        },
+        "inside_viewport": true
+      },
+      "#send": {
+        "visible": true,
+        "box": {
+          "x": 1186,
+          "y": 732,
+          "width": 48,
+          "height": 48
+        },
+        "inside_viewport": true
+      }
+    },
+    "page_errors": [],
+    "http_errors": [],
+    "api_requests": []
+  },
+  {
+    "viewport": "desktop",
+    "width": 1280,
+    "height": 900,
+    "theme": "dark",
+    "http_status": 200,
+    "panel": {
+      "x": 876,
+      "y": 352,
+      "width": 380,
+      "height": 450
+    },
+    "host": {
+      "overflow": false,
+      "fontLoaded": true
+    },
+    "widget": {
+      "overflow": false,
+      "direction": "rtl",
+      "fontLoaded": true,
+      "greeting": "سلام! چطور کمکت کنم؟",
+      "demoLabelInWidget": true
+    },
+    "controls": {
+      ".header": {
+        "visible": true,
+        "box": {
+          "x": 879,
+          "y": 355,
+          "width": 374,
+          "height": 60
+        },
+        "inside_viewport": true
+      },
+      "#close": {
+        "visible": true,
+        "box": {
+          "x": 1201,
+          "y": 363,
+          "width": 44,
+          "height": 44
+        },
+        "inside_viewport": true
+      },
+      ".starters": {
+        "visible": true,
+        "box": {
+          "x": 879,
+          "y": 661,
+          "width": 374,
+          "height": 52
+        },
+        "inside_viewport": true
+      },
+      "#message": {
+        "visible": true,
+        "box": {
+          "x": 898,
+          "y": 733,
+          "width": 280,
+          "height": 47
+        },
+        "inside_viewport": true
+      },
+      "#send": {
+        "visible": true,
+        "box": {
+          "x": 1186,
+          "y": 732,
+          "width": 48,
+          "height": 48
+        },
+        "inside_viewport": true
+      }
+    },
+    "page_errors": [],
+    "http_errors": [],
+    "api_requests": []
+  },
+  {
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "theme": "light",
+    "http_status": 200,
+    "panel": {
+      "x": 12,
+      "y": 308,
+      "width": 366,
+      "height": 450
+    },
+    "host": {
+      "overflow": false,
+      "fontLoaded": true
+    },
+    "widget": {
+      "overflow": false,
+      "direction": "rtl",
+      "fontLoaded": true,
+      "greeting": "سلام! چطور کمکت کنم؟",
+      "demoLabelInWidget": true
+    },
+    "controls": {
+      ".header": {
+        "visible": true,
+        "box": {
+          "x": 15,
+          "y": 311,
+          "width": 360,
+          "height": 60
+        },
+        "inside_viewport": true
+      },
+      "#close": {
+        "visible": true,
+        "box": {
+          "x": 323,
+          "y": 319,
+          "width": 44,
+          "height": 44
+        },
+        "inside_viewport": true
+      },
+      ".starters": {
+        "visible": true,
+        "box": {
+          "x": 15,
+          "y": 617,
+          "width": 360,
+          "height": 52
+        },
+        "inside_viewport": true
+      },
+      "#message": {
+        "visible": true,
+        "box": {
+          "x": 34,
+          "y": 689,
+          "width": 266,
+          "height": 47
+        },
+        "inside_viewport": true
+      },
+      "#send": {
+        "visible": true,
+        "box": {
+          "x": 308,
+          "y": 688,
+          "width": 48,
+          "height": 48
+        },
+        "inside_viewport": true
+      }
+    },
+    "page_errors": [],
+    "http_errors": [],
+    "api_requests": []
+  },
+  {
+    "viewport": "mobile",
+    "width": 390,
+    "height": 844,
+    "theme": "dark",
+    "http_status": 200,
+    "panel": {
+      "x": 12,
+      "y": 308,
+      "width": 366,
+      "height": 450
+    },
+    "host": {
+      "overflow": false,
+      "fontLoaded": true
+    },
+    "widget": {
+      "overflow": false,
+      "direction": "rtl",
+      "fontLoaded": true,
+      "greeting": "سلام! چطور کمکت کنم؟",
+      "demoLabelInWidget": true
+    },
+    "controls": {
+      ".header": {
+        "visible": true,
+        "box": {
+          "x": 15,
+          "y": 311,
+          "width": 360,
+          "height": 60
+        },
+        "inside_viewport": true
+      },
+      "#close": {
+        "visible": true,
+        "box": {
+          "x": 323,
+          "y": 319,
+          "width": 44,
+          "height": 44
+        },
+        "inside_viewport": true
+      },
+      ".starters": {
+        "visible": true,
+        "box": {
+          "x": 15,
+          "y": 617,
+          "width": 360,
+          "height": 52
+        },
+        "inside_viewport": true
+      },
+      "#message": {
+        "visible": true,
+        "box": {
+          "x": 34,
+          "y": 689,
+          "width": 266,
+          "height": 47
+        },
+        "inside_viewport": true
+      },
+      "#send": {
+        "visible": true,
+        "box": {
+          "x": 308,
+          "y": 688,
+          "width": 48,
+          "height": 48
+        },
+        "inside_viewport": true
+      }
+    },
+    "page_errors": [],
+    "http_errors": [],
+    "api_requests": []
+  },
+  {
+    "viewport": "mobile-small",
+    "width": 320,
+    "height": 568,
+    "theme": "light",
+    "http_status": 200,
+    "panel": {
+      "x": 12,
+      "y": 32,
+      "width": 296,
+      "height": 450
+    },
+    "host": {
+      "overflow": false,
+      "fontLoaded": true
+    },
+    "widget": {
+      "overflow": false,
+      "direction": "rtl",
+      "fontLoaded": true,
+      "greeting": "سلام! چطور کمکت کنم؟",
+      "demoLabelInWidget": true
+    },
+    "controls": {
+      ".header": {
+        "visible": true,
+        "box": {
+          "x": 15,
+          "y": 35,
+          "width": 290,
+          "height": 60
+        },
+        "inside_viewport": true
+      },
+      "#close": {
+        "visible": true,
+        "box": {
+          "x": 257,
+          "y": 43,
+          "width": 44,
+          "height": 44
+        },
+        "inside_viewport": true
+      },
+      ".starters": {
+        "visible": true,
+        "box": {
+          "x": 15,
+          "y": 341,
+          "width": 290,
+          "height": 52
+        },
+        "inside_viewport": true
+      },
+      "#message": {
+        "visible": true,
+        "box": {
+          "x": 34,
+          "y": 413,
+          "width": 196,
+          "height": 47
+        },
+        "inside_viewport": true
+      },
+      "#send": {
+        "visible": true,
+        "box": {
+          "x": 238,
+          "y": 412,
+          "width": 48,
+          "height": 48
+        },
+        "inside_viewport": true
+      }
+    },
+    "page_errors": [],
+    "http_errors": [],
+    "api_requests": []
+  },
+  {
+    "viewport": "mobile-small",
+    "width": 320,
+    "height": 568,
+    "theme": "dark",
+    "http_status": 200,
+    "panel": {
+      "x": 12,
+      "y": 32,
+      "width": 296,
+      "height": 450
+    },
+    "host": {
+      "overflow": false,
+      "fontLoaded": true
+    },
+    "widget": {
+      "overflow": false,
+      "direction": "rtl",
+      "fontLoaded": true,
+      "greeting": "سلام! چطور کمکت کنم؟",
+      "demoLabelInWidget": true
+    },
+    "controls": {
+      ".header": {
+        "visible": true,
+        "box": {
+          "x": 15,
+          "y": 35,
+          "width": 290,
+          "height": 60
+        },
+        "inside_viewport": true
+      },
+      "#close": {
+        "visible": true,
+        "box": {
+          "x": 257,
+          "y": 43,
+          "width": 44,
+          "height": 44
+        },
+        "inside_viewport": true
+      },
+      ".starters": {
+        "visible": true,
+        "box": {
+          "x": 15,
+          "y": 341,
+          "width": 290,
+          "height": 52
+        },
+        "inside_viewport": true
+      },
+      "#message": {
+        "visible": true,
+        "box": {
+          "x": 34,
+          "y": 413,
+          "width": 196,
+          "height": 47
+        },
+        "inside_viewport": true
+      },
+      "#send": {
+        "visible": true,
+        "box": {
+          "x": 238,
+          "y": 412,
+          "width": 48,
+          "height": 48
+        },
+        "inside_viewport": true
+      }
+    },
+    "page_errors": [],
+    "http_errors": [],
+    "api_requests": []
+  }
+]

@@ -1,0 +1,106 @@
+[
+  {
+    "viewport": "desktop",
+    "size": [
+      1280,
+      900
+    ],
+    "status": "passed",
+    "checks": [
+      "open-close",
+      "state-preserved",
+      "escape-focus",
+      "persian-zwnj",
+      "shift-enter",
+      "composition",
+      "waiting",
+      "duplicate-submit-lock",
+      "draft-during-wait",
+      "native-scroll",
+      "scroll-after-send",
+      "controls-visible"
+    ],
+    "user_messages": 4,
+    "assistant_messages": 4,
+    "page_errors": [],
+    "api_requests": []
+  },
+  {
+    "viewport": "mobile",
+    "size": [
+      390,
+      844
+    ],
+    "status": "passed",
+    "checks": [
+      "open-close",
+      "state-preserved",
+      "escape-focus",
+      "persian-zwnj",
+      "shift-enter",
+      "composition",
+      "waiting",
+      "duplicate-submit-lock",
+      "draft-during-wait",
+      "native-scroll",
+      "scroll-after-send",
+      "controls-visible"
+    ],
+    "user_messages": 4,
+    "assistant_messages": 4,
+    "page_errors": [],
+    "api_requests": []
+  },
+  {
+    "viewport": "mobile-small",
+    "size": [
+      320,
+      568
+    ],
+    "status": "passed",
+    "checks": [
+      "open-close",
+      "state-preserved",
+      "escape-focus",
+      "persian-zwnj",
+      "shift-enter",
+      "composition",
+      "waiting",
+      "duplicate-submit-lock",
+      "draft-during-wait",
+      "native-scroll",
+      "scroll-after-send",
+      "controls-visible"
+    ],
+    "user_messages": 4,
+    "assistant_messages": 4,
+    "page_errors": [],
+    "api_requests": []
+  },
+  {
+    "viewport": "desktop",
+    "status": "passed",
+    "mode": "mocked-api",
+    "request_count": 1,
+    "checks": [
+      "one-request-during-repeated-submit",
+      "pending-close-reopen",
+      "waiting-visible-until-response",
+      "draft-preserved",
+      "send-reenabled"
+    ]
+  },
+  {
+    "viewport": "mobile",
+    "status": "passed",
+    "mode": "mocked-api",
+    "request_count": 1,
+    "checks": [
+      "one-request-during-repeated-submit",
+      "pending-close-reopen",
+      "waiting-visible-until-response",
+      "draft-preserved",
+      "send-reenabled"
+    ]
+  }
+]
