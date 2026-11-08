@@ -5,6 +5,12 @@ export function safeUrl(value) {
     return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password ? url.href : null;
   } catch { return null; }
 }
+// This release permits only the bundled static demo, at its exact module-relative
+// URL. Real draft destinations require a separately reviewed allowlist.
+const demoDraftUrl = new URL('./draft-preview.html', import.meta.url).href;
+export function safeDraftUrl(value) {
+  return value === demoDraftUrl && safeUrl(value) ? demoDraftUrl : null;
+}
 const text = (v, max = 5000) => typeof v === 'string' && v.length > 0 && v.length <= max;
 const fields = ['businessName', 'category', 'subscription'];
 const actions = new Set(['next', 'browseTemplates', 'edit', 'createDraft',
@@ -23,7 +29,7 @@ export function validateView(v) {
   if (v.kind === 'field' && (!fields.includes(v.field) ||
       (v.options !== undefined && (!Array.isArray(v.options) || !v.options.every(o => o && text(o.id,200) && text(o.label,200)))))) throw new Error('پاسخ معتبر نیست.');
   if (v.actions.some(a => a.id === 'createDraft') && v.kind !== 'review') throw new Error('اطلاعات مرور کامل نیست.');
-  if (v.kind === 'draft' && (!text(v.draftId,200) || v.confirmed !== true || !safeUrl(v.draftUrl))) throw new Error('پیش‌نویس یا لینک آن معتبر نیست.');
+  if (v.kind === 'draft' && (!text(v.draftId,200) || v.confirmed !== true || !safeDraftUrl(v.draftUrl))) throw new Error('پیش‌نویس یا لینک آن معتبر نیست.');
   if (v.kind !== 'draft' && v.draftUrl !== undefined) throw new Error('لینک پیش‌نویس فقط پس از تأیید نمایش داده می‌شود.');
   return v;
 }

@@ -5,6 +5,32 @@ from playwright.async_api import expect
 OUTPUT = Path(__file__).resolve().parents[1] / 'artifacts' / 'widget'
 
 
+def untrusted_draft_urls(base):
+    from urllib.parse import urlsplit
+    origin = urlsplit(base)
+    allowed = base + '/widget/draft-preview.html'
+    return [
+        'https://fake-site.example/login',
+        'http://fake-site.example/login',
+        'https://fake-site.example/widget/draft-preview.html',
+        f'{origin.scheme}://{origin.hostname}.fake-site.example/widget/draft-preview.html',
+        f'{origin.scheme}://{origin.netloc}@fake-site.example/widget/draft-preview.html',
+        f'{origin.scheme}://user:pass@{origin.netloc}/widget/draft-preview.html',
+        f'{origin.scheme}://{origin.hostname}:{int(origin.port or 80) + 1}/widget/draft-preview.html',
+        ('https' if origin.scheme == 'http' else 'http') + '://' + origin.netloc + '/widget/draft-preview.html',
+        base + '/login',
+        base + '/widget/draft-preview.html.evil',
+        base + '/widget/draft-preview.html/login',
+        allowed + '?next=https://fake-site.example/login',
+        allowed + '#https://fake-site.example/login',
+        base + '/widget/%64raft-preview.html',
+        base + '/widget/../widget/draft-preview.html',
+        '//' + origin.netloc + '/widget/draft-preview.html',
+        allowed + '\n',
+        ' ' + allowed,
+    ]
+
+
 async def run_workflow_checks(browser, base):
     OUTPUT.mkdir(parents=True, exist_ok=True)
     results = []
@@ -113,6 +139,7 @@ async def run_workflow_checks(browser, base):
         page.on('request', lambda req: modules.append(req.url))
         attempt = 0
         starts = 0
+        untrusted = untrusted_draft_urls(base)
 
         async def workflow(route):
             nonlocal attempt, starts
@@ -129,10 +156,15 @@ async def run_workflow_checks(browser, base):
                 attempt += 1
                 if attempt == 1:
                     await route.abort('failed')
-                else:
+                elif attempt <= 3:
                     await route.fulfill(json={**common,'kind':'draft','title':'پیش‌نویس آزمایشی',
                         'confirmed':attempt > 2,'draftId':'test-draft',
                         'draftUrl':'javascript:alert(1)' if attempt == 3 else base+'/widget/draft-preview.html'})
+                else:
+                    index = attempt - 4
+                    await route.fulfill(json={**common,'kind':'draft','title':'پیش‌نویس آزمایشی',
+                        'confirmed':True,'draftId':'test-draft',
+                        'draftUrl':untrusted[index] if index < len(untrusted) else base+'/widget/draft-preview.html'})
             else:
                 raise AssertionError(payload)
 
@@ -150,16 +182,16 @@ async def run_workflow_checks(browser, base):
             await expect(chat.locator('#flow-value')).to_have_count(0)
             await chat.locator('.flow-error button').click()
         await chat.locator('[data-action=createDraft]').click()
-        for _ in range(3):
+        for _ in range(3 + len(untrusted)):
             await expect(chat.locator('.flow-error')).to_contain_text('پیش‌نویس ساخته نشد')
             await expect(chat.locator('#workflow a')).to_have_count(0)
             await chat.locator('.flow-error button').click()
         await expect(chat.locator('#workflow h2')).to_have_text('پیش‌نویس آزمایشی')
         await expect(chat.locator('#workflow a')).to_have_count(1)
         creates = [c for c in calls if c['action']=='createDraft']
-        assert len(creates)==4 and len({c['idempotencyKey'] for c in creates})==1
+        assert len(creates)==4 + len(untrusted) and len({c['idempotencyKey'] for c in creates})==1
         assert not any('workflow-demo.js' in m for m in modules)
-        schema = await page.evaluate("""async base => {
+        schema = await page.evaluate("""async ({base, untrusted}) => {
             const {validateView} = await import(base+'/widget/workflow-api.js');
             const common={sessionId:'schema-test',revision:1,title:'test',kind:'review',actions:[]};
             const draft={...common,kind:'draft',draftId:'test',confirmed:true,draftUrl:base+'/widget/draft-preview.html'};
@@ -173,6 +205,7 @@ async def run_workflow_checks(browser, base):
                     .map(key=>({...common,[key]:null})),
                 ...['javascript:alert(1)','data:text/html,test','https://user:pass@example.invalid','/relative',undefined]
                     .map(draftUrl=>({...draft,draftUrl})),
+                ...untrusted.map(draftUrl=>({...draft,draftUrl})),
                 {...common,draftUrl:draft.draftUrl}, {...draft,confirmed:false}
             ];
             let rejected=0;
@@ -180,8 +213,8 @@ async def run_workflow_checks(browser, base):
             validateView(draft);
             validateView({...common,actions:[{id:'createDraft',label:'confirm'}]});
             return {rejected,total:invalid.length};
-        }""",base)
-        assert schema['rejected'] == schema['total'] == 34, schema
+        }""",{'base':base, 'untrusted':untrusted})
+        assert schema['rejected'] == schema['total'] == 34 + len(untrusted), schema
         plans = await page.evaluate("""async base => {
             const {createDemoWorkflow} = await import(base+'/widget/workflow-demo.js');
             const {validateView} = await import(base+'/widget/workflow-api.js');
@@ -210,7 +243,7 @@ async def run_workflow_checks(browser, base):
         }""",base)
         assert plans == ['3','6','12'], plans
         results.append({'production_adapter':'passed','idempotency':'stable','invalid_draft':'rejected',
-            'legacy_schema':schema,'demo_plans':plans})
+            'legacy_schema':schema,'demo_plans':plans,'untrusted_draft_destinations_rejected':len(untrusted)})
     finally:
         await context.close()
     return results
