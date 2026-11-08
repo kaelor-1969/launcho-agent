@@ -33,6 +33,13 @@
       <div id="messages" class="messages" role="log" aria-label="پیام‌های گفتگو" aria-live="polite" aria-relevant="additions"></div>
       <div id="waiting" class="waiting" role="status" hidden><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>در حال نوشتن…</span></div>
       <section id="workflow" aria-label="مراحل ساخت فروشگاه" hidden></section>
+      <button id="review-button" type="button" hidden>مرور خلاصه و تأیید</button>
+      <section id="session-review" class="flow-card" aria-labelledby="review-title" hidden>
+        <h2 id="review-title">مرور اطلاعات</h2>
+        <div id="review-summary"></div>
+        <p id="review-notice"></p>
+        <button id="confirm" class="primary" type="button" disabled>تأیید و ساخت پیش‌نویس</button>
+      </section>
     </main>
     <nav class="starters" aria-label="پیشنهادهای گفتگو">
       <button class="primary-starter" type="button" data-question="برای ساخت فروشگاه با لانچو از کجا شروع کنم؟">ساخت فروشگاه</button>

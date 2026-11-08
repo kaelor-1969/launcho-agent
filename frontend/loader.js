@@ -3,13 +3,13 @@
   if (window.LaunchoWidget) return;
   const script = document.currentScript;
   if (!script || !script.src) return;
-  const widgetUrl = new URL('./widget.html', script.src);
+  const widgetUrl = new URL('/widget/widget.html', location.origin);
   const widgetOrigin = widgetUrl.origin;
   const channel = crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint32Array(4))).join('-');
   const options = {
     theme: ['light', 'dark', 'auto'].includes(script.dataset.theme) ? script.dataset.theme : 'auto',
     position: script.dataset.position === 'left' ? 'left' : 'right',
-    apiUrl: new URL('../api/chat', script.src).href,
+    apiUrl: '/api/chat',
     demo: script.dataset.demo === 'true',
     workflowUrl: null,
     offset: 24,
@@ -17,12 +17,18 @@
   };
   function validApi(value) {
     try {
-      const url = new URL(value, script.src);
+      const url = new URL(value, location.href);
       return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : null;
     } catch { return null; }
   }
-  if (script.dataset.apiUrl) options.apiUrl = validApi(script.dataset.apiUrl) || options.apiUrl;
-  if (script.dataset.workflowUrl) options.workflowUrl = validApi(script.dataset.workflowUrl);
+  function relativeApi(value) {
+    const valid = validApi(value);
+    if (!valid) return null;
+    const url = new URL(valid);
+    return url.origin === location.origin && !url.pathname.startsWith('//') ? url.pathname + url.search : null;
+  }
+  if (script.dataset.apiUrl) options.apiUrl = relativeApi(script.dataset.apiUrl) || options.apiUrl;
+  if (script.dataset.workflowUrl) options.workflowUrl = relativeApi(script.dataset.workflowUrl);
   for (const key of ['offset', 'mobileOffset']) if (script.dataset[key] && Number.isFinite(Number(script.dataset[key]))) options[key] = Math.max(0, Math.min(240, Number(script.dataset[key])));
   let host, shadow, button, panel, frame, feedback, ready = false, opened = false;
   const systemTheme = matchMedia('(prefers-color-scheme: dark)');
@@ -51,7 +57,7 @@
       frame.title = 'گفتگو با دستیار لانچو';
       frame.referrerPolicy = 'strict-origin-when-cross-origin';
       widgetUrl.hash = new URLSearchParams({ parentOrigin: location.origin, channel }).toString();
-      frame.src = widgetUrl.href;
+      frame.src = widgetUrl.pathname + widgetUrl.search + widgetUrl.hash;
       panel.append(frame);
       loadTimer = setTimeout(() => {
         if (!feedback.hidden) feedback.textContent = 'گفتگو بارگذاری نشد. اتصال اینترنت را بررسی و صفحه را تازه کن.';
@@ -64,9 +70,9 @@
     if (!next || typeof next !== 'object') return;
     if (['light', 'dark', 'auto'].includes(next.theme)) options.theme = next.theme;
     if (['left', 'right'].includes(next.position)) options.position = next.position;
-    if (typeof next.apiUrl === 'string') options.apiUrl = validApi(next.apiUrl) || options.apiUrl;
+    if (typeof next.apiUrl === 'string') options.apiUrl = relativeApi(next.apiUrl) || options.apiUrl;
     // Demo mode is fixed at installation, never enabled by a later message.
-    if (typeof next.workflowUrl === 'string') options.workflowUrl = validApi(next.workflowUrl);
+    if (typeof next.workflowUrl === 'string') options.workflowUrl = relativeApi(next.workflowUrl);
     for (const key of ['offset', 'mobileOffset']) if (Number.isFinite(next[key])) options[key] = Math.max(0, Math.min(240, next[key]));
     if (host) {
       host.dataset.position = options.position;

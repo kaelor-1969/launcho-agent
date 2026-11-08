@@ -1,3 +1,4 @@
+import { relativeUrl } from './api.js';
 // Proposed structured adapter. No guessed endpoint, pricing or production fallback.
 export function safeUrl(value) {
   try {
@@ -34,7 +35,8 @@ export function validateView(v) {
   return v;
 }
 export function createWorkflowApi(url) {
-  if (!safeUrl(url)) return null;
+  if (typeof url !== 'string' || !relativeUrl(url)) return null;
+  url = relativeUrl(url);
   return { async request(payload) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 45000);

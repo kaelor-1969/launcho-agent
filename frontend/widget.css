@@ -185,3 +185,4 @@ textarea::placeholder { color: var(--muted); font-size: 17px; font-weight: 550; 
 .flow-error { padding: var(--s3); margin-top: var(--s2); background: var(--danger-bg); color: var(--danger); border-radius: var(--s3); }
 .flow-error button { font: inherit; min-height: 44px; padding: var(--s2); border: 1px solid var(--border); border-radius: var(--s2); background: var(--surface); color: inherit; }
 .flow-card a { display: flex; align-items: center; min-height: 44px; color: var(--blue); }
+#review-button { min-height: 44px; padding: var(--s2); border: 1px solid var(--border); border-radius: var(--s2); background: var(--input-bg); color: var(--text); font: inherit; }

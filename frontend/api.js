@@ -1,26 +1,88 @@
-// The browser never receives gateway credentials or conversation history.
-export async function sendMessage(apiUrl, message, timeout = 45000) {
+// Capabilities live only in this closure, never in storage or messages.
+export function relativeUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const url = new URL(value, location.href);
+    return url.origin === location.origin && !url.username && !url.password && !url.pathname.startsWith('//')
+      ? url.pathname + url.search : null;
+  } catch { return null; }
+}
+
+async function post(url, body, token, timeout = 45000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }),
-      signal: controller.signal,
-      credentials: 'omit',
+    const response = await fetch(url, {
+      method: 'POST', credentials: 'omit', cache: 'no-store',
+      headers: { 'Content-Type': 'application/json', ...(token ? {'X-Session-Token': token} : {}) },
+      body: JSON.stringify(body), signal: controller.signal,
     });
-    if (!response.ok) throw new Error('http');
+    if (!response.ok) {
+      let detail;
+      try { detail = (await response.json())?.detail; } catch { /* No upstream text is displayed. */ }
+      const error = new Error('http');
+      error.status = response.status;
+      error.code = typeof detail?.code === 'string' ? detail.code : null;
+      throw error;
+    }
     let data;
     try { data = await response.json(); } catch { throw new Error('invalid'); }
-    if (!data || typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('invalid');
-    return data.reply;
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('invalid');
+    return data;
   } catch (error) {
     if (error.name === 'AbortError') throw new Error('دریافت پاسخ طول کشید. می‌توانی دوباره تلاش کنی.');
     if (error.message === 'invalid') throw new Error('پاسخ معتبری دریافت نشد. دوباره تلاش کن.');
-    if (error.message === 'http') throw new Error('ارسال پیام انجام نشد. دوباره تلاش کن.');
+    if (error.message === 'http') {
+      error.message = 'ارسال درخواست انجام نشد. دوباره تلاش کن.';
+      throw error;
+    }
     throw new Error('ارتباط برقرار نشد. اتصال اینترنتت را بررسی کن.');
-  } finally {
-    clearTimeout(timer);
+  } finally { clearTimeout(timer); }
+}
+
+const validRevision = value => Number.isSafeInteger(value) && value >= 0;
+const invalid = () => new Error('پاسخ معتبری دریافت نشد. دوباره تلاش کن.');
+
+export function createSessionApi() {
+  let session, initializing;
+  async function start() {
+    if (session) return;
+    if (!initializing) {
+      initializing = post('/api/sessions', {}).then(data => {
+        if (typeof data.sessionId !== 'string' || !data.sessionId ||
+            typeof data.sessionToken !== 'string' || !data.sessionToken || !validRevision(data.revision)) throw invalid();
+        session = { id: data.sessionId, token: data.sessionToken, revision: data.revision };
+      }).finally(() => { initializing = null; });
+    }
+    await initializing;
   }
+  function endpoint(action) { return `/api/sessions/${encodeURIComponent(session.id)}/${action}`; }
+  return {
+    start,
+    async sendMessage(apiUrl, message) {
+      await start();
+      const url = relativeUrl(apiUrl);
+      if (!url) throw invalid();
+      const data = await post(url, {message, sessionId: session.id}, session.token);
+      if (typeof data.reply !== 'string' || !data.reply.trim() || data.sessionId !== session.id ||
+          !validRevision(data.revision) || data.revision < session.revision) throw invalid();
+      session.revision = data.revision;
+      return data;
+    },
+    async review() {
+      await start();
+      const data = await post(endpoint('review'), {revision: session.revision}, session.token);
+      if (data.sessionId !== session.id || data.revision !== session.revision || typeof data.canConfirm !== 'boolean') throw invalid();
+      if (!data.draft && (!data.summary || typeof data.summary !== 'object' || Array.isArray(data.summary) ||
+          typeof data.reviewId !== 'string' || typeof data.confirmationToken !== 'string')) throw invalid();
+      return data;
+    },
+    // Called only from the visible confirm button, never from chat/model output.
+    async confirm(review) {
+      return post(endpoint('confirm'), {
+        revision: review.revision, reviewId: review.reviewId,
+        confirmationToken: review.confirmationToken, confirmed: true,
+      }, session.token);
+    },
+  };
 }
