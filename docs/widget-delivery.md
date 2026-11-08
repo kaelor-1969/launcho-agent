@@ -16,6 +16,7 @@
 
 | مرحله | گزارش |
 | --- | --- |
+| بررسی اولیهٔ ظاهر | [مرحلهٔ ۱](widget-stage1-review.md) |
 | تعامل‌ها | [مرحلهٔ ۲](widget-stage2-review.md) |
 | پاسخ موفق و خطاها | [مرحلهٔ ۳](widget-stage3-review.md) |
 | ایمنی نمایش متن | [مرحلهٔ ۴](widget-stage4-review.md) |
