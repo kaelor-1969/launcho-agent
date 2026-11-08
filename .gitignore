@@ -27,4 +27,13 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
+
+/data/
+
+*.sqlite3
+
+*.sqlite3-wal
+
+*.sqlite3-shm
+
 artifacts/
