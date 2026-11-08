@@ -1,101 +1,67 @@
-# Launcho Agent
+# دستیار هوشمند لانچو
 
-دستیار فارسی لانچو با FastAPI، loader بدون build، چت ایزوله در iframe و رابط ساخت فروشگاه مبتنی بر view سرور.
+نسخهٔ MVP دستیار لانچو با معماری یکپارچهٔ ماژولار (Modular Monolith)، برای پاسخ به پرسش‌ها و ساخت پیش‌نویس ثبت‌نام با Function Calling.
+سرویس ثبت‌نام فعلاً Mock است و ثبت‌نام واقعی یا پرداخت انجام نمی‌دهد.
 
-API واقعی فقط `POST /api/chat` است و حفظ شده است. مراحل ساخت، دامنه، quote، پیش‌نویس و پرداخت در بک‌اند فعلی وجود ندارند؛ رابط آن‌ها در demo با mock صریح قابل بررسی است. نصب واقعی fallback به mock ندارد. منطق ایجنت، prompt و بانک سؤال تغییر نکرده‌اند.
+## فناوری‌ها
 
-## اجرا در PowerShell
+Python 3.10+، FastAPI، Uvicorn، Pydantic، OpenAI SDK و python-dotenv.
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item .env.example .env
-```
+## اجرای محلی در PowerShell
 
-اگر `.env` موجود است آن را بازنویسی نکنید. برای چت واقعی سه متغیر `AI_API_KEY`، `AI_BASE_URL` و `AI_MODEL_NAME` را با اطلاعات سرور تنظیم کنید. `LAUNCHO_API_URL` و `LAUNCHO_API_KEY` فعلاً مصرف نمی‌شوند. هیچ کلیدی نباید در frontend، تگ نصب یا URL قرار بگیرد.
+دستورها را از ریشهٔ پروژه اجرا کنید:
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+python -m venv venv
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-نمونه: http://127.0.0.1:8000/widget/demo.html — با برچسب «حالت نمایشی»، بدون AI یا عملیات واقعی. اجرای صرفاً demo بدون تنظیمات واقعی:
+فقط اگر فایل `.env` ندارید، نمونه را کپی کنید:
 
 ```powershell
-$env:AI_API_KEY='demo-placeholder'
-$env:AI_BASE_URL='https://example.invalid/v1'
-$env:AI_MODEL_NAME='demo'
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+Copy-Item env.example .env
 ```
 
-## نصب واقعی
-
-```html
-<script defer src="https://YOUR-SERVER/widget/loader.js"
-  data-theme="light" data-position="right"
-  data-offset="24" data-mobile-offset="16"></script>
-```
-
-iframe و `/api/chat` نسبت به آدرس loader پیدا می‌شوند. `data-api-url` اختیاری است؛ آدرس نسبی نسبت به loader تفسیر می‌شود. HTTP/HTTPS لازم است. `data-demo="true"` فقط برای نمونه است و برای نصب واقعی اضافه نشود.
-
-```javascript
-LaunchoWidget.configure({theme:'light', position:'right', offset:24, mobileOffset:16});
-LaunchoWidget.setTheme('dark'); // light، dark، auto
-LaunchoWidget.open();
-LaunchoWidget.close();
-```
-
-طبق درخواست بعدی کاربر، ظاهر کامیت `04a8489` حفظ شده است: قاب گرادیانی متحرک، هدر LAUNCHO، اندازه‌های متن قبلی، دکمه ۵۸×۵۸ و پنجره ۳۸۰×۴۵۰ محدود به viewport. تم پیش‌فرض loader حالت auto و تم demo روشن است. در موبایل ۱۲ پیکسل از طرفین فاصله دارد و با visualViewport محدود می‌شود. میزبان برای جلوگیری از پوشاندن کنترل‌های اصلی می‌تواند position و offset را تنظیم کند. نصب تکراری بی‌اثر است، iframe در اولین بازشدن ساخته می‌شود و بستن آن state را پاک نمی‌کند. Tab بین میزبان و پنل non-modal حرکت می‌کند؛ Escape focus را به دکمه برمی‌گرداند.
-
-چت متن امن، محدودیت ۵۰۰۰ کاراکتر، Enter/Shift+Enter، composition، timeout برابر ۴۵ ثانیه، قفل درخواست و retry دستی بدون تکرار حباب کاربر دارد. حافظه فقط در همان iframe است؛ refresh و navigation همان تب آن را پاک می‌کنند. API واقعی chat فقط پیام جاری را به مدل می‌فرستد و حافظه گفتگو ندارد. خطاهای AI که با HTTP 200 و reply متنی برمی‌گردند از پاسخ عادی قابل تشخیص نیستند.
-
-برای فعال‌سازی مراحل واقعی، ابتدا نفر اول endpoint آماده مطابق [قرارداد adapter](docs/widget-api-contract.md) تحویل دهد، سپس `data-workflow-url` تنظیم شود. سایت میزبان باید `launcho:templates:open` را دریافت کند و با `LaunchoWidget.selectTemplate({id,name,image})` انتخاب واقعی را برگرداند. demo همین hook را با قالب عمومی الماس شبیه‌سازی می‌کند. حفظ جلسه بین صفحات هنوز پیاده نشده است؛ از پنل همان صفحه یا تب تازه استفاده شود.
-
-## فایل‌ها
-
-| فایل | نقش |
-| --- | --- |
-| frontend/loader.js | Shadow DOM، دکمه، iframe، handshake، viewport، فاصله‌ها و hook قالب |
-| frontend/widget.html | ساختار RTL، هدر، گفتگو و محل مراحل |
-| frontend/widget.css | توکن‌ها، تم روشن/تیره، حباب‌ها و کارت‌های مراحل |
-| frontend/widget.js | چت متصل به API موجود و دریافت پیام امن میزبان |
-| frontend/api.js | transport موجود chat و timeout؛ بدون تغییر |
-| frontend/workflow.js | رندر view سرور، ورودی، مرور/ویرایش، قفل و retry با idempotencyKey |
-| frontend/workflow-api.js | adapter قابل پیکربندی و schema پاسخ؛ بدون endpoint حدسی |
-| frontend/workflow-demo.js | fixture و transitionهای صرفاً نمایشی، import فقط با نصب صریح demo |
-| frontend/demo.html | نصب نمونه، تم و شبیه‌سازی hook سایت میزبان |
-| frontend/assets/template-almas.webp | thumbnail قالب عمومی موجود، فقط برای demo |
-| frontend/assets/Vazirmatn.woff2 و OFL.txt | فونت محلی موجود و مجوز SIL OFL |
-| tests/widget_browser.py | مرورگر واقعی چت، دو origin، دو تم، ورودی، شبکه، امنیت و viewport |
-| tests/widget_workflow_browser.py | مراحل، دامنه، قالب، ویرایش، هزینه، نتایج، idempotency و screenshots |
-| docs/widget-gap-review.md | وضعیت اولیه ۱۲ بخش |
-| docs/widget-api-contract.md | قرارداد نفر اول، hook میزبان و دارایی‌های نفر سوم |
-| docs/widget-delivery.md | نتیجه بررسی نهایی، محدودیت‌ها و تحویل |
-
-## تست بدون هزینه
+در `.env`، مقدار `AI_API_KEY` را با کلید واقعی و `AI_MODEL_NAME` را با شناسهٔ مدل فعال در درگاه که از ابزارها پشتیبانی می‌کند جایگزین کنید. مقدار `AI_BASE_URL` برابر `https://api.vitaico.ir/v1` است. فایل `.env` را کامیت نکنید.
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe -m playwright install chromium
-.\.venv\Scripts\python.exe tests/widget_browser.py
+.\venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
 
-اگر Chrome نصب است:
+- سلامت سرویس: http://127.0.0.1:8000/
+- مستندات API: http://127.0.0.1:8000/docs
+- ویجت: http://127.0.0.1:8000/static/widget.html
+- لودر: http://127.0.0.1:8000/static/loader.js
+
+پوشهٔ `static` فعلاً خالی است؛ برای استفاده از دو آدرس آخر باید فایل‌های فرانت‌اند در آن قرار بگیرند.
+
+## ساختار پروژه
+
+```text
+app/
+  main.py                  ساخت برنامه، CORS و انتشار فایل‌های استاتیک
+  api/routes.py            مسیر گفتگو: POST /api/chat
+  core/config.py           خواندن متغیرهای محیطی
+  models/schemas.py        مدل درخواست و پاسخ
+  services/ai_service.py   ارتباط با مدل و اجرای ابزار
+  services/launcho_api.py  سرویس Mock ثبت‌نام
+  prompts/system_prompts.py  دستورهای سیستمی
+content/                   محتوای دانشی؛ فعلاً خالی
+static/                    فایل‌های فرانت‌اند؛ فعلاً خالی
+tests/                     تست‌های پروژه
+test_tools.py              تست دستی مدل
+requirements.txt           وابستگی‌ها
+render.yaml                تنظیم استقرار Render
+env.example                نمونهٔ تنظیمات بدون اطلاعات محرمانه
+```
+
+## تست دستی
 
 ```powershell
-$env:LAUNCHO_BROWSER_CHANNEL='chrome'
-.\.venv\Scripts\python.exe tests/widget_browser.py
+.\venv\Scripts\python.exe test_tools.py
 ```
 
-`test_ai.py` درخواست واقعی هزینه‌دار می‌فرستد؛ اجرا نکنید. آزمون‌ها فقط `tests/` را اجرا می‌کنند. سرور مرورگر هم mock می‌شود تا حتی درخواست رهگیری‌نشده به AI نرود. اسکرین‌شات شروع، جمع‌آوری، قالب، مرور، هزینه و خطا در عرض‌های ۱۲۸۰، ۳۹۰ و ۳۲۰ و گزارش JSON در `artifacts/widget/` هستند. این پوشه در git نادیده گرفته می‌شود. viewport کوتاه جای آزمون کیبورد واقعی گوشی را نمی‌گیرد.
-
-## استقرار
-
-فایل‌های frontend با mount `/widget` ارائه می‌شوند. در ادغام با تغییرات جدید ریموت، مسیر `/static`، مدل‌های متمرکز درخواست/پاسخ، پاسخ سلامت توسعه‌یافته و مدیریت خطای HTTP 500 حفظ شدند؛ اعتبارسنجی trim و محدودیت پیام به مدل متمرکز منتقل شد. HTTPS، محدودسازی درخواست‌ها و دامنه مجاز را در استقرار تنظیم کنید. CSP سند iframe باید header واقعی `frame-ancestors` متناسب با دامنه‌های مجاز داشته باشد؛ `X-Frame-Options: SAMEORIGIN` نصب cross-origin را مسدود می‌کند. CSP میزبان باید سرور widget را در script-src و frame-src و استایل Shadow DOM را مجاز کند؛ سند iframe نیز font-src و connect-src مناسب لازم دارد. iframe/API پیش‌فرض هم‌origin‌اند؛ API خارجی به CORS همان سرور نیاز دارد. CORS موجود پروژه تغییر نکرده است.
-
-## قواعد معماری موجود
-
-پایتون برای بک‌اند (D-001)، مونولیت ماژولار (D-002)، چند مدل نقش‌محور (D-003). اسناد decisions/architecture/budget که قبلاً در README ذکر شده بودند در این checkout موجود نیستند.
+این اسکریپت درخواست واقعی ارسال می‌کند و ممکن است هزینه داشته باشد. تست‌های قدیمی پوشهٔ `tests` ممکن است با تغییرات فعلی قرارداد API نیاز به به‌روزرسانی داشته باشند.
 
 ## استقرار روی Render
 
@@ -108,3 +74,12 @@ $env:LAUNCHO_BROWSER_CHANNEL='chrome'
 مرجع تنظیمات: [مستندات رسمی Render](https://render.com/docs/blueprint-spec).
 
 وابستگی‌ها قفل نسخه ندارند؛ پیش از انتشار نهایی، نسخه‌های محیط آزموده‌شده را تثبیت کنید.
+
+
+## هسته گفتگو و تأیید پیش‌نویس
+
+هسته جلسه پایدار و تأیید مستقل اضافه شده است. مدل دیگر ابزار ساخت پیش‌نویس ندارد؛
+فقط اطلاعات غیرحساس را پیشنهاد می‌دهد. ساخت از مسیر دکمه تأیید و snapshot سرور انجام می‌شود.
+اتصال قدیمی mock برای نوشتن استفاده نمی‌شود و تا تحویل adapter قراردادی، ساخت واقعی غیرفعال است.
+قرارداد هم‌تیمی‌ها و محدودیت‌های استقرار در [راهنمای هسته](docs/core-api-contract.md) است.
+دستور تست بدون تماس واقعی: `venv\Scripts\python.exe -m unittest discover -s tests -v`.
