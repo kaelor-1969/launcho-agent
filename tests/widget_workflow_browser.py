@@ -1,4 +1,4 @@
-"""Browser coverage for structured views; called by widget_browser.py. No live services."""
+"""Browser checks for the demo-only, restricted store workflow; no live services."""
 from pathlib import Path
 from playwright.async_api import expect
 
@@ -6,177 +6,235 @@ OUTPUT = Path(__file__).resolve().parents[1] / 'artifacts' / 'widget'
 
 
 async def run_workflow_checks(browser, base):
+    OUTPUT.mkdir(parents=True, exist_ok=True)
     results = []
     for width in [1280, 390, 320]:
-        context = await browser.new_context(viewport={'width': width, 'height': 844}, reduced_motion='reduce')
-        page = await context.new_page()
-        errors, external, api_calls = [], [], []
-        page.on('pageerror', lambda error: errors.append(str(error)))
-        page.on('console', lambda message: errors.append(message.text) if message.type == 'error' else None)
-        page.on('request', lambda request: external.append(request.url) if not request.url.startswith(base) else None)
-        await page.route('**/api/chat', lambda route: (api_calls.append(route.request.url), route.abort())[1])
-        await page.goto(base + '/widget/demo.html')
-        launcher = page.locator('#launcho-widget button')
-        await expect(launcher).to_have_accessible_name('دستیار لانچو')
-        assert (await launcher.bounding_box())['width'] == 58
-        await launcher.click()
-        chat = page.frame_locator('#launcho-widget iframe')
-        await expect(chat.locator('.demo-badge')).to_be_visible()
-        await page.screenshot(path=str(OUTPUT / f'flow-{width}-start.png'))
-        await chat.get_by_role('button', name='ساخت فروشگاه', exact=True).click()
-        await expect(chat.locator('#flow-value')).to_be_visible()
-        await expect(chat.locator('.starters')).to_be_hidden()
-        await chat.locator('#flow-value').fill('فروشگاه من')
-        await page.screenshot(path=str(OUTPUT / f'flow-{width}-collection.png'))
-        await chat.locator('[data-action=next]').click()
-        await expect(chat.locator('h2').last).to_have_text('دسته‌بندی را مشخص کن')
-        await chat.locator('[data-action=next]').click()
-        await expect(chat.locator('[data-action=checkDomain]')).to_be_visible()
-        for domain, status in [('taken.ir','غیرقابل انتخاب'), ('error.ir','خطای بررسی'), ('my-shop.ir','آزاد؛ هنوز ثبت یا رزرو نشده')]:
-            await chat.locator('#flow-value').fill(domain)
-            await chat.locator('[data-action=checkDomain]').click()
-            await expect(chat.locator('.flow-status')).to_have_text('در حال بررسی')
-            await expect(chat.locator('.flow-card [role=status]')).to_have_text(status)
-            if domain == 'error.ir':
-                await page.screenshot(path=str(OUTPUT / f'flow-{width}-error.png'))
-                await expect(chat.locator('[data-action=next]')).to_have_count(0)
-        # Changing a checked domain cannot reuse its availability.
-        await chat.locator('#flow-value').fill('other.ir')
-        await expect(chat.locator('[data-action=next]')).to_be_disabled()
-        await expect(chat.locator('.flow-card [role=status]')).to_have_text('بررسی‌نشده')
-        await chat.locator('[data-action=checkDomain]').click()
-        await expect(chat.locator('.flow-status')).to_have_count(0)
-        await chat.locator('[data-action=next]').click()
-        await expect(chat.locator('[data-action=browseTemplates]')).to_be_visible()
-        assert not await page.evaluate("LaunchoWidget.selectTemplate({id:'x',name:'x',image:'javascript:alert(1)'})")
-        await page.screenshot(path=str(OUTPUT / f'flow-{width}-template.png'))
-        await chat.locator('[data-action=browseTemplates]').click()
-        await expect(launcher).to_have_attribute('aria-expanded','false')
-        await page.locator('#choose-template').click()
-        await expect(chat.locator('#flow-value')).to_have_attribute('type','tel')
-        await expect(chat.locator('#workflow img')).to_have_attribute('alt','الماس')
-        await expect(chat.locator('[data-action=changeTemplate]')).to_be_visible()
-        await chat.locator('[data-action=changeTemplate]').click()
-        await chat.locator('[data-action=browseTemplates]').click()
-        await page.locator('#choose-template').click()
-        await expect(chat.locator('#flow-value')).to_have_attribute('type','tel')
-        # Closing keeps the current form draft, not just submitted data.
-        await chat.locator('#flow-value').fill('۰۹۱۲۳۴۵۶۷۸۹')
-        await chat.locator('#flow-value').press('Escape')
-        await expect(launcher).to_be_focused()
-        await launcher.click()
-        await expect(chat.locator('#flow-value')).to_have_value('۰۹۱۲۳۴۵۶۷۸۹')
-        await chat.locator('[data-action=next]').click()
-        await expect(chat.locator('#flow-value option')).to_have_count(3)
-        await chat.locator('#flow-value').select_option('6')
-        await chat.locator('[data-action=next]').click()
-        await expect(chat.locator('#flow-value option')).to_have_count(2)
-        await chat.locator('[data-action=next]').click()
-        await expect(chat.locator('[data-action=createDraft]')).to_be_visible()
-        await expect(chat.locator('#workflow')).to_contain_text('09123456789')
-        await expect(chat.locator('#workflow')).to_contain_text('۷٬۷۵۰٬۰۰۰')
-        await page.screenshot(path=str(OUTPUT / f'flow-{width}-review.png'))
-        await chat.locator('[data-action=edit]').click()
-        await chat.locator('[data-action="edit:businessName"]').click()
-        await chat.locator('#flow-value').fill('نام اصلاح‌شده')
-        await chat.locator('[data-action=next]').click()
-        await expect(chat.locator('#workflow')).to_contain_text('نام اصلاح‌شده')
-        await chat.locator('[data-action=createDraft]').click()
-        await expect(chat.locator('.flow-status')).to_have_text('در حال ساخت پیش‌نویس…')
-        await expect(chat.locator('[data-action=createDraft]')).to_be_disabled()
-        await expect(chat.locator('[data-action=continuePayment]')).to_be_visible()
-        await chat.locator('[data-action=continuePayment]').click()
-        await expect(chat.locator('[data-action=pay]')).to_be_disabled()
-        await expect(chat.locator('[data-action=pay]')).to_have_text('پرداخت ۷٬۷۵۰٬۰۰۰ تومان')
-        await page.screenshot(path=str(OUTPUT / f'flow-{width}-cost.png'))
-        await chat.locator('[data-action=fixtureFailed]').click()
-        await expect(chat.locator('#workflow')).to_contain_text('ناموفق')
-        await chat.locator('[data-action=continuePayment]').click()
-        await chat.locator('[data-action=fixtureUnknown]').click()
-        await expect(chat.locator('[data-action=checkPayment]')).to_be_visible()
-        await expect(chat.locator('[data-action=pay]')).to_have_count(0)
-        await chat.locator('[data-action=checkPayment]').click()
-        await expect(chat.locator('#workflow')).to_contain_text('پاسخ آزمایشی: پرداخت تأیید شد')
-        assert not api_calls and not external, (api_calls, external)
-        assert await page.evaluate('localStorage.length') == 0
-        assert await chat.locator('body').evaluate('localStorage.length') == 0
-        assert await chat.locator('body').evaluate('document.documentElement.scrollWidth <= innerWidth')
-        if width < 480:
-            panel = await page.locator('#launcho-widget .panel').bounding_box()
-            assert panel['x'] == 12 and panel['width'] == width - 24
-            await page.set_viewport_size({'width':width,'height':430})
-            await page.screenshot(path=str(OUTPUT / f'flow-{width}-short-viewport.png'))
-            await expect(chat.locator('#close')).to_be_in_viewport(ratio=1)
-            close = await chat.locator('#close').bounding_box()
-            assert close['y'] >= 0 and close['y'] + close['height'] <= 430
-        assert not errors, errors
-        if width == 1280:
-            # Six fixture totals are checked against the supplied specification.
-            totals = await page.evaluate("""async base => {
-              const {createDemoWorkflow} = await import(base+'/widget/workflow-demo.js');
-              const timer=window.setTimeout; window.setTimeout=cb=>timer(cb,0);
-              try {
-                const totals=[];
-                for (const plan of ['3','6','12']) for (const method of ['installments','upfront']) {
-                  const api=createDemoWorkflow();
-                  const send=(action,data={})=>api.request({action,data});
-                  await send('start'); await send('next',{value:'name'}); await send('next',{value:'category'});
-                  await send('checkDomain',{value:'example.ir'}); await send('next',{value:'example.ir'});
-                  await send('selectTemplate',{template:{id:'almas',name:'Almas',image:base+'/widget/assets/template-almas.webp'}});
-                  await send('next',{value:'09123456789'}); await send('next',{value:plan});
-                  const view=await send('next',{value:method}); totals.push(view.quote.today);
-                }
-                return totals;
-              } finally {window.setTimeout=timer;}
-            }""",base)
-            assert totals == [6150000,17400000,7750000,19000000,11750000,23000000], totals
-        results.append({'workflow_width':width,'status':'passed','live_requests':0})
-        await context.close()
+        context = await browser.new_context(viewport={'width':width,'height':844},
+            is_mobile=width < 480, has_touch=width < 480, reduced_motion='reduce')
+        try:
+            page = await context.new_page()
+            errors, external, api_calls = [], [], []
+            page.on('pageerror', lambda error: errors.append(str(error)))
+            context.on('request', lambda req: external.append(req.url) if not req.url.startswith(base) else None)
+            await page.route('**/api/**', lambda route: (api_calls.append(route.request.url), route.abort())[1])
+            await page.goto(base + '/widget/demo.html')
+            launcher = page.locator('#launcho-widget button')
+            await launcher.click()
+            chat = page.frame_locator('#launcho-widget iframe')
+            await expect(chat.locator('.demo-badge')).to_contain_text('حالت نمایشی')
+            await page.screenshot(path=str(OUTPUT/f'flow-{width}-start.png'))
+            await chat.locator('.primary-starter').click()
+            entry = chat.locator('#flow-value')
+            await expect(entry).to_be_visible()
+            await entry.fill('فروشگاه من')
+            await page.screenshot(path=str(OUTPUT/f'flow-{width}-collection.png'))
+            await chat.locator('[data-action=next]').click()
+            await expect(chat.locator('#workflow h2')).to_have_text('دسته‌بندی را مشخص کن')
+            await entry.select_option('سایر')
+            await chat.locator('[data-action=next]').click()
+            await expect(chat.locator('#workflow h2')).to_have_text('دوره اشتراک را مشخص کن')
+            await entry.select_option('6')
+            await entry.press('Escape')
+            await launcher.click()
+            await expect(entry).to_have_value('6')
+            await chat.locator('[data-action=next]').click()
+            await expect(chat.locator('#workflow h2')).to_have_text('قالب فروشگاهت را انتخاب کن')
+            await page.screenshot(path=str(OUTPUT/f'flow-{width}-template.png'))
+            assert not await page.evaluate("LaunchoWidget.selectTemplate({id:'x',name:'x',image:'javascript:alert(1)'})")
+            await chat.locator('[data-action=browseTemplates]').click()
+            await expect(launcher).to_have_attribute('aria-expanded','false')
+            await page.locator('#choose-template').click()
+            await expect(chat.locator('#workflow h2')).to_have_text('مرور اطلاعات')
+            await expect(chat.locator('#workflow dt')).to_have_text(['نام کسب‌وکار','دسته‌بندی','دوره اشتراک','قالب'])
+            await expect(chat.locator('#workflow dd')).to_have_text(['فروشگاه من','سایر','شش‌ماهه','الماس'])
+            await expect(chat.locator('#workflow a')).to_have_count(0)
+            await page.screenshot(path=str(OUTPUT/f'flow-{width}-review.png'))
 
-    # Real adapter transport with a mocked server: uncertain creation, stable key,
-    # repeated-click lock, invalid responses, and no production demo fallback.
+            # Every editable field returns directly to review; the plan stays put.
+            for field, value in [('businessName','نام اصلاح‌شده'),('category','زیبایی'),('subscription','12'),('template',None)]:
+                await chat.locator('[data-action=edit]').click()
+                await expect(chat.locator('#workflow button')).to_have_count(4)
+                await chat.locator(f'[data-action="edit:{field}"]').click()
+                if field == 'template':
+                    await chat.locator('[data-action=browseTemplates]').click()
+                    await page.locator('#choose-template').click()
+                else:
+                    if field == 'businessName':
+                        await entry.fill(value)
+                    else:
+                        await entry.select_option(value)
+                    await chat.locator('[data-action=next]').click()
+                await expect(chat.locator('#workflow h2')).to_have_text('مرور اطلاعات')
+            await expect(chat.locator('#workflow dd')).to_have_text(['نام اصلاح‌شده','زیبایی','سالانه','الماس'])
+            await chat.locator('[data-action=createDraft]').click()
+            await expect(chat.locator('[data-action=createDraft]')).to_be_disabled()
+            await expect(chat.locator('#workflow h2')).to_have_text('پیش‌نویس نمایشی آماده شد.')
+            await expect(chat.locator('#workflow button')).to_have_count(0)
+            await expect(chat.locator('input[type=tel]')).to_have_count(0)
+            link = chat.get_by_role('link', name='مشاهده نمونهٔ پیش‌نویس (نمایشی)')
+            await expect(link).to_have_attribute('href',base + '/widget/draft-preview.html')
+            await expect(link).to_have_attribute('rel','noopener noreferrer')
+            await link.scroll_into_view_if_needed()
+            await page.screenshot(path=str(OUTPUT/f'flow-{width}-draft.png'))
+            async with page.expect_popup() as popup_info:
+                await link.click()
+            popup = await popup_info.value
+            await popup.wait_for_load_state()
+            await expect(popup.get_by_text('صرفاً نمایشی — فروشگاه واقعی نیست')).to_be_visible()
+            await expect(popup.locator('h1')).to_have_text('نمونهٔ پیش‌نویس فروشگاه')
+            assert await popup.evaluate('window.opener === null')
+            assert await popup.evaluate('document.documentElement.scrollWidth <= innerWidth')
+            assert await popup.locator('img').evaluate('el => el.complete && el.naturalWidth > 0')
+            await popup.screenshot(path=str(OUTPUT/f'flow-{width}-preview.png'), full_page=True)
+            await popup.close()
+            await chat.locator('#close').click()
+            await launcher.click()
+            await expect(link).to_be_visible()
+            assert not api_calls and not external and not errors, (api_calls,external,errors)
+            assert await page.evaluate('localStorage.length + sessionStorage.length') == 0
+            assert await chat.locator('body').evaluate('localStorage.length + sessionStorage.length') == 0
+            assert await chat.locator('body').evaluate('document.documentElement.scrollWidth <= innerWidth')
+            if width < 480:
+                await page.set_viewport_size({'width':width,'height':430})
+                await expect(chat.locator('#close')).to_be_in_viewport(ratio=1)
+                await link.scroll_into_view_if_needed()
+                await expect(link).to_be_in_viewport(ratio=1)
+                await page.screenshot(path=str(OUTPUT/f'flow-{width}-short-viewport.png'))
+            results.append({'workflow_width':width,'status':'passed','live_requests':0,
+                'sequence':['businessName','category','subscription','template','review','confirm','draft-link'],
+                'edit_all_fields':'passed','preview':'passed','close_reopen':'passed'})
+        finally:
+            await context.close()
+
     context = await browser.new_context(viewport={'width':1280,'height':900})
-    page = await context.new_page()
-    calls, modules = [], []
-    page.on('request', lambda req: modules.append(req.url))
-    attempt = 0
-    async def workflow(route):
-        nonlocal attempt
-        payload = route.request.post_data_json
-        calls.append(payload)
-        a = payload['action']
-        common = {'sessionId':'server-test','revision':len(calls),'actions':[]}
-        if a == 'start':
-            await route.fulfill(json={**common,'kind':'review','title':'مرور پاسخ سرور','quote':{'id':'q-test','currency':'TOMAN','today':7750000,'expiresAt':'2099-01-01T00:00:00Z'},'actions':[{'id':'createDraft','label':'تأیید و ساخت پیش‌نویس'}]})
-        elif a == 'createDraft':
-            attempt += 1
-            if attempt == 1:
-                await route.abort('failed')
+    try:
+        page = await context.new_page()
+        calls, modules = [], []
+        page.on('request', lambda req: modules.append(req.url))
+        attempt = 0
+        starts = 0
+
+        async def workflow(route):
+            nonlocal attempt, starts
+            payload = route.request.post_data_json
+            calls.append(payload)
+            common = {'sessionId':'server-test','revision':len(calls),'actions':[]}
+            if payload['action'] == 'start':
+                starts += 1
+                if starts < 3:
+                    await route.fulfill(json={**common,'kind':'field','field':'domain' if starts == 1 else 'mobile','title':'legacy'})
+                else:
+                    await route.fulfill(json={**common,'kind':'review','title':'مرور پاسخ سرور','actions':[{'id':'createDraft','label':'تأیید'}]})
+            elif payload['action'] == 'createDraft':
+                attempt += 1
+                if attempt == 1:
+                    await route.abort('failed')
+                else:
+                    await route.fulfill(json={**common,'kind':'draft','title':'پیش‌نویس آزمایشی',
+                        'confirmed':attempt > 2,'draftId':'test-draft',
+                        'draftUrl':'javascript:alert(1)' if attempt == 3 else base+'/widget/draft-preview.html'})
             else:
-                await route.fulfill(json={**common,'kind':'draft','title':'پیش‌نویس فروشگاهت آماده شد.','confirmed':True,'draftId':'test-draft','actions':[{'id':'continuePayment','label':'ادامه به پرداخت'}]})
-        else:
-            # An unverified success must be rejected, retaining existing view.
-            await route.fulfill(json={**common,'kind':'result','title':'fake','paymentStatus':'success','verified':False})
-    await page.route('**/test-workflow',workflow)
-    # Use production installation, not demo.html.
-    await page.goto(base + '/widget/widget.html')
-    await page.evaluate("""url => {
-        const script=document.createElement('script'); script.src=url+'/widget/loader.js';
-        script.dataset.workflowUrl=url+'/test-workflow';document.body.append(script);
-    }""",base)
-    await page.locator('#launcho-widget button').click()
-    chat = page.frame_locator('#launcho-widget iframe')
-    await chat.locator('.primary-starter').click()
-    await chat.locator('[data-action=createDraft]').click()
-    await expect(chat.locator('.flow-error')).to_contain_text('پیش‌نویس ساخته نشد')
-    await page.screenshot(path=str(OUTPUT/'flow-draft-error.png'))
-    await chat.locator('.flow-error button').click()
-    await expect(chat.locator('[data-action=continuePayment]')).to_be_visible()
-    creates = [c for c in calls if c['action']=='createDraft']
-    assert len(creates)==2 and creates[0]['idempotencyKey']==creates[1]['idempotencyKey']
-    await chat.locator('[data-action=continuePayment]').click()
-    await expect(chat.locator('.flow-error')).to_contain_text('هنوز تأیید نشده')
-    assert not any('workflow-demo.js' in m for m in modules)
-    await context.close()
-    results.append({'production_adapter':'passed','idempotency':'stable','unverified_success':'rejected'})
+                raise AssertionError(payload)
+
+        await page.route('**/test-workflow',workflow)
+        await page.goto(base + '/widget/widget.html')
+        await page.evaluate("""url => {
+            const script=document.createElement('script'); script.src=url+'/widget/loader.js';
+            script.dataset.workflowUrl=url+'/test-workflow';document.body.append(script);
+        }""",base)
+        await page.locator('#launcho-widget button').click()
+        chat = page.frame_locator('#launcho-widget iframe')
+        await chat.locator('.primary-starter').click()
+        for _ in range(2):
+            await expect(chat.locator('.flow-error')).to_contain_text('پاسخ معتبر نیست')
+            await expect(chat.locator('#flow-value')).to_have_count(0)
+            await chat.locator('.flow-error button').click()
+        await chat.locator('[data-action=createDraft]').click()
+        for _ in range(3):
+            await expect(chat.locator('.flow-error')).to_contain_text('پیش‌نویس ساخته نشد')
+            await expect(chat.locator('#workflow a')).to_have_count(0)
+            await chat.locator('.flow-error button').click()
+        await expect(chat.locator('#workflow h2')).to_have_text('پیش‌نویس آزمایشی')
+        await expect(chat.locator('#workflow a')).to_have_count(1)
+        creates = [c for c in calls if c['action']=='createDraft']
+        assert len(creates)==4 and len({c['idempotencyKey'] for c in creates})==1
+        assert not any('workflow-demo.js' in m for m in modules)
+        schema = await page.evaluate("""async base => {
+            const {validateView} = await import(base+'/widget/workflow-api.js');
+            const common={sessionId:'schema-test',revision:1,title:'test',kind:'review',actions:[]};
+            const draft={...common,kind:'draft',draftId:'test',confirmed:true,draftUrl:base+'/widget/draft-preview.html'};
+            const invalid=[
+                ...['mobile','setupPayment','domain'].map(field=>({...common,kind:'field',field})),
+                ...['payment','result'].map(kind=>({...common,kind})),
+                ...['pay','continuePayment','editPayment','refreshQuote','checkPayment','fixtureSuccess',
+                    'fixtureFailed','fixtureUnknown','edit:mobile','edit:setupPayment','checkDomain','edit:domain','changeTemplate']
+                    .map(id=>({...common,actions:[{id,label:'legacy'}]})),
+                ...['mobile','setupPayment','domain','domainStatus','quote','checkoutUrl','transactionId','paymentStatus','verified']
+                    .map(key=>({...common,[key]:null})),
+                ...['javascript:alert(1)','data:text/html,test','https://user:pass@example.invalid','/relative',undefined]
+                    .map(draftUrl=>({...draft,draftUrl})),
+                {...common,draftUrl:draft.draftUrl}, {...draft,confirmed:false}
+            ];
+            let rejected=0;
+            for(const value of invalid) {try {validateView(value);} catch {rejected++;}}
+            validateView(draft);
+            validateView({...common,actions:[{id:'createDraft',label:'confirm'}]});
+            return {rejected,total:invalid.length};
+        }""",base)
+        assert schema['rejected'] == schema['total'] == 34, schema
+        plans = await page.evaluate("""async base => {
+            const {createDemoWorkflow} = await import(base+'/widget/workflow-demo.js');
+            const {validateView} = await import(base+'/widget/workflow-api.js');
+            return Promise.all(['3','6','12'].map(async plan => {
+                const api=createDemoWorkflow();
+                const send=async (action,data={})=>validateView(await api.request({action,data}));
+                await send('start');
+                for(const payload of [{action:'createDraft'}, {action:'checkDomain',data:{value:'example.ir'}},
+                    {action:'next',data:{field:'mobile',value:'legacy'}}]) {
+                    let rejected=false;
+                    try {await api.request(payload);} catch {rejected=true;}
+                    if(!rejected) throw new Error('Out-of-sequence action accepted');
+                }
+                await send('next',{value:'name'}); await send('next',{value:'category'});
+                let rejected=false;
+                try {await send('next',{value:'invalid-plan'});} catch {rejected=true;}
+                if(!rejected) throw new Error('Invalid plan accepted');
+                const template=await send('next',{value:plan});
+                if(template.kind!=='template') throw new Error('Wrong order');
+                const review=await send('selectTemplate',{template:{id:'almas',name:'Almas',image:base+'/widget/assets/template-almas.webp'}});
+                if(review.kind!=='review' || 'quote' in review) throw new Error('Unexpected review');
+                const draft=await send('createDraft');
+                if(draft.kind!=='draft' || draft.actions.length || !draft.draftUrl) throw new Error('Unexpected draft');
+                return plan;
+            }));
+        }""",base)
+        assert plans == ['3','6','12'], plans
+        results.append({'production_adapter':'passed','idempotency':'stable','invalid_draft':'rejected',
+            'legacy_schema':schema,'demo_plans':plans})
+    finally:
+        await context.close()
     return results
+
+
+if __name__ == '__main__':
+    import argparse
+    import asyncio
+    import json
+    from playwright.async_api import async_playwright
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--base-url', default='http://127.0.0.1:8000')
+    args = parser.parse_args()
+    OUTPUT = Path(__file__).resolve().parents[1] / 'artifacts' / 'widget-stage6'
+
+    async def main():
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(channel='chrome')
+            try:
+                report = await run_workflow_checks(browser, args.base_url)
+                (OUTPUT/'report.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
+                print(json.dumps(report, indent=2))
+            finally:
+                await browser.close()
+
+    asyncio.run(main())

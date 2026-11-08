@@ -1,0 +1,168 @@
+[
+  {
+    "viewport": "desktop",
+    "positive_control": "passed",
+    "payloads": [
+      {
+        "viewport": "desktop",
+        "case": "script",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "desktop",
+        "case": "img-onerror",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "desktop",
+        "case": "svg-onload",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "desktop",
+        "case": "iframe-srcdoc",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "desktop",
+        "case": "closing-tags",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "desktop",
+        "case": "javascript-link",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "desktop",
+        "case": "html-entities",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "desktop",
+        "case": "markdown",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      }
+    ],
+    "request_count": 8,
+    "dialogs": [],
+    "payload_requests": [],
+    "page_errors": [],
+    "close_reopen": "passed"
+  },
+  {
+    "viewport": "mobile",
+    "positive_control": "passed",
+    "payloads": [
+      {
+        "viewport": "mobile",
+        "case": "script",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "mobile",
+        "case": "img-onerror",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "mobile",
+        "case": "svg-onload",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "mobile",
+        "case": "iframe-srcdoc",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "mobile",
+        "case": "closing-tags",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "mobile",
+        "case": "javascript-link",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "mobile",
+        "case": "html-entities",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      },
+      {
+        "viewport": "mobile",
+        "case": "markdown",
+        "status": "passed",
+        "user_and_reply_literal": true,
+        "textContent_observed": true,
+        "payload_elements_created": 0,
+        "script_marker": false
+      }
+    ],
+    "request_count": 8,
+    "dialogs": [],
+    "payload_requests": [],
+    "page_errors": [],
+    "close_reopen": "passed"
+  }
+]

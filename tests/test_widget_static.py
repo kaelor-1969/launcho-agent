@@ -19,7 +19,7 @@ class WidgetStaticTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_widget_assets_and_content_types(self):
         for filename, content_type in [
-            ("widget.html", "text/html"), ("demo.html", "text/html"),
+            ("widget.html", "text/html"), ("demo.html", "text/html"), ("draft-preview.html", "text/html"),
             ("widget.css", "text/css"), ("loader.js", "javascript"),
             ("widget.js", "javascript"), ("api.js", "javascript"),
             ("workflow.js", "javascript"), ("workflow-api.js", "javascript"),

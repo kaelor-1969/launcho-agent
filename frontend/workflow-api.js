@@ -6,27 +6,25 @@ export function safeUrl(value) {
   } catch { return null; }
 }
 const text = (v, max = 5000) => typeof v === 'string' && v.length > 0 && v.length <= max;
+const fields = ['businessName', 'category', 'subscription'];
+const actions = new Set(['next', 'browseTemplates', 'edit', 'createDraft',
+  ...[...fields, 'template'].map(field => `edit:${field}`)]);
 export function validTemplate(t) {
   return t && text(t.id, 200) && text(t.name, 200) && safeUrl(t.image);
 }
 export function validateView(v) {
   if (!v || !text(v.sessionId, 200) || !Number.isSafeInteger(v.revision) || v.revision < 0 || !text(v.title) ||
-      !['field', 'template', 'review', 'draft', 'payment', 'result'].includes(v.kind) ||
+      !['field', 'template', 'review', 'draft'].includes(v.kind) ||
       !Array.isArray(v.actions) || v.actions.length > 20 ||
-      !v.actions.every(a => a && text(a.id, 200) && text(a.label, 200)) ||
+      !v.actions.every(a => a && actions.has(a.id) && text(a.label, 200)) ||
       (v.rows !== undefined && (!Array.isArray(v.rows) || !v.rows.every(r => r && text(r.label, 200) && typeof r.value === 'string'))) ||
       (v.template !== undefined && !validTemplate(v.template))) throw new Error('پاسخ معتبر نیست. دوباره تلاش کن.');
-  if (v.kind === 'field' && (!['businessName', 'category', 'domain', 'mobile', 'subscription', 'setupPayment'].includes(v.field) ||
+  if (['mobile', 'setupPayment', 'domain', 'domainStatus', 'quote', 'checkoutUrl', 'transactionId', 'paymentStatus', 'verified'].some(key => key in v)) throw new Error('این اطلاعات خارج از محدودهٔ دستیار است.');
+  if (v.kind === 'field' && (!fields.includes(v.field) ||
       (v.options !== undefined && (!Array.isArray(v.options) || !v.options.every(o => o && text(o.id,200) && text(o.label,200)))))) throw new Error('پاسخ معتبر نیست.');
-  if (v.quote !== undefined && (!v.quote || v.quote.currency !== 'TOMAN' || !text(v.quote.id,200) || !Number.isSafeInteger(v.quote.today) || v.quote.today < 0 || !Number.isFinite(Date.parse(v.quote.expiresAt)))) throw new Error('مبلغ معتبر دریافت نشد.');
-  if (v.kind === 'payment' && !v.quote) throw new Error('مبلغ معتبر دریافت نشد.');
-  if (v.actions.some(a => a.id === 'createDraft') && (v.kind !== 'review' || !v.quote)) throw new Error('اطلاعات مرور کامل نیست.');
-  if (v.paymentStatus !== undefined && !['success', 'failed', 'cancelled', 'unknown'].includes(v.paymentStatus)) throw new Error('وضعیت معتبر نیست.');
-  if (v.paymentStatus === 'success' && v.verified !== true) throw new Error('پرداخت هنوز تأیید نشده است.');
-  if (v.checkoutUrl !== undefined && (!safeUrl(v.checkoutUrl) || !v.checkoutUrl.startsWith('https://') || !text(v.transactionId,200))) throw new Error('لینک پرداخت معتبر نیست.');
-  if (v.kind === 'draft' && (!text(v.draftId,200) || v.confirmed !== true)) throw new Error('ساخت پیش‌نویس تأیید نشده است.');
-  if (v.domainStatus !== undefined && !['unchecked','checking','available','unavailable','error'].includes(v.domainStatus)) throw new Error('وضعیت دامنه معتبر نیست.');
-  if (v.kind === 'result' && v.paymentStatus === 'unknown' && v.actions.some(a => a.id === 'pay')) throw new Error('ابتدا وضعیت تراکنش باید بررسی شود.');
+  if (v.actions.some(a => a.id === 'createDraft') && v.kind !== 'review') throw new Error('اطلاعات مرور کامل نیست.');
+  if (v.kind === 'draft' && (!text(v.draftId,200) || v.confirmed !== true || !safeUrl(v.draftUrl))) throw new Error('پیش‌نویس یا لینک آن معتبر نیست.');
+  if (v.kind !== 'draft' && v.draftUrl !== undefined) throw new Error('لینک پیش‌نویس فقط پس از تأیید نمایش داده می‌شود.');
   return v;
 }
 export function createWorkflowApi(url) {

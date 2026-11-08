@@ -2,7 +2,9 @@
 
 دستیار فارسی لانچو با FastAPI، loader بدون build، چت ایزوله در iframe و رابط ساخت فروشگاه مبتنی بر view سرور.
 
-API واقعی فقط `POST /api/chat` است و حفظ شده است. مراحل ساخت، دامنه، quote، پیش‌نویس و پرداخت در بک‌اند فعلی وجود ندارند؛ رابط آن‌ها در demo با mock صریح قابل بررسی است. نصب واقعی fallback به mock ندارد. منطق ایجنت، prompt و بانک سؤال تغییر نکرده‌اند.
+API واقعی فقط `POST /api/chat` است و حفظ شده است. مراحل ساخت و پیش‌نویس در بک‌اند فعلی وجود ندارند؛ رابط آن‌ها در demo با mock صریح قابل بررسی است. دریافت شماره موبایل، روش پرداخت، محاسبه مبلغ و تراکنش از محدودهٔ دستیار حذف شده‌اند. انتخاب دورهٔ اشتراک باقی است. نصب واقعی fallback به mock ندارد. منطق ایجنت، prompt و بانک سؤال تغییر نکرده‌اند.
+
+مسیر demo فقط این مراحل را دارد: نام کسب‌وکار ← دسته‌بندی ← دوره اشتراک ← قالب ← مرور اطلاعات ← تأیید ← لینک پیش‌نویس نمایشی. سؤال دامنه حذف شده است. لینک پایانی یک نمونهٔ ثابت محلی باز می‌کند؛ به اطلاعات واردشده متصل نیست و فروشگاه واقعی ایجاد نمی‌شود.
 
 ## اجرا در PowerShell
 
@@ -26,6 +28,14 @@ $env:AI_BASE_URL='https://example.invalid/v1'
 $env:AI_MODEL_NAME='demo'
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
+
+برای بررسی فقط frontend بدون نصب وابستگی‌های بک‌اند، در یک ترمینال جدا اجرا کنید:
+
+```powershell
+python tests/widget_preview_server.py --port 8000
+```
+
+این سرور فقط فایل‌های `frontend/` را ارائه می‌کند و API ندارد؛ مخصوص توسعه و demo است.
 
 ## نصب واقعی
 
@@ -63,10 +73,11 @@ LaunchoWidget.close();
 | frontend/workflow-api.js | adapter قابل پیکربندی و schema پاسخ؛ بدون endpoint حدسی |
 | frontend/workflow-demo.js | fixture و transitionهای صرفاً نمایشی، import فقط با نصب صریح demo |
 | frontend/demo.html | نصب نمونه، تم و شبیه‌سازی hook سایت میزبان |
+| frontend/draft-preview.html | مقصد ثابت و صریحاً نمایشی لینک پیش‌نویس؛ بدون دادهٔ کاربر یا عملیات واقعی |
 | frontend/assets/template-almas.webp | thumbnail قالب عمومی موجود، فقط برای demo |
 | frontend/assets/Vazirmatn.woff2 و OFL.txt | فونت محلی موجود و مجوز SIL OFL |
 | tests/widget_browser.py | مرورگر واقعی چت، دو origin، دو تم، ورودی، شبکه، امنیت و viewport |
-| tests/widget_workflow_browser.py | مراحل، دامنه، قالب، ویرایش، هزینه، نتایج، idempotency و screenshots |
+| tests/widget_workflow_browser.py | ترتیب مراحل، ویرایش هر چهار انتخاب، لینک پیش‌نویس، رد قرارداد قدیمی و idempotency |
 | docs/widget-gap-review.md | وضعیت اولیه ۱۲ بخش |
 | docs/widget-api-contract.md | قرارداد نفر اول، hook میزبان و دارایی‌های نفر سوم |
 | docs/widget-delivery.md | نتیجه بررسی نهایی، محدودیت‌ها و تحویل |
@@ -87,7 +98,15 @@ $env:LAUNCHO_BROWSER_CHANNEL='chrome'
 .\.venv\Scripts\python.exe tests/widget_browser.py
 ```
 
-`test_ai.py` درخواست واقعی هزینه‌دار می‌فرستد؛ اجرا نکنید. آزمون‌ها فقط `tests/` را اجرا می‌کنند. سرور مرورگر هم mock می‌شود تا حتی درخواست رهگیری‌نشده به AI نرود. اسکرین‌شات شروع، جمع‌آوری، قالب، مرور، هزینه و خطا در عرض‌های ۱۲۸۰، ۳۹۰ و ۳۲۰ و گزارش JSON در `artifacts/widget/` هستند. این پوشه در git نادیده گرفته می‌شود. viewport کوتاه جای آزمون کیبورد واقعی گوشی را نمی‌گیرد.
+`test_ai.py` درخواست واقعی هزینه‌دار می‌فرستد؛ اجرا نکنید. آزمون‌ها فقط `tests/` را اجرا می‌کنند. سرور مرورگر هم mock می‌شود تا حتی درخواست رهگیری‌نشده به AI نرود. اسکرین‌شات شروع، جمع‌آوری، قالب، مرور، پیش‌نویس و خطا در عرض‌های ۱۲۸۰، ۳۹۰ و ۳۲۰ و گزارش JSON در `artifacts/widget/` تولید می‌شوند. این پوشه در git نادیده گرفته می‌شود. viewport کوتاه جای آزمون کیبورد واقعی گوشی را نمی‌گیرد.
+
+برای بررسی فقط مسیر نمایشی روی سرور frontend موجود، بدون وابستگی به FastAPI:
+
+```powershell
+python tests/widget_workflow_browser.py --base-url http://127.0.0.1:8000
+```
+
+این اجرا از Chrome نصب‌شده استفاده می‌کند و خروجی آن در `artifacts/widget-stage6/` است. گزارش‌های مرحله‌ای در `docs/widget-stage2-review.md` تا `docs/widget-stage6-review.md` ثبت می‌شوند.
 
 ## استقرار
 

@@ -1,0 +1,222 @@
+[
+  {
+    "viewport": "desktop",
+    "case": "success",
+    "status": "passed",
+    "request_count": 2,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": false
+  },
+  {
+    "viewport": "desktop",
+    "case": "http-500",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "desktop",
+    "case": "http-503",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "desktop",
+    "case": "network",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "desktop",
+    "case": "invalid-json",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "desktop",
+    "case": "missing-reply",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "desktop",
+    "case": "numeric-reply",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "desktop",
+    "case": "null-reply",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "desktop",
+    "case": "blank-reply",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "desktop",
+    "case": "null-body",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "desktop",
+    "case": "array-body",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "mobile",
+    "case": "success",
+    "status": "passed",
+    "request_count": 2,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": false
+  },
+  {
+    "viewport": "mobile",
+    "case": "http-500",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "mobile",
+    "case": "http-503",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "mobile",
+    "case": "network",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "mobile",
+    "case": "invalid-json",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "mobile",
+    "case": "missing-reply",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "mobile",
+    "case": "numeric-reply",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "mobile",
+    "case": "null-reply",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "mobile",
+    "case": "blank-reply",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "mobile",
+    "case": "null-body",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  },
+  {
+    "viewport": "mobile",
+    "case": "array-body",
+    "status": "passed",
+    "request_count": 3,
+    "user_messages": 2,
+    "assistant_messages": 2,
+    "page_errors": [],
+    "retry_checked": true
+  }
+]

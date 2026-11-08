@@ -1,0 +1,67 @@
+[
+  {
+    "workflow_width": 1280,
+    "status": "passed",
+    "live_requests": 0,
+    "sequence": [
+      "businessName",
+      "category",
+      "subscription",
+      "template",
+      "review",
+      "confirm",
+      "draft-link"
+    ],
+    "edit_all_fields": "passed",
+    "preview": "passed",
+    "close_reopen": "passed"
+  },
+  {
+    "workflow_width": 390,
+    "status": "passed",
+    "live_requests": 0,
+    "sequence": [
+      "businessName",
+      "category",
+      "subscription",
+      "template",
+      "review",
+      "confirm",
+      "draft-link"
+    ],
+    "edit_all_fields": "passed",
+    "preview": "passed",
+    "close_reopen": "passed"
+  },
+  {
+    "workflow_width": 320,
+    "status": "passed",
+    "live_requests": 0,
+    "sequence": [
+      "businessName",
+      "category",
+      "subscription",
+      "template",
+      "review",
+      "confirm",
+      "draft-link"
+    ],
+    "edit_all_fields": "passed",
+    "preview": "passed",
+    "close_reopen": "passed"
+  },
+  {
+    "production_adapter": "passed",
+    "idempotency": "stable",
+    "invalid_draft": "rejected",
+    "legacy_schema": {
+      "rejected": 34,
+      "total": 34
+    },
+    "demo_plans": [
+      "3",
+      "6",
+      "12"
+    ]
+  }
+]
