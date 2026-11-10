@@ -264,12 +264,32 @@ class PrivacyAndModelTests(unittest.TestCase):
             reply,update=ai_service.generate_turn('پیش‌نویس بساز ۰۹۱۲۳۴۵۶۷۸۹')
         self.assertEqual(update,{})
         self.assertNotIn('۰۹۱۲۳۴۵۶۷۸۹',json.dumps(call.call_args.kwargs,ensure_ascii=False))
-        self.assertEqual([x['function']['name'] for x in call.call_args.kwargs['tools']],['update_signup_preferences'])
+        self.assertNotIn('tools', call.call_args.kwargs)
 
     def test_mock_history_and_arguments_are_not_instructions(self):
         response=NS(choices=[NS(message=NS(content=None,tool_calls=[NS(function=NS(name='update_signup_preferences',arguments=json.dumps({'businessName':'نمونه'})))]))])
         with patch.object(ai_service.client.chat.completions,'create',return_value=response):
-            self.assertEqual(ai_service.generate_turn('نام کسب‌وکار نمونه است')[1],{'businessName':'نمونه'})
+            self.assertEqual(ai_service.generate_turn('نام کسب‌وکار نمونه است', allow_preferences=True)[1],{'businessName':'نمونه'})
+
+    def test_price_question_uses_official_referral_without_calling_model(self):
+        with patch.object(ai_service.client.chat.completions, 'create') as call:
+            reply, update = ai_service.generate_turn('هزینه ساخت فروشگاه چقدره؟')
+        call.assert_not_called()
+        self.assertIn('https://launcho.ir/pricing', reply)
+        self.assertEqual(update, {})
+
+    def test_guidance_replaces_unsupported_price_and_sensitive_request(self):
+        for text, link in (
+            ('اشتراک ۲۴۰٬۰۰۰ تومان است.', 'https://launcho.ir/pricing'),
+            ('کد تأیید خود را همین‌جا بفرستید.', 'https://launcho.ir/start'),
+        ):
+            with self.subTest(text=text):
+                response = NS(choices=[NS(message=NS(content=text, tool_calls=[]))])
+                with patch.object(ai_service.client.chat.completions, 'create', return_value=response):
+                    reply, update = ai_service.generate_turn('چطور شروع کنم؟')
+                self.assertIn(link, reply)
+                self.assertNotIn(text, reply)
+                self.assertEqual(update, {})
 
 
 class EndpointTests(unittest.IsolatedAsyncioTestCase):

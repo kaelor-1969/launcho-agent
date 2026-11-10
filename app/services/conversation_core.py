@@ -164,7 +164,7 @@ class ConversationCore:
                             None if changed else current['review_id'],sid))
             result = self.get_session(sid,token)
             return {'reply':reply,'sessionId':sid,'revision':result['revision'],'preferences':prefs,
-                    'nextAction':'review' if self.complete(prefs) else 'collect_preferences'}
+                    'nextAction':'review' if self.gateway.can_create and self.complete(prefs) else 'collect_preferences'}
         finally:
             with self.store.transaction() as db:
                 db.execute('UPDATE sessions SET chat_until=0 WHERE id=? AND chat_until=?',(sid,lease))
@@ -204,7 +204,7 @@ class ConversationCore:
 
     def estimate(self, prefs):
         # Never turn local fixtures into user-facing live prices.
-        if self.gateway.mode!='live':
+        if self.gateway.mode!='live' or not self.gateway.can_create:
             return None
         try:
             _,pricing=self.data(prefs['kind'])
