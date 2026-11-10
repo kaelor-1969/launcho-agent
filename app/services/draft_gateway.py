@@ -1,5 +1,12 @@
 """Boundary owned jointly with the API teammate. No legacy write calls."""
+from threading import Lock
+from time import monotonic
 from typing import Protocol
+from urllib.parse import urlsplit
+
+import httpx
+
+from app.core.config import settings
 from app.services import launcho_api
 
 
@@ -38,9 +45,60 @@ class ExistingReadOnlyGateway:
         raise GatewayUnavailable('Contract-compliant draft adapter not installed.')
 
 
+class LaunchoReadOnlyGateway:
+    mode = 'live'
+    can_create = False
+
+    def __init__(self, base_url: str, token: str):
+        url = urlsplit(base_url)
+        if (url.scheme != 'https' or not url.hostname or url.username or url.password
+                or url.query or url.fragment or not token):
+            raise GatewayUnavailable('Invalid Launcho API configuration.')
+        self.base_url = base_url.rstrip('/')
+        self.token = token
+        self.cache = {}
+        self.lock = Lock()
+
+    def read(self, endpoint: str, ttl: int, params: dict | None = None) -> dict:
+        key = (endpoint, tuple((params or {}).items()))
+        with self.lock:
+            entry = self.cache.get(key)
+            if entry and monotonic() < entry[0]:
+                return entry[1]
+            try:
+                response = httpx.get(
+                    self.base_url + endpoint, params=params,
+                    headers={'Authorization': f'Bearer {self.token}'},
+                    timeout=5, follow_redirects=False,
+                )
+                response.raise_for_status()
+                payload = response.json()
+            except (httpx.HTTPError, ValueError):
+                raise GatewayUnavailable('Launcho read request failed.') from None
+            if not isinstance(payload, dict) or payload.get('ok') is not True:
+                raise GatewayUnavailable('Invalid Launcho response envelope.')
+            data = unwrap(payload)
+            self.cache[key] = (monotonic() + ttl, data)
+            return data
+
+    def get_pricing(self):
+        return self.read('/pricing', 600)
+
+    def get_signup_options(self, kind):
+        if kind not in {'shop', 'website'}:
+            raise GatewayUnavailable('Invalid Launcho service kind.')
+        return self.read('/signup-options', 600, {'kind': kind})
+
+    def get_service_info(self):
+        return self.read('/service-info', 60)
+
+    def create_signup_draft(self, payload, idempotency_key):
+        raise GatewayUnavailable('Live draft creation is disabled.')
+
+
 def build_gateway() -> DraftGateway:
-    # Replace this factory with the teammate's contract-compliant adapter.
-    # It must preserve Idempotency-Key through timeouts and return real API data.
+    if settings.LAUNCHO_API_URL or settings.LAUNCHO_API_KEY:
+        return LaunchoReadOnlyGateway(settings.LAUNCHO_API_URL, settings.LAUNCHO_API_KEY)
     return ExistingReadOnlyGateway()
 
 

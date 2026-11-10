@@ -14,7 +14,7 @@ from app.core.config import PROJECT_ROOT
 from app.core.privacy import redact
 from app.models.schemas import Preferences, PreferenceUpdate
 from app.services.ai_service import generate_turn
-from app.services.draft_gateway import build_gateway, unwrap, GatewayRejected
+from app.services.draft_gateway import build_gateway, unwrap, GatewayRejected, GatewayUnavailable
 from app.services.session_store import CoreError, SessionStore, digest
 
 
@@ -136,6 +136,12 @@ class ConversationCore:
             if self.gateway.mode != 'live':
                 # Fixtures may guide choices, but must not masquerade as live prices.
                 pricing = {'mode':'mock','notice':'داده نمونه است؛ عدد یا زمان اعلام نکن.'}
+            service_info = getattr(self.gateway, 'get_service_info', None)
+            if service_info is not None:
+                try:
+                    options = {**options, 'serviceInfo': service_info()}
+                except GatewayUnavailable:
+                    pass
             reply, update = self.model(safe, json.loads(row['history']), prefs, options, pricing)
             reply = redact(reply)
             if update:

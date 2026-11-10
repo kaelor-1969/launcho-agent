@@ -2,4 +2,5 @@ fastapi
 uvicorn
 pydantic
 openai
+httpx
 python-dotenv
