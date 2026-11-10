@@ -47,7 +47,7 @@ python tests/widget_preview_server.py --port 8000
   data-offset="24" data-mobile-offset="16"></script>
 ```
 
-iframe و `/api/chat` نسبت به آدرس loader پیدا می‌شوند. `data-api-url` اختیاری است؛ آدرس نسبی نسبت به loader تفسیر می‌شود. HTTP/HTTPS لازم است. `data-demo="true"` فقط برای نمونه است و برای نصب واقعی اضافه نشود.
+برای نصب روی سایت اصلی، اسکریپت را از دامنهٔ جداگانهٔ ویجت (مثل `https://ag.launchox.ir`) بارگذاری کنید. iframe فقط بعد از بازکردن ویجت ساخته می‌شود. iframe و `/api/chat` روی مبدأ loader قرار دارند و `data-api-url` هم به همان مبدأ محدود است. در نصب واقعی از HTTPS استفاده کنید. `data-demo="true"` فقط برای نمونه است.
 
 ```javascript
 LaunchoWidget.configure({theme:'light', position:'right', offset:24, mobileOffset:16});

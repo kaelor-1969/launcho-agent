@@ -3,7 +3,7 @@
   if (window.LaunchoWidget) return;
   const script = document.currentScript;
   if (!script || !script.src) return;
-  const widgetUrl = new URL('/widget/widget.html', location.origin);
+  const widgetUrl = new URL('/widget/widget.html', script.src);
   const widgetOrigin = widgetUrl.origin;
   const channel = crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint32Array(4))).join('-');
   const options = {
@@ -22,10 +22,11 @@
     } catch { return null; }
   }
   function relativeApi(value) {
-    const valid = validApi(value);
-    if (!valid) return null;
-    const url = new URL(valid);
-    return url.origin === location.origin && !url.pathname.startsWith('//') ? url.pathname + url.search : null;
+    try {
+      const url = new URL(value, widgetOrigin);
+      return url.origin === widgetOrigin && !url.username && !url.password &&
+        !url.pathname.startsWith('//') ? url.pathname + url.search : null;
+    } catch { return null; }
   }
   if (script.dataset.apiUrl) options.apiUrl = relativeApi(script.dataset.apiUrl) || options.apiUrl;
   if (script.dataset.workflowUrl) options.workflowUrl = relativeApi(script.dataset.workflowUrl);
@@ -55,9 +56,11 @@
     if (opened && !frame) {
       frame = document.createElement('iframe');
       frame.title = 'گفتگو با دستیار لانچو';
-      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      frame.referrerPolicy = 'no-referrer';
+      frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation');
+      frame.setAttribute('allow', '');
       widgetUrl.hash = new URLSearchParams({ parentOrigin: location.origin, channel }).toString();
-      frame.src = widgetUrl.pathname + widgetUrl.search + widgetUrl.hash;
+      frame.src = widgetUrl.href;
       panel.append(frame);
       loadTimer = setTimeout(() => {
         if (!feedback.hidden) feedback.textContent = 'گفتگو بارگذاری نشد. اتصال اینترنت را بررسی و صفحه را تازه کن.';

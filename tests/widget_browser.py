@@ -97,6 +97,14 @@ async def main():
                     await page.evaluate("LaunchoWidget.setTheme('" + theme + "')")
                     launcher = page.locator("#launcho-widget button")
                     await launcher.click()
+                    frame = page.locator("#launcho-widget iframe")
+                    await expect(frame).to_have_attribute("referrerpolicy", "no-referrer")
+                    assert (await frame.get_attribute("src")).startswith(base + "/widget/widget.html#")
+                    sandbox = (await frame.get_attribute("sandbox")).split()
+                    assert set(sandbox) == {
+                        "allow-scripts", "allow-same-origin", "allow-forms",
+                        "allow-popups", "allow-top-navigation-by-user-activation",
+                    }
                     chat = page.frame_locator("#launcho-widget iframe")
                     await expect(chat.locator("html")).to_have_attribute("data-theme", theme)
                     await expect(chat.locator("#message")).to_be_focused()
