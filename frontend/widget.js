@@ -125,7 +125,20 @@ function appendMessage(role, message) {
   avatar.append(icon);
   const bubble = document.createElement('p');
   bubble.className = `bubble ${role}`;
-  bubble.textContent = message;
+  if (role === 'user') {
+    bubble.textContent = message;
+  } else {
+    // Render only bold markers. Every other character stays plain text.
+    let offset = 0;
+    for (const match of message.matchAll(/\*\*([^*\r\n]+)\*\*/g)) {
+      bubble.append(document.createTextNode(message.slice(offset, match.index)));
+      const bold = document.createElement('strong');
+      bold.textContent = match[1];
+      bubble.append(bold);
+      offset = match.index + match[0].length;
+    }
+    bubble.append(document.createTextNode(message.slice(offset)));
+  }
   const speaker = document.createElement('span');
   speaker.className = 'sr-only';
   speaker.textContent = role === 'user' ? 'شما: ' : 'دستیار لانچو: ';
@@ -274,10 +287,7 @@ $('confirm').addEventListener('click', async () => {
 document.querySelectorAll('[data-question]').forEach((button) => {
   button.addEventListener('click', () => {
     if (button.classList.contains('primary-starter') && structured) startWorkflow();
-    else {
-      if (button.classList.contains('primary-starter')) document.querySelector('.starters').hidden = true;
-      submit(button.dataset.question);
-    }
+    else submit(button.dataset.question);
   });
 });
 // Follow content resizing only while the reader is near the end of the chat.
