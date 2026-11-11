@@ -409,6 +409,19 @@ class PrivacyAndModelTests(unittest.TestCase):
         self.assertIn('https://launcho.ir/pricing', reply)
         self.assertEqual(update, {})
 
+    def test_model_rate_limit_uses_verified_shoe_store_guidance(self):
+        from openai import RateLimitError
+
+        upstream = httpx.Response(429, request=httpx.Request('POST', 'https://example.invalid/v1/chat'))
+        failure = RateLimitError('gateway throttled', response=upstream, body=None)
+        with patch.object(ai_service.client.chat.completions, 'create', side_effect=failure):
+            reply, update = ai_service.generate_turn('برای فروشگاه کیف و کفش از کجا شروع کنم؟')
+            self.assertIn('سایز و رنگ', reply)
+            self.assertIn('https://launcho.ir/#templates', reply)
+            self.assertEqual(update, {})
+            with self.assertRaises(RateLimitError):
+                ai_service.generate_turn('آیا امکان مهاجرت اطلاعات از سرویس فعلی را دارم؟')
+
     def test_bold_official_url_survives_and_impostor_is_removed(self):
         text = '**https://launcho.ir/start** و **https://launcho.ir.evil.example/start**'
         response = NS(choices=[NS(message=NS(content=text, tool_calls=[]))])

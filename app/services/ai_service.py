@@ -125,6 +125,26 @@ def relevant_knowledge(knowledge, message):
     return '\n'.join([intro, *relevant])
 
 
+def guidance_during_outage(message):
+    """Answer common questions from verified product information during a model outage."""
+    message = message.replace('\u200c', ' ').strip(' ؟?!،.')
+    if re.fullmatch(r'سلام(?: وقت بخیر)?|درود|وقت بخیر', message):
+        return 'سلام! برای انتخاب قالب، راه‌اندازی یا بررسی هزینه‌های فروشگاه راهنمایی می‌خواهید؟'
+    if re.search(r'لینک.{0,24}(?:ثبت نام|شروع)|آدرس.{0,24}ثبت نام', message):
+        return 'برای شروع ثبت‌نام، فرم رسمی لانچو را باز کنید. https://launcho.ir/start'
+    if re.search(r'کیف\s*(?:و|یا)\s*کفش', message) and re.search(r'فروش|قالب|شروع', message):
+        return (
+            'برای شروع، کیف و کفش را دو دسته کنید و برای کفش، سایز و رنگ هر مدل را جدا مشخص کنید. '
+            'اگر تنوع محصول بالاست، نمونهٔ دیجی‌کالا را برای چیدمان و فیلتر مقایسه کنید. '
+            'برای چیدمان مد و پوشاک، نمونهٔ مدا را ببینید. https://launcho.ir/#templates'
+        )
+    if re.search(r'از کجا شروع|چطور.{0,24}(?:بسازم|راه اندازی)|(?:ساخت|راه اندازی) فروشگاه', message):
+        return _STORE_START_REPLY
+    if re.fullmatch(r'لانچو (?:چیست|چیه|چیه دقیقا|چه کاری انجام می دهد)', message):
+        return 'لانچو برای ساخت سایت و فروشگاه آنلاین است. در راه‌اندازی فروشگاه، کارشناس برای تنظیم قالب و آموزش پنل همراهی می‌کند.'
+    return None
+
+
 def generate_turn(message, history=None, preferences=None, options=None, pricing=None, *, allow_preferences=False):
     message = redact(message.strip())
     if not allow_preferences and message.rstrip('؟?') == 'برای ساخت فروشگاه با لانچو از کجا شروع کنم':
@@ -156,7 +176,16 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         kwargs.update(tools=tools, tool_choice='auto')
     if settings.AI_TEMPERATURE is not None:
         kwargs['temperature'] = settings.AI_TEMPERATURE
-    response = client.chat.completions.create(**kwargs)
+    try:
+        response = client.chat.completions.create(**kwargs)
+    except APIError as error:
+        fallback = None if allow_preferences else guidance_during_outage(message)
+        if fallback is None:
+            raise
+        logger.warning('Using Launcho guidance during model failure: %s', type(error).__name__)
+        if price_query:
+            fallback = f'{fallback}\n\n{price_reply}'
+        return fallback, {}
     if not response.choices:
         return empty_guidance_reply(message, safe_history), {}
     answer = response.choices[0].message
