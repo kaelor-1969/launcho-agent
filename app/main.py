@@ -1,8 +1,10 @@
 from pathlib import Path
 import mimetypes
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
@@ -12,6 +14,16 @@ STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Launcho Agent API")
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_request(_request: Request, _exc: RequestValidationError):
+    # Pydantic error details can contain the rejected input, including credentials.
+    return JSONResponse(
+        status_code=422,
+        content={"detail": {"code": "invalid_request", "message": "اطلاعات درخواست معتبر نیست."}},
+        headers={"Cache-Control": "no-store"},
+    )
 
 # اجازهٔ دسترسی فرانت‌اند از همهٔ دامنه‌ها
 app.add_middleware(

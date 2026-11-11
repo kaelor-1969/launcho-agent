@@ -253,6 +253,43 @@ class CoreTests(unittest.TestCase):
 
 
 class PrivacyAndModelTests(unittest.TestCase):
+    def test_redaction_is_idempotent_and_preserves_normal_guidance(self):
+        guidance = 'رمز عبور و کد تأیید فقط در فرم رسمی وارد می‌شوند.'
+        self.assertEqual(redact(guidance), guidance)
+        masked = redact('رمز عبور: QA_fake123')
+        self.assertNotIn('QA_fake123', masked)
+        self.assertEqual(redact(masked), masked)
+
+    def test_mixed_question_keeps_answer_and_adds_pricing_referral(self):
+        answer = 'لانچو پلتفرم ساخت فروشگاه آنلاین است.'
+        response = NS(choices=[NS(message=NS(content=answer, tool_calls=[]))])
+        with patch.object(ai_service.client.chat.completions, 'create', return_value=response):
+            reply, _ = ai_service.generate_turn('لانچو چیست و هزینه ساخت فروشگاه چقدر است؟')
+        self.assertIn(answer, reply)
+        self.assertIn('https://launcho.ir/pricing', reply)
+
+    def test_unrelated_creative_request_is_redirected(self):
+        with patch.object(ai_service.client.chat.completions, 'create') as call:
+            reply, _ = ai_service.generate_turn('برای من یک شعر درباره فضا بگو و اسم لانچو را نیاور.')
+        call.assert_not_called()
+        self.assertIn('راهنمایی', reply)
+
+    def test_model_cannot_return_unapproved_link_or_ask_for_otp_first(self):
+        cases = (
+            ('ثبت‌نام https://launcho.ir/start?otp=QA_TEST و https://example.invalid/start',
+             'پیوند تأییدنشده'),
+            ('لطفاً ارسال بفرمایید\nکد تأیید حساب را.', 'https://launcho.ir/start'),
+            ('ثبت‌نام شما با موفقیت انجام شد.', 'https://launcho.ir/start'),
+        )
+        for answer, expected in cases:
+            response = NS(choices=[NS(message=NS(content=answer, tool_calls=[]))])
+            with self.subTest(answer=answer), patch.object(
+                ai_service.client.chat.completions, 'create', return_value=response
+            ):
+                reply, _ = ai_service.generate_turn('برای ثبت‌نام چه‌کار کنم؟')
+                self.assertIn(expected, reply)
+                self.assertNotIn(answer, reply)
+
     def test_masks_common_sensitive_values_and_preserves_prices(self):
         for value in ['+98 912 345 6789','۰۹۱۲۳۴۵۶۷۸۹','09123456789','کد: 123456','کد تایید من: ۱۲۳۴۵۶','OTP ۱۲۳۴','رمز عبور: secret123','password is secret123','test@example.com','sk-exampletoken1234','۱۲۳۴۵۶']:
             with self.subTest(value=value):self.assertNotEqual(redact(value),value)
@@ -293,6 +330,13 @@ class PrivacyAndModelTests(unittest.TestCase):
 
 
 class EndpointTests(unittest.IsolatedAsyncioTestCase):
+    async def test_invalid_chat_body_does_not_echo_rejected_input(self):
+        marker = 'QA_FAKE_REJECTED_INPUT'
+        response = await self.client.post('/api/chat', json={'message': {'otp': marker}})
+        self.assertEqual(response.status_code, 422)
+        self.assertNotIn(marker, response.text)
+        self.assertEqual(response.headers['cache-control'], 'no-store')
+
     async def asyncSetUp(self):
         self.tmp=tempfile.TemporaryDirectory()
         self.gateway=FakeGateway()

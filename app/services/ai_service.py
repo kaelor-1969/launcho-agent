@@ -28,10 +28,31 @@ def get_launcho_knowledge():
 
 
 _PRICE_QUERY = re.compile(r'قیمت|هزینه|تعرفه|تخفیف|قسط|اقساط|چند\s*تومن|چقدر\s*باید\s*پرداخت')
-_PRICE_CLAIM = re.compile(r'[\d۰-۹٠-٩][\d۰-۹٠-٩ ,٬٫.]*(?:هزار\s*|میلیون\s*|میلیارد\s*)?(?:تومان|تومن|ریال)|(?:هزار|میلیون|میلیارد)\s*(?:تومان|تومن|ریال)|(?:رایگان|بدون\s*هزینه)')
-_SENSITIVE_REQUEST = re.compile(r'(?:شماره\s*(?:موبایل|تلفن|همراه)|موبایل|رمز(?:\s*عبور)?|گذرواژه|کد\s*(?:تأیید|تایید|ورود|یک.بار.مصرف)|\botp\b).{0,60}(?:بفرست|وارد کن|بنویس|بده|اعلام کن|ارسال کن|ثبت کن)', re.I)
+_PRICE_CLAIM = re.compile(
+    r'\d[\d ,٬٫.\s]*(?:هزار\s*|میلیون\s*|میلیارد\s*)?(?:تومان|تومن|ریال|دلار|درصد|[%٪])'
+    r'|(?:هزار|میلیون|میلیارد)\s*(?:تومان|تومن|ریال|دلار)|رایگان|بدون\s*هزینه'
+)
+_SENSITIVE_FIELD = r'(?:شماره\s*(?:موبایل|تلفن|همراه)|موبایل|نام\s*مالک|رمز(?:\s*عبور)?|گذرواژه|کد\s*(?:تأیید|تایید|ورود|یک[ -]بار[ -]مصرف)|\botp\b|password)'
+_REQUEST_VERB = r'(?:بفرست|وارد\s*کن|بنویس|بده|اعلام\s*کن|ارسال\s*(?:کن|بفرما)|ثبت\s*کن|نیاز\s*دارم|ارائه\s*(?:کن|ده)|send|share|provide)'
+_SENSITIVE_REQUEST = re.compile(
+    rf'{_SENSITIVE_FIELD}.{{0,100}}{_REQUEST_VERB}|{_REQUEST_VERB}.{{0,100}}{_SENSITIVE_FIELD}',
+    re.I | re.S,
+)
+_MODEL_URL = re.compile(r'(?:https?://|www\.)[^\s<>"\]\)]+', re.I)
+_OFFICIAL_URLS = {'https://launcho.ir', 'https://launcho.ir/', 'https://launcho.ir/start',
+                  'https://launcho.ir/pricing', 'https://launcho.ir/contact'}
 _PRICE_REPLY = 'برای استعلام تعرفه و شرایط پرداخت، صفحه رسمی لانچو را ببینید: https://launcho.ir/pricing'
 _FORM_REPLY = 'اطلاعات ورود و تأیید را فقط در فرم رسمی لانچو وارد کنید: https://launcho.ir/start'
+_ACTION_CLAIM = re.compile(
+    r'(?:ثبت\s*نام|حساب|پیش\s*نویس|پرداخت).{0,45}با\s*موفقیت.{0,25}(?:شد|کردم)'
+    r'|(?:برایتان|برای\s*شما).{0,35}(?:حساب|پیش\s*نویس).{0,20}(?:ساختم|ایجاد کردم)',
+    re.S,
+)
+_UNRELATED_CREATIVE_REQUEST = re.compile(
+    r'(?:شعر|لطیفه|جوک|داستان|ترانه).{0,100}(?:بگو|بنویس|بساز|بخون)'
+    r'|(?:بگو|بنویس|بساز|بخون).{0,30}(?:شعر|لطیفه|جوک|داستان|ترانه)'
+    r'|\b(?:write|tell|compose)\b.{0,50}\b(?:poem|joke|story|song)\b', re.I | re.S
+)
 
 
 def relevant_knowledge(knowledge, message):
@@ -49,8 +70,12 @@ def relevant_knowledge(knowledge, message):
 
 def generate_turn(message, history=None, preferences=None, options=None, pricing=None, *, allow_preferences=False):
     message = redact(message.strip())
-    if not allow_preferences and _PRICE_QUERY.search(message):
+    clauses = [part.strip() for part in re.split(r'[؟?؛\n]+|\s+و\s+', message) if part.strip()]
+    price_query = not allow_preferences and bool(_PRICE_QUERY.search(message))
+    if price_query and all(_PRICE_QUERY.search(part) for part in clauses):
         return _PRICE_REPLY, {}
+    if _UNRELATED_CREATIVE_REQUEST.search(message):
+        return 'می‌توانم دربارهٔ لانچو و راه‌اندازی سایت یا فروشگاه راهنمایی کنم.', {}
     safe_history = [{'role':item['role'], 'content':redact(item['content'])}
                     for item in (history or [])[-12:] if item['role'] in {'user','assistant'}]
     context = {'preferences':preferences or {}, 'options':options or {},
@@ -59,7 +84,9 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
     policy = '' if allow_preferences else (
         '\nحالت فقط راهنمایی است. هیچ اطلاعاتی برای ثبت‌نام جمع نکن. '
         'هیچ مبلغ، تخفیف، اقساط یا رایگان‌بودن را اعلام نکن. '
-        'داده ناکافی را صریح بگو و به صفحه رسمی مرتبط ارجاع بده.'
+        'داده ناکافی را صریح بگو و به صفحه رسمی مرتبط ارجاع بده. '
+        'ادعای ساخت حساب یا فروشگاه، ارسال کد، پذیرش قوانین، پرداخت، یا صدور تخفیف نکن. '
+        'فقط به پرسش‌های مرتبط با لانچو و راه‌اندازی سایت یا فروشگاه پاسخ بده.'
     )
     kwargs = dict(model=settings.AI_MODEL_NAME,
         messages=[{'role':'system','content':get_system_prompt(knowledge) + policy +
@@ -85,13 +112,20 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         except ValidationError:
             return 'اطلاعات انتخابی معتبر نبود. لطفاً نام کسب‌وکار، دسته‌بندی، دوره و قالب را مشخص کنید.', {}
     text = (answer.content or '').strip()
-    if _SENSITIVE_REQUEST.search(text):
+    normalized = text.translate(str.maketrans('يك', 'یک')).replace('\u200c', ' ')
+    if _SENSITIVE_REQUEST.search(normalized):
         return _FORM_REPLY, {}
-    if not allow_preferences and _PRICE_CLAIM.search(text):
+    if not allow_preferences and _ACTION_CLAIM.search(normalized):
+        return 'برای انجام ثبت‌نام و بررسی وضعیت آن، فرم رسمی لانچو را باز کنید: https://launcho.ir/start', {}
+    if not allow_preferences and _PRICE_CLAIM.search(normalized):
         return _PRICE_REPLY, {}
+    text = _MODEL_URL.sub(
+        lambda match: match[0] if match[0].rstrip('.,،؛') in _OFFICIAL_URLS else '[پیوند تأییدنشده حذف شد]',
+        text,
+    )
     text = redact(text) or 'پاسخ سرویس خالی بود.'
-    # A model-generated signup reference must never become an authoritative link.
-    text = re.sub(r'https?://\S*[?&]signup=\S+', '[لینک پیش‌نویس فقط از بک‌اند ارائه می‌شود]', text)
+    if price_query and 'https://launcho.ir/pricing' not in text:
+        text = f'{text}\n\n{_PRICE_REPLY}'
     return text[:12000], {}
 
 
