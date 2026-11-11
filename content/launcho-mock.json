@@ -1,0 +1,93 @@
+{
+  "source": "launcho-api-v1.md (contract example, not current website data)",
+  "pricing": {
+    "currency": "toman",
+    "setupFees": {
+      "shop": 15000000,
+      "website": 5000000
+    },
+    "defaultSignupPlanMonths": 3,
+    "plans": [
+      {
+        "months": 3,
+        "title": "اشتراک ۳ ماهه",
+        "price": 2400000,
+        "listPrice": 2400000,
+        "featured": false,
+        "giftMonthly": 50000
+      },
+      {
+        "months": 6,
+        "title": "اشتراک ۶ ماهه",
+        "price": 4000000,
+        "listPrice": 4800000,
+        "featured": false,
+        "giftMonthly": 50000
+      },
+      {
+        "months": 12,
+        "title": "اشتراک یک‌ساله",
+        "price": 8000000,
+        "listPrice": 9600000,
+        "featured": true,
+        "giftMonthly": 50000
+      }
+    ],
+    "domains": [
+      {
+        "tld": "ir",
+        "includedInSetup": true,
+        "annualFee": 0
+      },
+      {
+        "tld": "com",
+        "includedInSetup": false,
+        "annualFee": 1200000
+      }
+    ],
+    "setupIncludes": [
+      "پیگیری اداری درگاه پرداخت",
+      "پیگیری اینماد"
+    ],
+    "planIncludes": [
+      "فروشگاه کامل با قالب‌های آماده"
+    ],
+    "installment": {
+      "count": 4,
+      "monthlyPart": 3750000,
+      "line": "متن آماده لانچو"
+    }
+  },
+  "signupOptions": {
+    "shop": {
+      "kind": "shop",
+      "steps": [],
+      "businessCategories": [],
+      "templateCategories": [],
+      "templates": []
+    },
+    "website": {
+      "kind": "website",
+      "steps": [],
+      "businessCategories": [],
+      "templateCategories": [],
+      "templates": []
+    }
+  },
+  "serviceInfo": {
+    "contactUrl": "https://launcho.ir/contact",
+    "useCases": [
+      "معرفی محصولات فروشگاه حضوری در یک نشانی مستقل",
+      "ساخت کاتالوگ آنلاین برای کسب‌وکارهای فعال در شبکه‌های اجتماعی"
+    ]
+  },
+  "offers": [
+    {
+      "id": "demo_campaign",
+      "type": "discount",
+      "title": "جشنوارهٔ نمونه",
+      "line": "در این سناریوی آزمایشی، شرایط جشنواره را می‌توانید در مرحلهٔ پرداخت بررسی کنید.",
+      "expiresAt": null
+    }
+  ]
+}

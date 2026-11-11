@@ -350,6 +350,46 @@ class PrivacyAndModelTests(unittest.TestCase):
         with patch.object(ai_service.client.chat.completions,'create',return_value=response):
             self.assertEqual(ai_service.generate_turn('نام کسب‌وکار نمونه است', allow_preferences=True)[1],{'businessName':'نمونه'})
 
+    def test_mock_offer_endpoint_only_matches_supported_objections(self):
+        from app.mock_launcho import OfferRequest, offers, widget_host
+
+        request = OfferRequest(kind='shop', step=4, objections=['price'],
+                               needs=['low_upfront'], discountAlreadyShown=False)
+        token = 'Bearer local-simulation'
+        matched = offers(request, token)
+        self.assertEqual(matched['data']['offers'][0]['id'], 'demo_campaign')
+        request.discountAlreadyShown = True
+        self.assertEqual(offers(request, token)['data']['offers'], [])
+        self.assertIn('/widget/loader.js', widget_host())
+
+    def test_demo_campaign_is_labeled_and_not_repeated(self):
+        options = {'demoOffers': [{'id': 'demo_campaign', 'line': 'جشنوارهٔ نمونه'}]}
+        message = 'هزینه برام زیاده'
+        with patch.object(ai_service.client.chat.completions, 'create') as call:
+            reply, _ = ai_service.generate_turn(message, options=options)
+            later, _ = ai_service.generate_turn(message, [{'role': 'assistant', 'content': reply}], options=options)
+        call.assert_not_called()
+        self.assertIn('پیشنهاد آزمایشی', reply)
+        self.assertIn('جشنوارهٔ نمونه', reply)
+        self.assertIn('امکانات ضروری', reply)
+        self.assertNotIn('جشنواره', later)
+
+    def test_store_campaign_question_uses_product_knowledge(self):
+        response = NS(choices=[NS(message=NS(content='در پنل فروشنده می‌توانید حراج زمان‌دار بسازید.', tool_calls=[]))])
+        with patch.object(ai_service.client.chat.completions, 'create', return_value=response) as call:
+            reply, _ = ai_service.generate_turn('برای مشتریان فروشگاه در پنل جشنواره دارم؟')
+        self.assertIn('حراج زمان‌دار', reply)
+        self.assertNotIn('launcho.ir/pricing', reply)
+        self.assertIn('مدیریت کیف پول', call.call_args.kwargs['messages'][0]['content'])
+
+    def test_long_model_reply_is_shortened_at_sentence_boundary(self):
+        sentence = 'برای شروع، فهرست محصولات اصلی را آماده کنید.'
+        response = NS(choices=[NS(message=NS(content=(sentence + ' ') * 40, tool_calls=[]))])
+        with patch.object(ai_service.client.chat.completions, 'create', return_value=response):
+            reply, _ = ai_service.generate_turn('چطور محصولاتم را آماده کنم؟')
+        self.assertLessEqual(len(reply), 620)
+        self.assertTrue(reply.endswith(sentence))
+
     def test_price_question_uses_official_referral_without_calling_model(self):
         with patch.object(ai_service.client.chat.completions, 'create') as call:
             reply, update = ai_service.generate_turn('هزینه ساخت فروشگاه چقدره؟')

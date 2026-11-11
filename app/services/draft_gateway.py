@@ -49,9 +49,12 @@ class LaunchoReadOnlyGateway:
     mode = 'live'
     can_create = False
 
-    def __init__(self, base_url: str, token: str):
+    def __init__(self, base_url: str, token: str, *, local_mock=False):
         url = urlsplit(base_url)
-        if (url.scheme != 'https' or not url.hostname or url.username or url.password
+        allowed_scheme = url.scheme == 'https'
+        if local_mock:
+            allowed_scheme = url.scheme == 'http' and url.hostname in {'127.0.0.1', '::1'}
+        if (not allowed_scheme or not url.hostname or url.username or url.password
                 or url.query or url.fragment or not token):
             raise GatewayUnavailable('Invalid Launcho API configuration.')
         self.base_url = base_url.rstrip('/')
@@ -59,18 +62,19 @@ class LaunchoReadOnlyGateway:
         self.cache = {}
         self.lock = Lock()
 
-    def read(self, endpoint: str, ttl: int, params: dict | None = None) -> dict:
+    def read(self, endpoint: str, ttl: int, params: dict | None = None, *, payload=None) -> dict:
         key = (endpoint, tuple((params or {}).items()))
         with self.lock:
             entry = self.cache.get(key)
             if entry and monotonic() < entry[0]:
                 return entry[1]
             try:
-                response = httpx.get(
-                    self.base_url + endpoint, params=params,
-                    headers={'Authorization': f'Bearer {self.token}'},
-                    timeout=5, follow_redirects=False,
-                )
+                request_options = dict(headers={'Authorization': f'Bearer {self.token}'},
+                                       timeout=5, follow_redirects=False)
+                if payload is None:
+                    response = httpx.get(self.base_url + endpoint, params=params, **request_options)
+                else:
+                    response = httpx.post(self.base_url + endpoint, json=payload, **request_options)
                 response.raise_for_status()
                 payload = response.json()
             except (httpx.HTTPError, ValueError):
@@ -78,7 +82,8 @@ class LaunchoReadOnlyGateway:
             if not isinstance(payload, dict) or payload.get('ok') is not True:
                 raise GatewayUnavailable('Invalid Launcho response envelope.')
             data = unwrap(payload)
-            self.cache[key] = (monotonic() + ttl, data)
+            if ttl:
+                self.cache[key] = (monotonic() + ttl, data)
             return data
 
     def get_pricing(self):
@@ -96,7 +101,24 @@ class LaunchoReadOnlyGateway:
         raise GatewayUnavailable('Live draft creation is disabled.')
 
 
+class LocalMockGateway(LaunchoReadOnlyGateway):
+    mode = 'local_mock'
+
+    def __init__(self, base_url):
+        super().__init__(base_url, 'local-simulation', local_mock=True)
+
+    def match_price_offers(self, kind):
+        return self.read('/offers/match', 0, payload={
+            'kind': kind, 'step': 4, 'objections': ['price'],
+            'needs': ['low_upfront'], 'discountAlreadyShown': False,
+        })
+
+
 def build_gateway() -> DraftGateway:
+    if settings.LAUNCHO_MOCK_URL:
+        if settings.LAUNCHO_API_URL or settings.LAUNCHO_API_KEY:
+            raise GatewayUnavailable('Configure either the local mock or the live Launcho API.')
+        return LocalMockGateway(settings.LAUNCHO_MOCK_URL)
     if settings.LAUNCHO_API_URL or settings.LAUNCHO_API_KEY:
         return LaunchoReadOnlyGateway(settings.LAUNCHO_API_URL, settings.LAUNCHO_API_KEY)
     return ExistingReadOnlyGateway()

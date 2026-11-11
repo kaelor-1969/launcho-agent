@@ -18,6 +18,7 @@ class Settings:
         temperature = os.getenv("AI_TEMPERATURE", "").strip()
         # مقدار خالی یعنی پارامتر ارسال نشود؛ همهٔ مدل‌ها آن را نمی‌پذیرند.
         self.AI_TEMPERATURE = float(temperature) if temperature else None
+        self.LAUNCHO_MOCK_URL = os.getenv("LAUNCHO_MOCK_URL", "").strip()
         self.LAUNCHO_API_URL = os.getenv("LAUNCHO_API_URL", "").strip()
         self.LAUNCHO_API_KEY = os.getenv("LAUNCHO_API_KEY", "").strip()
         for name in ("AI_API_KEY", "AI_MODEL_NAME"):
