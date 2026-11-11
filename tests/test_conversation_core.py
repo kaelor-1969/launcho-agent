@@ -467,15 +467,14 @@ class PrivacyAndModelTests(unittest.TestCase):
         self.assertIn('https://launcho.ir/pricing', reply)
         self.assertEqual(update, {})
 
-    def test_model_rate_limit_uses_verified_shoe_store_guidance(self):
+    def test_model_rate_limit_answers_explicit_inventory_question(self):
         from openai import RateLimitError
 
         upstream = httpx.Response(429, request=httpx.Request('POST', 'https://example.invalid/v1/chat'))
         failure = RateLimitError('gateway throttled', response=upstream, body=None)
         with patch.object(ai_service.client.chat.completions, 'create', side_effect=failure):
-            reply, update = ai_service.generate_turn('برای فروشگاه کیف و کفش از کجا شروع کنم؟')
-            self.assertIn('سایز و رنگ', reply)
-            self.assertIn('https://launcho.ir/#templates', reply)
+            reply, update = ai_service.generate_turn('موجودی هر رنگ و سایز را چطور ثبت کنم؟')
+            self.assertEqual(reply, 'در پنل موجودی می‌توانید موجودی هر رنگ و سایز را جدا ثبت کنید.')
             self.assertEqual(update, {})
             with self.assertRaises(RateLimitError):
                 ai_service.generate_turn('آیا امکان مهاجرت اطلاعات از سرویس فعلی را دارم؟')
@@ -488,11 +487,14 @@ class PrivacyAndModelTests(unittest.TestCase):
         self.assertIn('**https://launcho.ir/start**', reply)
         self.assertNotIn('evil.example', reply)
 
-    def test_bag_store_gets_one_direct_next_step(self):
+    def test_business_types_get_one_direct_next_step(self):
         with patch.object(ai_service.client.chat.completions, 'create') as model:
-            reply, _ = ai_service.generate_turn('برای فروشگاه کیف از کجا شروع کنم؟')
+            for business in ('کیف‌فروشی', 'تعمیر موبایل', 'آموزش زبان', 'ابزار صنعتی', 'قهوه تخصصی'):
+                with self.subTest(business=business):
+                    history = [{'role': 'assistant', 'content': ai_service._STORE_START_REPLY}]
+                    reply, _ = ai_service.generate_turn(business, history)
+                    self.assertEqual(reply, ai_service._STORE_DOMAIN_QUESTION)
         model.assert_not_called()
-        self.assertEqual(reply, 'برای شروع، کیف‌ها را بر اساس نوع دسته‌بندی کنید.')
 
     def test_chat_guides_signup_and_hands_off_after_user_is_ready(self):
         history = []
