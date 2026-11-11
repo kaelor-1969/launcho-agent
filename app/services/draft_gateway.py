@@ -114,13 +114,44 @@ class LocalMockGateway(LaunchoReadOnlyGateway):
         })
 
 
+class LaunchoDraftGateway(LaunchoReadOnlyGateway):
+    can_create = True
+
+    def create_signup_draft(self, payload, idempotency_key):
+        try:
+            response = httpx.post(
+                self.base_url + '/signup-drafts', json=payload,
+                headers={'Authorization': f'Bearer {self.token}', 'Idempotency-Key': idempotency_key},
+                timeout=10, follow_redirects=False,
+            )
+            response.raise_for_status()
+            return unwrap(response.json())
+        except httpx.HTTPStatusError as error:
+            status = error.response.status_code
+            if status in {400, 401, 403, 404, 410, 422, 429}:
+                raise GatewayRejected(status, 'draft_rejected') from None
+            raise GatewayUnavailable('Unknown draft outcome.') from None
+        except (httpx.HTTPError, ValueError):
+            raise GatewayUnavailable('Unknown draft outcome.') from None
+
+    def get_draft_status(self, ref):
+        return self.read(f'/signup-drafts/{ref}', 0)
+
+    def match_checkout_offers(self, kind, plan_months):
+        return self.read('/offers/match', 0, payload={
+            'kind': kind, 'planMonths': plan_months, 'step': 4,
+            'objections': ['price'], 'needs': ['low_upfront'], 'discountAlreadyShown': False,
+        })
+
+
 def build_gateway() -> DraftGateway:
     if settings.LAUNCHO_MOCK_URL:
         if settings.LAUNCHO_API_URL or settings.LAUNCHO_API_KEY:
             raise GatewayUnavailable('Configure either the local mock or the live Launcho API.')
         return LocalMockGateway(settings.LAUNCHO_MOCK_URL)
     if settings.LAUNCHO_API_URL or settings.LAUNCHO_API_KEY:
-        return LaunchoReadOnlyGateway(settings.LAUNCHO_API_URL, settings.LAUNCHO_API_KEY)
+        gateway = LaunchoDraftGateway if settings.LAUNCHO_ENABLE_DRAFTS else LaunchoReadOnlyGateway
+        return gateway(settings.LAUNCHO_API_URL, settings.LAUNCHO_API_KEY)
     return ExistingReadOnlyGateway()
 
 

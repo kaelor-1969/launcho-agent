@@ -16,14 +16,15 @@ const text = (v, max = 5000) => typeof v === 'string' && v.length > 0 && v.lengt
 const fields = ['businessName', 'category', 'subscription'];
 const actions = new Set(['next', 'browseTemplates', 'edit', 'createDraft',
   ...[...fields, 'template'].map(field => `edit:${field}`)]);
+const demoActions = new Set(['costHelp', 'style:visual', 'style:catalog']);
 export function validTemplate(t) {
   return t && text(t.id, 200) && text(t.name, 200) && safeUrl(t.image);
 }
-export function validateView(v) {
+export function validateView(v, {demo = false} = {}) {
   if (!v || !text(v.sessionId, 200) || !Number.isSafeInteger(v.revision) || v.revision < 0 || !text(v.title) ||
       !['field', 'template', 'review', 'draft'].includes(v.kind) ||
       !Array.isArray(v.actions) || v.actions.length > 20 ||
-      !v.actions.every(a => a && actions.has(a.id) && text(a.label, 200)) ||
+      !v.actions.every(a => a && (actions.has(a.id) || (demo && demoActions.has(a.id))) && text(a.label, 200)) ||
       (v.rows !== undefined && (!Array.isArray(v.rows) || !v.rows.every(r => r && text(r.label, 200) && typeof r.value === 'string'))) ||
       (v.template !== undefined && !validTemplate(v.template))) throw new Error('پاسخ معتبر نیست. دوباره تلاش کن.');
   if (['mobile', 'setupPayment', 'domain', 'domainStatus', 'quote', 'checkoutUrl', 'transactionId', 'paymentStatus', 'verified'].some(key => key in v)) throw new Error('این اطلاعات خارج از محدودهٔ دستیار است.');

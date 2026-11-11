@@ -4,6 +4,7 @@ from functools import lru_cache
 import hmac
 import json
 import os
+import re
 import secrets
 import time
 from urllib.parse import parse_qsl, urlencode, urlsplit
@@ -13,7 +14,7 @@ from pydantic import ValidationError
 from app.core.config import PROJECT_ROOT
 from app.core.privacy import has_visible_text, redact
 from app.models.schemas import Preferences, PreferenceUpdate
-from app.services.ai_service import generate_turn, is_price_question
+from app.services.ai_service import CHECKOUT_OFFER_LABEL, generate_turn, is_price_question
 from app.services.draft_gateway import build_gateway, unwrap, GatewayRejected, GatewayUnavailable
 from app.services.session_store import CoreError, SessionStore, digest
 
@@ -161,7 +162,14 @@ class ConversationCore:
                         options = {**options, 'demoOffers': offers}
                 except GatewayUnavailable:
                     pass
-            reply, update = self.model(safe, history, prefs, options, pricing)
+            checkout_offer = self.checkout_offer(safe, history, prefs)
+            if checkout_offer:
+                options = {**options, 'checkoutOffer': checkout_offer}
+            if self.model is generate_turn:
+                reply, update = self.model(safe, history, prefs, options, pricing,
+                                           allow_preferences=self.gateway.can_create and bool(options and pricing))
+            else:
+                reply, update = self.model(safe, history, prefs, options, pricing)
             reply = redact(reply)
             if update:
                 try:
@@ -193,6 +201,34 @@ class ConversationCore:
     def chat_result(self, sid, revision, prefs, reply):
         return {'reply':reply,'sessionId':sid,'revision':revision,'preferences':prefs,
                 'nextAction':'review' if self.gateway.can_create and self.complete(prefs) else 'collect_preferences'}
+
+    def checkout_offer(self, message, history, prefs):
+        match = getattr(self.gateway, 'match_checkout_offers', None)
+        if (match is None or not self.complete(prefs) or not is_price_question(message)
+                or not re.search(r'اقساط|قسط|پیش[\s‌]*پرداخت|گران|گرونه|هزینه.{0,16}بالا|هزینه.{0,16}زیاد', message)
+                or any(turn['role'] == 'assistant' and CHECKOUT_OFFER_LABEL in turn['content'] for turn in history)):
+            return None
+        try:
+            offers = unwrap(match(prefs['kind'], prefs['planMonths'])).get('offers')
+        except GatewayUnavailable:
+            return None
+        if not isinstance(offers, list):
+            return None
+        for offer in offers:
+            if not isinstance(offer, dict) or offer.get('type') not in {'payment_option', 'discount'}:
+                continue
+            line = offer.get('line')
+            if not isinstance(line, str) or not line.strip() or len(line) > 160 or re.search(r'https?://|www\.', line, re.I):
+                continue
+            expires = offer.get('expiresAt')
+            if expires is not None:
+                try:
+                    if parse_expiry(expires) <= time.time():
+                        continue
+                except ValueError:
+                    continue
+            return redact(line.strip())
+        return None
 
     @staticmethod
     def complete(prefs):
@@ -299,7 +335,7 @@ class ConversationCore:
         except GatewayRejected as error:
             with self.store.transaction() as db:
                 db.execute("UPDATE reviews SET status='rejected' WHERE id=?",(review['id'],))
-            status=error.status if error.status in {400,401,404,409,410,429} else 503
+            status=error.status if error.status in {400,401,403,404,409,410,422,429} else 503
             messages={401:'اتصال لانچو مجاز نیست؛ مسئول اتصال باید بررسی کند.',
                       429:'محدودیت درخواست لانچو؛ بعداً خلاصه تازه دریافت کنید.',
                       410:'پیش‌نویس منقضی است؛ مرور و تأیید تازه لازم است.'}
@@ -324,6 +360,25 @@ class ConversationCore:
             if source in prefs: query[target]=prefs[source]
         return {'url':'https://launcho.ir/start'+('?' + urlencode(query) if query else ''),
                 'isDraft':False,'notice':'این لینک عمومی است؛ پیش‌نویسی در لانچو ساخته نشده است.'}
+
+    def draft_status(self, sid, token):
+        session = self.get_session(sid, token)
+        draft = session.get('draft')
+        if not draft:
+            raise CoreError(404, 'draft_not_found', 'پیش‌نویسی برای این گفتگو پیدا نشد.')
+        reader = getattr(self.gateway, 'get_draft_status', None)
+        if reader is None:
+            raise CoreError(503, 'draft_status_unavailable', 'پیگیری وضعیت فعلاً در دسترس نیست.')
+        try:
+            result = unwrap(reader(draft['ref']))
+            status = result.get('status')
+            if result.get('ref') != draft['ref'] or status not in (
+                'draft', 'opened', 'mobile_verified', 'invoiced', 'paid', 'active', 'expired'
+            ):
+                raise GatewayUnavailable('Invalid draft status.')
+        except GatewayUnavailable:
+            raise CoreError(503, 'draft_status_unavailable', 'پیگیری وضعیت فعلاً در دسترس نیست.') from None
+        return {'status':status}
 
 
 @lru_cache(maxsize=1)
