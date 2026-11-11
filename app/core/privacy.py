@@ -1,17 +1,27 @@
 """Redact obvious contact details and credentials before model calls or storage."""
 import re
+import unicodedata
 
 _DIGITS = str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
 _PHONE = re.compile(r'(?<!\w)(?:(?:\+98|0098)[\s().-]*|0[\s().-]*)?9(?:[\s().-]*\d){9}(?!\d)|(?<!\d)0(?:[\s().-]*\d){10}(?!\d)')
-_CODE = re.compile(r'((?:کد(?:\s*(?:تأیید|تایید|ورود|یک.?بار.?مصرف))?|otp|verification\s*code)\s*(?:من\s*)?[:=：-]?\s*(?:(?:is|است)\s*)?)(\d(?:[ -]*\d){3,7})(?!\d)', re.I)
+_CODE = re.compile(
+    r'((?:کد(?:[\s\u200c]*(?:تأیید|تایید|ورود|یک[\s\u200c-]*بار[\s\u200c-]*مصرف))?'
+    r'|\botp\b|\bverification[\s-]+code\b|\bone[\s\u2010-\u2015-]*time[\s-]+pass[\s-]*code\b)'
+    r'\s*(?:(?:من|my)\s*)?[:=：-]?\s*(?:(?:is|است)\s*)?)'
+    r'(\d(?:[ -]*\d){3,7})(?![ -]*\d)', re.I,
+)
 _PASSWORD = re.compile(
-    r'((?:رمز(?:\s*عبور)?|password|api[_ -]?key)\s*(?:من\s*)?'
+    r'((?<!\w)(?:رمز(?:[\s\u200c]*عبور)?|گذر[\s\u200c]*واژه|\bpassword\b|api[_ -]?key)\s*(?:من\s*)?'
     r'(?:[:=：-]\s*|(?:is|است)\s+|(?=[A-Za-z0-9_!@#$%^&*.-]*[0-9])))'
     r'(?!\[پوشانده شد\])([^\s،,؛;]+)',
     re.I,
 )
 _EMAIL = re.compile(r'\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b', re.I)
 _KEY = re.compile(r'\bsk-[A-Za-z0-9_-]{8,}\b')
+
+
+def has_visible_text(text: str) -> bool:
+    return any(unicodedata.category(char)[0] in 'LNPS' for char in text)
 
 
 def redact(text: str) -> str:

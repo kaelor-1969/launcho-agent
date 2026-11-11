@@ -103,15 +103,27 @@ class CoreTests(unittest.TestCase):
 
     def test_redaction_before_model_and_history(self):
         captured=[]
-        def model(*args):captured.append(args);return 'کد تأیید: ۱۲۳۴۵۶',{}
+        def model(*args):captured.append(args);return 'one-time passcode: ۱۲۳۴۵۶',{}
         self.core.model=model
-        self.core.chat(self.sid,self.token,'شماره من ۰۹۱۲۳۴۵۶۷۸۹ و کد تأیید: ۱۲۳۴۵۶')
+        self.core.chat(self.sid,self.token,'شماره من ۰۹۱۲۳۴۵۶۷۸۹ و گذرواژه: SampleSecret و one-time passcode: ۷۸۹۰۱۲')
         self.core.chat(self.sid,self.token,'ادامه')
         stored=self.core.get_session(self.sid,self.token)
         representation=json.dumps([captured,stored],ensure_ascii=False)
-        for secret in ['۰۹۱۲۳۴۵۶۷۸۹','۱۲۳۴۵۶','09123456789','123456']:
+        for secret in ['۰۹۱۲۳۴۵۶۷۸۹','۱۲۳۴۵۶','09123456789','123456','SampleSecret','۷۸۹۰۱۲']:
             self.assertNotIn(secret,representation)
         self.assertTrue(captured[1][1])
+
+    def test_existing_history_is_scrubbed_on_access(self):
+        old = [{'role':'user','content':'گذرواژه: LegacySecret'},
+               {'role':'assistant','content':'one-time passcode: 654321'}]
+        with self.core.store.transaction() as db:
+            db.execute('UPDATE sessions SET history=? WHERE id=?', (json.dumps(old), self.sid))
+        history = self.core.get_session(self.sid,self.token)['history']
+        self.assertEqual([turn['content'] for turn in history],
+                         ['گذرواژه: [پوشانده شد]', 'one-time passcode: [پوشانده شد]'])
+        with self.core.store.transaction() as db:
+            row = db.execute('SELECT history FROM sessions WHERE id=?', (self.sid,)).fetchone()
+        self.assertEqual(json.loads(row['history']), history)
 
     def test_safe_model_update_is_saved(self):
         self.core.model=lambda *args:('انتخاب دریافت شد',CHOICES)
@@ -287,6 +299,18 @@ class PrivacyAndModelTests(unittest.TestCase):
         self.assertIn('عکس، رنگ و سایزها', reply)
         self.assertNotIn('https://', reply)
 
+    def test_widget_starters_work_without_model(self):
+        import re
+
+        html = (Path(__file__).resolve().parents[1] / 'frontend' / 'widget.html').read_text(encoding='utf-8')
+        starters = re.findall(r'data-question="([^"]+)"', html)
+        self.assertEqual(len(starters), 3)
+        with patch.object(ai_service.client.chat.completions, 'create') as call:
+            replies = [ai_service.generate_turn(question)[0] for question in starters]
+        call.assert_not_called()
+        self.assertIn('https://launcho.ir/features', replies[1])
+        self.assertIn('https://launcho.ir/pricing', replies[2])
+
     def test_store_starter_guides_before_referring_to_pricing(self):
         with patch.object(ai_service.client.chat.completions, 'create') as call:
             reply, update = ai_service.generate_turn('برای ساخت فروشگاه با لانچو از کجا شروع کنم؟')
@@ -397,6 +421,27 @@ class PrivacyAndModelTests(unittest.TestCase):
         self.assertIn('https://launcho.ir/pricing', reply)
         self.assertEqual(update, {})
 
+    def test_model_rate_limit_uses_verified_shoe_store_guidance(self):
+        from openai import RateLimitError
+
+        upstream = httpx.Response(429, request=httpx.Request('POST', 'https://example.invalid/v1/chat'))
+        failure = RateLimitError('gateway throttled', response=upstream, body=None)
+        with patch.object(ai_service.client.chat.completions, 'create', side_effect=failure):
+            reply, update = ai_service.generate_turn('برای فروشگاه کیف و کفش از کجا شروع کنم؟')
+            self.assertIn('سایز و رنگ', reply)
+            self.assertIn('https://launcho.ir/#templates', reply)
+            self.assertEqual(update, {})
+            with self.assertRaises(RateLimitError):
+                ai_service.generate_turn('آیا امکان مهاجرت اطلاعات از سرویس فعلی را دارم؟')
+
+    def test_bold_official_url_survives_and_impostor_is_removed(self):
+        text = '**https://launcho.ir/start** و **https://launcho.ir.evil.example/start**'
+        response = NS(choices=[NS(message=NS(content=text, tool_calls=[]))])
+        with patch.object(ai_service.client.chat.completions, 'create', return_value=response):
+            reply, _ = ai_service.generate_turn('لینک ثبت‌نام را بده')
+        self.assertIn('**https://launcho.ir/start**', reply)
+        self.assertNotIn('evil.example', reply)
+
     def test_guidance_replaces_unsupported_price_and_sensitive_request(self):
         for text, link in (
             ('اشتراک ۲۴۰٬۰۰۰ تومان است.', 'https://launcho.ir/pricing'),
@@ -412,6 +457,30 @@ class PrivacyAndModelTests(unittest.TestCase):
 
 
 class EndpointTests(unittest.IsolatedAsyncioTestCase):
+    async def test_session_chat_reports_model_rate_limit(self):
+        from openai import RateLimitError
+
+        session = self.core.create_session()
+        upstream = httpx.Response(429, request=httpx.Request('POST', 'https://example.invalid/v1/chat'))
+        failure = RateLimitError('private gateway details', response=upstream, body=None)
+        with patch.object(self.core, 'model', side_effect=failure):
+            response = await self.client.post(
+                '/api/chat', json={'message':'سلام','sessionId':session['sessionId']},
+                headers={'X-Session-Token':session['sessionToken']},
+            )
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response.json()['detail']['code'], 'model_rate_limited')
+        self.assertNotIn('private gateway details', response.text)
+
+    async def test_invisible_chat_is_rejected_and_persian_joiner_survives(self):
+        with patch('app.api.routes.get_ai_response', return_value='پاسخ') as model:
+            blank = await self.client.post('/api/chat', json={'message':'\u200b\u200c\u202e\ufe0f'})
+            self.assertEqual(blank.status_code, 422)
+            model.assert_not_called()
+            valid = await self.client.post('/api/chat', json={'message':'می‌روم'})
+            self.assertEqual(valid.status_code, 200)
+            model.assert_called_once_with('می‌روم')
+
     async def test_invalid_chat_body_does_not_echo_rejected_input(self):
         marker = 'QA_FAKE_REJECTED_INPUT'
         response = await self.client.post('/api/chat', json={'message': {'otp': marker}})

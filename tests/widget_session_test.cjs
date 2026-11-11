@@ -23,7 +23,8 @@ class Element {
   blur() {}
 }
 
-async function widget({sessionFailure = false, canConfirm = true, embedded = false} = {}) {
+async function widget({sessionFailure = false, canConfirm = true, embedded = false,
+  reply = 'ready <script>bad()</script>'} = {}) {
   const nodes = new Map();
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
@@ -72,7 +73,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
             return {ok: false, status: 410, json: async () => ({detail: {code}})};
           }
           revision++;
-          data = {reply: 'ready <script>bad()</script>', sessionId: sid, revision,
+          data = {reply, sessionId: sid, revision,
             nextAction: 'review'};
         } else if (url.endsWith('/review')) {
           if (failReview) throw new TypeError('review response lost after server invalidated previous review');
@@ -171,6 +172,15 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
     if (auditOnly) return;
   }
   const w = await widget();
+  const linked = await widget({reply: '**https://launcho.ir/start**، https://launcho.ir/pricing. https://launcho.ir.evil.example/start'});
+  await linked.send('\u200b\u200c\u202e\ufe0f');
+  assert.equal(linked.calls.length, 1, 'invisible input must never reach chat');
+  await linked.send('می‌روم');
+  assert.equal(linked.calls.at(-1).body.message, 'می‌روم');
+  const bubble = linked.get('messages').children.at(-1).children[1];
+  const links = bubble.children.flatMap(node => [node, ...(node.children || [])]).filter(node => node.href);
+  assert.deepEqual(links.map(node => node.href), ['https://launcho.ir/start', 'https://launcho.ir/pricing']);
+  assert.ok(links.every(node => node.target === '_blank' && node.rel === 'noopener noreferrer'));
   assert.deepEqual(w.calls.map(c => c.url), ['/api/sessions']);
   await w.send();
   assert.equal(w.calls.length, 2, 'model response must never confirm or create a review');

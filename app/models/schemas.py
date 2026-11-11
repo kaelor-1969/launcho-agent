@@ -1,7 +1,7 @@
 from typing import Literal
 import re
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from app.core.privacy import reject_sensitive
+from app.core.privacy import has_visible_text, reject_sensitive
 
 
 class StrictModel(BaseModel):
@@ -59,7 +59,7 @@ class ChatRequest(StrictModel):
     @field_validator('message')
     @classmethod
     def not_blank(cls, value):
-        if not value.strip():
+        if not has_visible_text(value):
             raise ValueError('پیام خالی است.')
         return value.strip()
 

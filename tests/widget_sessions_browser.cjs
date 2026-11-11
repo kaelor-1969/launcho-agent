@@ -79,7 +79,15 @@ const server = http.createServer(async (req, res) => {
     });
     const command = (method, params = {}) => new Promise((resolve, reject) => {
       const key = ++id;
-      pending.set(key, data => data.error ? reject(new Error(data.error.message)) : resolve(data.result));
+      const timer = setTimeout(() => {
+        pending.delete(key);
+        reject(new Error(`Browser did not respond to ${method}`));
+      }, 10000);
+      pending.set(key, data => {
+        clearTimeout(timer);
+        if (data.error) reject(new Error(data.error.message));
+        else resolve(data.result);
+      });
       socket.send(JSON.stringify({id: key, method, params}));
     });
     const evaluate = async expression => {
@@ -103,7 +111,11 @@ const server = http.createServer(async (req, res) => {
       await evaluate(`window.frame = document.querySelector('#launcho-widget').shadowRoot.querySelector('iframe'); window.doc = frame.contentDocument`);
       await wait(`frame.style.visibility === 'visible' && doc.querySelector('.primary-starter')?.disabled === false`);
       assert.equal(calls.length, 1);
-      assert.ok(await evaluate(`frame.getAttribute('src').startsWith('/widget/widget.html#')`));
+      assert.ok(await evaluate(`(() => {
+        const url = new URL(frame.src);
+        return url.origin === location.origin && url.pathname === '/widget/widget.html' &&
+          new URLSearchParams(url.hash.slice(1)).get('parentOrigin') === location.origin;
+      })()`));
       await evaluate(`doc.querySelector('#message').value = 'confirm now'; doc.querySelector('#form').requestSubmit()`);
       await wait(`doc.querySelector('#review-button').hidden === false`);
       assert.equal(calls.length, 2);
@@ -134,7 +146,7 @@ const server = http.createServer(async (req, res) => {
         assert.equal(JSON.stringify(call.body).includes(token), false);
       }
       assert.equal(await evaluate(`doc.body.textContent.includes('browser-session-token') || doc.body.textContent.includes('browser-confirmation-token')`), false);
-      console.log(`PASS: Chrome ${width}px session, chat, review, manual confirmation retry, relative iframe, memory-only credentials`);
+      console.log(`PASS: Chromium ${width}px session, chat, review, manual confirmation retry, iframe origin, memory-only credentials`);
 
       // A separate page lifecycle checks failure recovery and invalidated reviews.
       failSession = true;
