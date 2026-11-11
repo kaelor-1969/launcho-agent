@@ -59,12 +59,17 @@ async def run_workflow_checks(browser, base):
             await entry.select_option('سایر')
             await chat.locator('[data-action=next]').click()
             await expect(chat.locator('#workflow h2')).to_have_text('دوره اشتراک را مشخص کن')
+            await chat.locator('[data-action=costHelp]').click()
+            await expect(chat.locator('#workflow')).to_contain_text('دورهٔ سه‌ماهه')
+            await expect(entry).to_have_value('')
             await entry.select_option('6')
             await entry.press('Escape')
             await launcher.click()
             await expect(entry).to_have_value('6')
             await chat.locator('[data-action=next]').click()
             await expect(chat.locator('#workflow h2')).to_have_text('قالب فروشگاهت را انتخاب کن')
+            await chat.locator('[data-action="style:catalog"]').click()
+            await expect(chat.locator('#workflow')).to_contain_text('فیلتر رنگ و سایز')
             await page.screenshot(path=str(OUTPUT/f'flow-{width}-template.png'))
             assert not await page.evaluate("LaunchoWidget.selectTemplate({id:'x',name:'x',image:'javascript:alert(1)'})")
             await chat.locator('[data-action=browseTemplates]').click()
@@ -220,7 +225,7 @@ async def run_workflow_checks(browser, base):
             const {validateView} = await import(base+'/widget/workflow-api.js');
             return Promise.all(['3','6','12'].map(async plan => {
                 const api=createDemoWorkflow();
-                const send=async (action,data={})=>validateView(await api.request({action,data}));
+                const send=async (action,data={})=>validateView(await api.request({action,data}), {demo:true});
                 await send('start');
                 for(const payload of [{action:'createDraft'}, {action:'checkDomain',data:{value:'example.ir'}},
                     {action:'next',data:{field:'mobile',value:'legacy'}}]) {
@@ -228,7 +233,7 @@ async def run_workflow_checks(browser, base):
                     try {await api.request(payload);} catch {rejected=true;}
                     if(!rejected) throw new Error('Out-of-sequence action accepted');
                 }
-                await send('next',{value:'name'}); await send('next',{value:'category'});
+                await send('next',{value:'name'}); await send('next',{value:'سایر'});
                 let rejected=false;
                 try {await send('next',{value:'invalid-plan'});} catch {rejected=true;}
                 if(!rejected) throw new Error('Invalid plan accepted');

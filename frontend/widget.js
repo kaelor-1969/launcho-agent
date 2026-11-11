@@ -1,5 +1,5 @@
 import { createSessionApi, relativeUrl } from './api.js?v=4';
-import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js';
+import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js?v=2';
 
 const $ = (id) => document.getElementById(id);
 const input = $('message');

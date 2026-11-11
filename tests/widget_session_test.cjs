@@ -96,7 +96,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
     const module = new vm.SourceTextModule(readFileSync(resolve(__dirname, '../frontend', name), 'utf8'), {context});
     modules.set(name, module);
     await module.link(specifier => {
-      if (specifier === './workflow.js') {
+      if (specifier.split('?')[0] === './workflow.js') {
         return new vm.SyntheticModule(['configureWorkflow','startWorkflow','workflowActive','selectWorkflowTemplate'], function () {
           this.setExport('configureWorkflow', () => {});
           this.setExport('startWorkflow', () => {});

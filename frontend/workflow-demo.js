@@ -7,6 +7,8 @@ export function createDemoWorkflow() {
   const fields = ['businessName','category','subscription','template'];
   const labels = {businessName:'نام کسب‌وکار',category:'دسته‌بندی',subscription:'دوره اشتراک',template:'قالب'};
   const plans = [{id:'3',label:'سه‌ماهه'},{id:'6',label:'شش‌ماهه'},{id:'12',label:'سالانه'}];
+  const categories = ['کیف و کفش','پوشاک','زیبایی','سایر'].map(label => ({id:label,label}));
+  let showCostHelp = false, style;
   const action = (id,label) => ({id,label});
   const envelope = v => ({sessionId, revision:++revision, ...v});
   function review() {
@@ -19,13 +21,22 @@ export function createDemoWorkflow() {
   }
   function field() {
     if (step==='template') return envelope({kind:'template',title:'قالب فروشگاهت را انتخاب کن',
+      description: style === 'catalog'
+        ? 'برای محصولات زیاد، قالبی با فیلتر رنگ و سایز انتخاب کن.'
+        : style === 'visual'
+          ? 'برای تأکید روی ظاهر محصول، قالبی با تصاویر درشت انتخاب کن.'
+          : 'برای پیشنهاد قالب، اولویتت را انتخاب کن.',
       ...(state.template ? {template:state.template} : {}),
-      actions:[action('browseTemplates',state.template ? 'تغییر قالب' : 'مشاهده و انتخاب قالب')]});
+      actions:[action('style:visual','نمایش برجستهٔ محصول'),action('style:catalog','جست‌وجو و فیلتر محصول'),
+        action('browseTemplates',state.template ? 'تغییر قالب' : 'مشاهده و انتخاب قالب')]});
     return envelope({kind:'field', field:step, label:labels[step], value:state[step] || '',
-      title:step==='businessName' ? 'حتماً، قدم‌به‌قدم پیش می‌ریم. اسم کسب‌وکارت چیه؟' : `${labels[step]} را مشخص کن`,
-      ...(step==='category' ? {options:[{id:'پوشاک',label:'پوشاک'},{id:'زیبایی',label:'زیبایی'},{id:'سایر',label:'سایر'}]} : {}),
+      title:step==='businessName' ? 'اسم کسب‌وکارت چیه؟' : `${labels[step]} را مشخص کن`,
+      ...(step==='category' ? {options:categories} : {}),
       ...(step==='subscription' ? {options:plans} : {}),
-      actions:[action('next','ادامه')]});
+      ...(step==='subscription' && showCostHelp ? {
+        description:'برای تعهد کوتاه‌تر، دورهٔ سه‌ماهه را بررسی کن. شرایط اقساط و جشنوارهٔ قابل استفاده در فرم رسمی مشخص می‌شود.',
+      } : {}),
+      actions:[action('next','ادامه'), ...(step==='subscription' && !showCostHelp ? [action('costHelp','هزینه برایم مهم است')] : [])]});
   }
   function advance() {
     if (editing) { editing=false; return review(); }
@@ -36,10 +47,23 @@ export function createDemoWorkflow() {
   return {async request({action:a,data={}}) {
     await new Promise(resolve=>setTimeout(resolve,250));
     if (a==='start' && step==='businessName') return field();
+    if (a==='costHelp' && step==='subscription') {
+      showCostHelp = true;
+      if (plans.some(plan => plan.id === data.value)) state.subscription = data.value;
+      return field();
+    }
+    if (step==='template' && (a==='style:visual' || a==='style:catalog')) {
+      style = a.slice(6);
+      return field();
+    }
     if (a==='selectTemplate' && step==='template') {state.template=data.template; return advance();}
     if (a==='next' && fields.includes(step) && step!=='template') {
       if (data.field && data.field!==step) throw new Error('این فیلد در مرحلهٔ فعلی پذیرفته نیست.');
+      if (step==='category' && !categories.some(category=>category.id===data.value)) throw new Error('دسته‌بندی معتبر نیست.');
       if (step==='subscription' && !plans.some(p=>p.id===data.value)) throw new Error('دوره اشتراک معتبر نیست.');
+      if (step==='businessName' && (typeof data.value !== 'string' || !/\p{L}/u.test(data.value))) {
+        throw new Error('نام کسب‌وکار را وارد کن.');
+      }
       state[step]=data.value; return advance();
     }
     if (a==='edit' && step==='review') return envelope({kind:'review',title:'کدام اطلاعات را ویرایش می‌کنی؟',actions:fields.map(f=>action(`edit:${f}`,labels[f]))});
@@ -48,7 +72,7 @@ export function createDemoWorkflow() {
       step='draft';
       return envelope({kind:'draft',title:'پیش‌نویس نمایشی آماده شد.',draftId:'demo-only',confirmed:true,
         draftUrl:new URL('./draft-preview.html', import.meta.url).href,
-        description:'این لینک یک نمونهٔ ثابت برای بررسی رابط است؛ فروشگاه واقعی ساخته نشده و اطلاعات واردشده در نمونه نمایش داده نمی‌شود.',actions:[]});
+        description:'نمونه را ببین و برای ثبت‌نام واقعی، فرم رسمی لانچو را باز کن.',actions:[]});
     }
     throw new Error('این اقدام در نمونه در دسترس نیست.');
   }};
