@@ -65,7 +65,7 @@ async def check(context, base, viewport, case, body):
     try:
         response = await page.goto(base.rstrip('/') + '/widget/demo.html')
         assert response.status == 200
-        await page.locator('#launcho-widget button').click()
+        await page.locator('#launcho-widget .launcher').click()
         f = page.frame_locator('#launcho-widget iframe')
         entry, waiting = f.locator('#message'), f.locator('#waiting')
         send, retry, error = f.locator('#send'), f.locator('#retry'), f.locator('#error')

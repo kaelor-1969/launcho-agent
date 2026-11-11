@@ -49,6 +49,8 @@ python tests/widget_preview_server.py --port 8000
 
 برای نصب روی سایت اصلی، اسکریپت را از دامنهٔ جداگانهٔ ویجت (مثل `https://ag.launchox.ir`) بارگذاری کنید. iframe فقط بعد از بازکردن ویجت ساخته می‌شود. iframe و `/api/chat` روی مبدأ loader قرار دارند و `data-api-url` هم به همان مبدأ محدود است. در نصب واقعی از HTTPS استفاده کنید. `data-demo="true"` فقط برای نمونه است.
 
+برای تعیین اندازهٔ اولیهٔ پنجره، `data-width="480"` و `data-height="600"` را به تگ نصب اضافه کنید. مقادیر بر حسب پیکسل‌اند و پنجره با فضای قابل نمایش تطبیق پیدا می‌کند. در دسکتاپ، کاربر با دکمهٔ کنار دکمهٔ گفتگو بین اندازهٔ اولیه و حالت بزرگ جابه‌جا می‌شود.
+
 ```javascript
 LaunchoWidget.configure({theme:'light', position:'right', offset:24, mobileOffset:16});
 LaunchoWidget.setTheme('dark'); // light، dark، auto

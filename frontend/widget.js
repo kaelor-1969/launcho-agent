@@ -133,6 +133,10 @@ function appendReplyText(parent, text) {
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.textContent = address;
+    if (address === 'https://launcho.ir/#templates') {
+      link.textContent = 'مشاهدهٔ قالب‌های لانچو';
+      link.addEventListener('click', () => notify('templates-link-opened'));
+    }
     parent.append(link);
     offset = match.index + address.length;
   }

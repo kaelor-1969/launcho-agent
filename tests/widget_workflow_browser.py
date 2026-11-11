@@ -44,7 +44,7 @@ async def run_workflow_checks(browser, base):
             context.on('request', lambda req: external.append(req.url) if not req.url.startswith(base) else None)
             await page.route('**/api/**', lambda route: (api_calls.append(route.request.url), route.abort())[1])
             await page.goto(base + '/widget/demo.html')
-            launcher = page.locator('#launcho-widget button')
+            launcher = page.locator('#launcho-widget .launcher')
             await launcher.click()
             chat = page.frame_locator('#launcho-widget iframe')
             await expect(chat.locator('.demo-badge')).to_contain_text('حالت نمایشی')
@@ -179,7 +179,7 @@ async def run_workflow_checks(browser, base):
             const script=document.createElement('script'); script.src=url+'/widget/loader.js';
             script.dataset.workflowUrl=url+'/test-workflow';document.body.append(script);
         }""",base)
-        await page.locator('#launcho-widget button').click()
+        await page.locator('#launcho-widget .launcher').click()
         chat = page.frame_locator('#launcho-widget iframe')
         await chat.locator('.primary-starter').click()
         for _ in range(2):

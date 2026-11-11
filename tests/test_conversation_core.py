@@ -330,7 +330,7 @@ class PrivacyAndModelTests(unittest.TestCase):
         response = NS(choices=[NS(message=NS(content='', tool_calls=[]))])
         with patch.object(ai_service.client.chat.completions, 'create', return_value=response):
             reply, _ = ai_service.generate_turn('لباس زنانه می‌فروشم.', history)
-        self.assertIn('عکس، رنگ و سایزها', reply)
+        self.assertIn('اسم برندتان', reply)
         self.assertNotIn('https://', reply)
 
     def test_widget_starters_work_without_model(self):
@@ -498,10 +498,11 @@ class PrivacyAndModelTests(unittest.TestCase):
         history = []
         with patch.object(ai_service.client.chat.completions, 'create') as model:
             for message, expected in (
-                ('می‌خواهم فروشگاه بسازم', 'چه محصولی'),
-                ('کیف و کفش', 'جست‌وجو و فیلتر'),
+                ('من از لانچو خوشم اومده مراحل ثبت نام رو برام انجام بده', 'چه محصولی'),
+                ('کیف و کفش', 'اسم برندتان'),
                 ('هزینه چقدر است؟', 'https://launcho.ir/pricing'),
-                ('فیلتر', 'برای ادامه در فرم رسمی آماده‌اید؟'),
+                ('Kif Sara', 'kifsara.ir'),
+                ('بله', 'https://launcho.ir/#templates'),
                 ('آماده‌ام', 'https://launcho.ir/start'),
             ):
                 reply, update = ai_service.generate_turn(message, history)
