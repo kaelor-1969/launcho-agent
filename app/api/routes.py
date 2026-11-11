@@ -1,6 +1,6 @@
 import logging
 from fastapi import APIRouter, Header, HTTPException, Response
-from openai import APIError
+from openai import APIError, RateLimitError
 from pydantic import ValidationError
 
 from app.core.privacy import redact
@@ -21,6 +21,10 @@ def run(action):
         raise HTTPException(exc.status,detail={'code':exc.code,'message':exc.message},headers={'Cache-Control':'no-store'}) from None
     except ValidationError:
         raise HTTPException(422,detail={'code':'invalid_preferences','message':'اطلاعات انتخابی معتبر نیست.'},headers={'Cache-Control':'no-store'}) from None
+    except RateLimitError:
+        logger.warning('chat_gateway_failure type=RateLimitError')
+        raise HTTPException(429, detail={'code':'model_rate_limited','message':'سرویس پاسخ‌گویی به محدودیت مصرف رسیده است.'},
+                            headers={'Cache-Control':'no-store'}) from None
     except APIError as exc:
         logger.warning('chat_gateway_failure type=%s',type(exc).__name__)
         raise HTTPException(503,detail={'code':'model_unavailable','message':'سرویس گفتگو در دسترس نیست.'},headers={'Cache-Control':'no-store'}) from None

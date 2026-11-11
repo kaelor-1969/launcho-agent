@@ -1,4 +1,4 @@
-import { createSessionApi, relativeUrl } from './api.js?v=3';
+import { createSessionApi, relativeUrl } from './api.js?v=4';
 import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js';
 
 const $ = (id) => document.getElementById(id);

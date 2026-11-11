@@ -432,6 +432,21 @@ class PrivacyAndModelTests(unittest.TestCase):
 
 
 class EndpointTests(unittest.IsolatedAsyncioTestCase):
+    async def test_session_chat_reports_model_rate_limit(self):
+        from openai import RateLimitError
+
+        session = self.core.create_session()
+        upstream = httpx.Response(429, request=httpx.Request('POST', 'https://example.invalid/v1/chat'))
+        failure = RateLimitError('private gateway details', response=upstream, body=None)
+        with patch.object(self.core, 'model', side_effect=failure):
+            response = await self.client.post(
+                '/api/chat', json={'message':'سلام','sessionId':session['sessionId']},
+                headers={'X-Session-Token':session['sessionToken']},
+            )
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response.json()['detail']['code'], 'model_rate_limited')
+        self.assertNotIn('private gateway details', response.text)
+
     async def test_invisible_chat_is_rejected_and_persian_joiner_survives(self):
         with patch('app.api.routes.get_ai_response', return_value='پاسخ') as model:
             blank = await self.client.post('/api/chat', json={'message':'\u200b\u200c\u202e\ufe0f'})
