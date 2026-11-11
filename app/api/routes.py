@@ -37,7 +37,7 @@ def no_store(response):
 def chat(request: ChatRequest, response: Response, x_session_token: str | None = Header(default=None)):
     no_store(response)
     if request.sessionId:
-        return run(lambda:get_core().chat(request.sessionId,x_session_token,request.message))
+        return run(lambda:get_core().chat(request.sessionId,x_session_token,request.message,request.requestId))
     # Legacy widget remains compatible, but has no memory or draft-writing ability.
     return run(lambda:ChatResponse(reply=redact(get_ai_response(redact(request.message)))))
 

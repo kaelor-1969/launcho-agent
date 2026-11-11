@@ -120,10 +120,18 @@ class ConversationCore:
                 merged[key] = value
         return merged
 
-    def chat(self, sid, token, message):
+    def chat(self, sid, token, message, request_id=None):
         safe = redact(message)
         with self.store.transaction() as db:
             row = self.store.authenticate(db,sid,token)
+            history = json.loads(row['history'])
+            if request_id:
+                for previous, answer in zip(history[::2], history[1::2]):
+                    if previous.get('requestId') == request_id:
+                        if previous['content'] != safe:
+                            raise CoreError(409, 'request_conflict', 'شناسهٔ پیام قبلاً استفاده شده است.')
+                        prefs = json.loads(row['prefs'])
+                        return self.chat_result(sid, row['revision'], prefs, answer['content'])
             self.ensure_editable(db,row)
             lease = time.time()+150
             db.execute('UPDATE sessions SET chat_until=? WHERE id=?',(lease,sid))
@@ -141,7 +149,7 @@ class ConversationCore:
                     options = {**options, 'serviceInfo': service_info()}
                 except GatewayUnavailable:
                     pass
-            reply, update = self.model(safe, json.loads(row['history']), prefs, options, pricing)
+            reply, update = self.model(safe, history, prefs, options, pricing)
             reply = redact(reply)
             if update:
                 try:
@@ -151,7 +159,10 @@ class ConversationCore:
                     reply = 'انتخاب‌ها معتبر نبودند. لطفاً از گزینه‌های مجاز استفاده کنید؛ اطلاعات قبلی حفظ شد.'
             if safe != message:
                 reply = 'اطلاعات تماس یا کد پوشانده شد؛ آن‌ها را فقط در فرم رسمی وارد کنید.\n' + reply
-            history = (json.loads(row['history']) + [{'role':'user','content':safe},
+            user_turn = {'role':'user','content':safe}
+            if request_id:
+                user_turn['requestId'] = request_id
+            history = (history + [user_turn,
                        {'role':'assistant','content':reply}])[-12:]
             with self.store.transaction() as db:
                 current = self.store.authenticate(db,sid,token)
@@ -162,11 +173,14 @@ class ConversationCore:
                            (json.dumps(prefs,ensure_ascii=False),json.dumps(history,ensure_ascii=False),int(changed),
                             None if changed else current['review_id'],sid))
             result = self.get_session(sid,token)
-            return {'reply':reply,'sessionId':sid,'revision':result['revision'],'preferences':prefs,
-                    'nextAction':'review' if self.gateway.can_create and self.complete(prefs) else 'collect_preferences'}
+            return self.chat_result(sid, result['revision'], prefs, reply)
         finally:
             with self.store.transaction() as db:
                 db.execute('UPDATE sessions SET chat_until=0 WHERE id=? AND chat_until=?',(sid,lease))
+
+    def chat_result(self, sid, revision, prefs, reply):
+        return {'reply':reply,'sessionId':sid,'revision':revision,'preferences':prefs,
+                'nextAction':'review' if self.gateway.can_create and self.complete(prefs) else 'collect_preferences'}
 
     @staticmethod
     def complete(prefs):

@@ -54,6 +54,7 @@ class PreferenceUpdate(StrictModel):
 class ChatRequest(StrictModel):
     message: str = Field(min_length=1, max_length=5000)
     sessionId: str | None = Field(default=None, min_length=16, max_length=100)
+    requestId: str | None = Field(default=None, pattern=r'^[a-f0-9-]{36}$')
 
     @field_validator('message')
     @classmethod

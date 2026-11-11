@@ -1,4 +1,4 @@
-import { createSessionApi, relativeUrl } from './api.js';
+import { createSessionApi, relativeUrl } from './api.js?v=2';
 import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js';
 
 const $ = (id) => document.getElementById(id);
@@ -12,7 +12,7 @@ try {
   if (['http:', 'https:'].includes(url.protocol) && url.origin === params.get('parentOrigin')) parentOrigin = url.origin;
 } catch { /* Standalone preview does not send messages to a parent. */ }
 let apiUrl = '/api/chat';
-const sessionApi = createSessionApi();
+const sessionApi = createSessionApi(parentOrigin || 'standalone');
 let sessionReady = false;
 let sessionStarting = false;
 let review = null;
@@ -91,7 +91,17 @@ async function initializeSession() {
   sessionStarting = true;
   updateInput();
   try {
-    await sessionApi.start();
+    const history = await sessionApi.start();
+    for (const turn of history) {
+      if (['user', 'assistant'].includes(turn?.role) && typeof turn.content === 'string') {
+        appendMessage(turn.role, turn.content);
+      }
+    }
+    if (history.length) {
+      $('welcome').classList.add('compact');
+      $('welcome-description').hidden = true;
+      scrollToBottom(true);
+    }
     sessionReady = true;
     showError('');
   } catch {
@@ -156,6 +166,7 @@ async function submit(message, retry = false) {
   }
   // A failed turn must be resolved before sending another, preserving order.
   if (failed && !retry) { showError('ابتدا پیام قبلی را با «تلاش مجدد» ارسال کن.', true); return; }
+  const requestId = retry ? failed.requestId : globalThis.crypto?.randomUUID?.();
   pending = true;
   failed = null;
   showError('');
@@ -175,11 +186,11 @@ async function submit(message, retry = false) {
   try {
     // Give the explicit demo a visible pending state, without calling an API.
     if (demoMode) await new Promise(resolve => setTimeout(resolve, 700));
-    const result = demoMode ? {reply: 'برای بررسی مراحل در این نمونه، «ساخت فروشگاه» را انتخاب کن.'} : await sessionApi.sendMessage(apiUrl, message);
+    const result = demoMode ? {reply: 'برای بررسی مراحل در این نمونه، «ساخت فروشگاه» را انتخاب کن.'} : await sessionApi.sendMessage(apiUrl, message, requestId);
     appendMessage('assistant', result.reply);
     $('review-button').hidden = result.nextAction !== 'review';
   } catch (error) {
-    failed = message;
+    failed = {message, requestId};
     showError(error.message, true);
   } finally {
     pending = false;
@@ -204,7 +215,7 @@ input.addEventListener('keydown', (event) => {
 });
 $('retry').addEventListener('click', () => {
   if (!sessionReady && !demoMode) initializeSession();
-  else if (failed) submit(failed, true);
+  else if (failed) submit(failed.message, true);
 });
 
 function showDraft(draft) {

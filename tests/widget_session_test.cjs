@@ -1,5 +1,5 @@
 // Run: node --experimental-vm-modules tests/widget_session_test.cjs
-// Isolated widget runtime: no model, network, storage, or draft service is used.
+// Isolated widget runtime: no model, network, or draft service is used.
 const {strict: assert} = require('node:assert');
 const {readFileSync} = require('node:fs');
 const {resolve} = require('node:path');
@@ -23,7 +23,7 @@ class Element {
   blur() {}
 }
 
-async function widget({sessionFailure = false, canConfirm = true, embedded = false} = {}) {
+async function widget({sessionFailure = false, canConfirm = true, embedded = false, storage = new Map(), history = []} = {}) {
   const nodes = new Map();
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
@@ -32,6 +32,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   const calls = [];
   let failSession = sessionFailure, failConfirm = false, rejectConfirm = false, failReview = false;
   let releaseConfirm;
+  let chatError;
   let revision = 0;
   const sid = 'session-id-for-testing', token = 'secret-session-token';
   const review = {sessionId: sid, revision: 1, reviewId: 'review-id-for-testing',
@@ -45,14 +46,20 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   window.parent = embedded ? {postMessage() {}} : window;
   const context = vm.createContext({
     URL, URLSearchParams, AbortController, setTimeout, clearTimeout, location, window,
+    crypto: require('node:crypto').webcrypto,
+    sessionStorage: {
+      getItem: key => storage.get(key) ?? null,
+      setItem: (key, value) => storage.set(key, value),
+      removeItem: key => storage.delete(key),
+    },
     matchMedia: () => ({matches: false, addEventListener() {}}),
     ResizeObserver: class {observe() {}},
     document: {getElementById: get, documentElement: {dataset: {}}, addEventListener() {},
       querySelectorAll: () => [], querySelector: () => new Element(),
-      createElement: () => new Element(), createElementNS: () => new Element()},
+      createTextNode: textContent => ({textContent}), createElement: () => new Element(), createElementNS: () => new Element()},
     fetch: async (url, options) => {
       assert.ok(url.startsWith('/') && !url.startsWith('//'), 'fetch must use a relative URL');
-      const body = JSON.parse(options.body);
+      const body = options.body === undefined ? undefined : JSON.parse(options.body);
       calls.push({url, body, headers: options.headers});
       let data;
       if (url === '/api/sessions') {
@@ -60,12 +67,20 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
         data = {sessionId: sid, sessionToken: token, revision: 0};
       } else {
         assert.equal(options.headers['X-Session-Token'], token);
-        assert.ok(!JSON.stringify(body).includes(token));
+        assert.ok(!(JSON.stringify(body) || '').includes(token));
         if (url === '/api/chat') {
           assert.equal(body.sessionId, sid);
+          if (chatError) {
+            const code = chatError;
+            chatError = null;
+            if (code === 'offline') throw new TypeError('response lost');
+            return {ok: false, status: 410, json: async () => ({detail: {code}})};
+          }
           revision++;
           data = {reply: 'ready <script>bad()</script>', sessionId: sid, revision,
             nextAction: 'review'};
+        } else if (options.method === 'GET' && url === '/api/sessions/' + sid) {
+          data = {sessionId: sid, revision, history};
         } else if (url.endsWith('/review')) {
           if (failReview) throw new TypeError('review response lost after server invalidated previous review');
           data = {...review, revision};
@@ -95,7 +110,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
           this.setExport('selectWorkflowTemplate', () => {});
         }, {context});
       }
-      return load(specifier.replace('./', ''));
+      return load(specifier.replace('./', '').split('?')[0]);
     });
     return module;
   }
@@ -105,6 +120,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   await settle();
   return {get, calls, settle, window, windowListeners,
     relativeUrl: modules.get('api.js').namespace.relativeUrl,
+    failChat: code => { chatError = code; },
     failReview: () => { failReview = true; },
     recoverSession: () => { failSession = false; },
     failConfirmation: () => { failConfirm = true; },
@@ -194,6 +210,30 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   failed.recoverSession(); await failed.get('retry').emit('click'); await failed.settle();
   await failed.send();
   assert.equal(failed.calls.at(-1).url, '/api/chat');
+
+  const storage = new Map();
+  const offline = await widget({storage});
+  offline.failChat('offline');
+  await offline.send('keep my message');
+  const originalRequest = offline.calls.at(-1).body;
+  assert.match(originalRequest.requestId, /^[a-f0-9-]{36}$/);
+  await offline.get('retry').emit('click');
+  await offline.settle();
+  assert.deepEqual(offline.calls.at(-1).body, originalRequest);
+  assert.equal(offline.calls.filter(call => call.url === '/api/sessions').length, 1);
+  assert.equal([...storage.values()][0].includes(originalRequest.message), false);
+
+  const restored = await widget({storage, history: [
+    {role: 'user', content: 'keep my message'},
+    {role: 'assistant', content: 'previous answer'},
+  ]});
+  assert.deepEqual(restored.calls.map(call => call.url), ['/api/sessions/session-id-for-testing']);
+  assert.match(JSON.stringify(restored.get('messages').children), /previous answer/);
+  restored.failChat('session_expired');
+  await restored.send('continue after expiry');
+  assert.deepEqual(restored.calls.slice(1).map(call => call.url), ['/api/chat', '/api/sessions', '/api/chat']);
+  assert.equal(restored.calls[1].body.requestId, restored.calls[3].body.requestId);
+  assert.match(JSON.stringify(restored.get('messages').children), /previous answer/);
 
   const readonly = await widget({canConfirm: false});
   await readonly.send(); await readonly.get('review-button').emit('click');

@@ -86,6 +86,21 @@ class CoreTests(unittest.TestCase):
         text=Path(self.core.store.path).read_bytes()
         self.assertNotIn(self.token.encode(),text)
 
+    def test_chat_retry_replays_saved_answer(self):
+        calls = []
+        def model(*args):
+            calls.append(args)
+            return 'پاسخ قبلی', {}
+        self.core.model = model
+        request_id = 'b1823417-5dd5-44e4-ab48-ea9f6dd60cd8'
+        first = self.core.chat(self.sid, self.token, 'سؤال اول', request_id)
+        replay = self.core.chat(self.sid, self.token, 'سؤال اول', request_id)
+        self.assertEqual(first, replay)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(self.core.get_session(self.sid, self.token)['history']), 2)
+        self.assert_core_error('request_conflict',
+                               lambda: self.core.chat(self.sid, self.token, 'متن دیگر', request_id))
+
     def test_redaction_before_model_and_history(self):
         captured=[]
         def model(*args):captured.append(args);return 'کد تأیید: ۱۲۳۴۵۶',{}

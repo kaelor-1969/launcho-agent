@@ -1,4 +1,4 @@
-// Capabilities live only in this closure, never in storage or messages.
+// Persist only the session capability in the widget's own tab storage.
 export function relativeUrl(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
   try {
@@ -13,7 +13,7 @@ async function post(url, body, token, timeout = 45000) {
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
     const response = await fetch(url, {
-      method: 'POST', credentials: 'omit', cache: 'no-store',
+      method: body === undefined ? 'GET' : 'POST', credentials: 'omit', cache: 'no-store',
       headers: { 'Content-Type': 'application/json', ...(token ? {'X-Session-Token': token} : {}) },
       body: JSON.stringify(body), signal: controller.signal,
     });
@@ -33,7 +33,9 @@ async function post(url, body, token, timeout = 45000) {
     if (error.name === 'AbortError') throw new Error('دریافت پاسخ طول کشید. می‌توانی دوباره تلاش کنی.');
     if (error.message === 'invalid') throw new Error('پاسخ معتبری دریافت نشد. دوباره تلاش کن.');
     if (error.message === 'http') {
-      error.message = 'ارسال درخواست انجام نشد. دوباره تلاش کن.';
+      error.message = error.code === 'conversation_busy'
+        ? 'پاسخ پیام قبلی هنوز در حال آماده‌شدن است. چند لحظه بعد دوباره تلاش کن.'
+        : 'ارسال درخواست انجام نشد. دوباره تلاش کن.';
       throw error;
     }
     throw new Error('ارتباط برقرار نشد. اتصال اینترنتت را بررسی کن.');
@@ -43,27 +45,69 @@ async function post(url, body, token, timeout = 45000) {
 const validRevision = value => Number.isSafeInteger(value) && value >= 0;
 const invalid = () => new Error('پاسخ معتبری دریافت نشد. دوباره تلاش کن.');
 
-export function createSessionApi() {
+const sessionEnded = error => ['session_not_found', 'session_expired'].includes(error.code);
+
+export function createSessionApi(scope = 'standalone') {
+  const storageKey = 'launcho.chat.session:' + scope;
   let session, initializing;
-  async function start() {
-    if (session) return;
-    if (!initializing) {
-      initializing = post('/api/sessions', {}).then(data => {
-        if (typeof data.sessionId !== 'string' || !data.sessionId ||
-            typeof data.sessionToken !== 'string' || !data.sessionToken || !validRevision(data.revision)) throw invalid();
-        session = { id: data.sessionId, token: data.sessionToken, revision: data.revision };
-      }).finally(() => { initializing = null; });
+  function save(value) {
+    try {
+      if (value) sessionStorage.setItem(storageKey, JSON.stringify({id: value.id, token: value.token}));
+      else sessionStorage.removeItem(storageKey);
+    } catch { /* Some browsers block storage in an embedded widget. */ }
+  }
+  function savedSession() {
+    try {
+      const value = JSON.parse(sessionStorage.getItem(storageKey));
+      if (typeof value?.id === 'string' && typeof value.token === 'string') return value;
+    } catch { /* Continue without tab storage. */ }
+    return null;
+  }
+  async function connect() {
+    const saved = savedSession();
+    if (saved) {
+      try {
+        const data = await post('/api/sessions/' + encodeURIComponent(saved.id), undefined, saved.token);
+        if (data.sessionId !== saved.id || !validRevision(data.revision) || !Array.isArray(data.history)) throw invalid();
+        session = {...saved, revision: data.revision};
+        return data.history;
+      } catch (error) {
+        if (!sessionEnded(error)) throw error;
+        save(null);
+      }
     }
-    await initializing;
+    const data = await post('/api/sessions', {});
+    if (typeof data.sessionId !== 'string' || !data.sessionId ||
+        typeof data.sessionToken !== 'string' || !data.sessionToken || !validRevision(data.revision)) throw invalid();
+    session = { id: data.sessionId, token: data.sessionToken, revision: data.revision };
+    save(session);
+    return [];
+  }
+  async function start() {
+    if (session) return [];
+    if (!initializing) {
+      initializing = connect().finally(() => { initializing = null; });
+    }
+    return initializing;
   }
   function endpoint(action) { return `/api/sessions/${encodeURIComponent(session.id)}/${action}`; }
   return {
     start,
-    async sendMessage(apiUrl, message) {
+    async sendMessage(apiUrl, message, requestId) {
       await start();
       const url = relativeUrl(apiUrl);
       if (!url) throw invalid();
-      const data = await post(url, {message, sessionId: session.id}, session.token);
+      const send = () => post(url, {message, sessionId: session.id, requestId}, session.token);
+      let data;
+      try {
+        data = await send();
+      } catch (error) {
+        if (!sessionEnded(error)) throw error;
+        session = null;
+        save(null);
+        await start();
+        data = await send();
+      }
       if (typeof data.reply !== 'string' || !data.reply.trim() || data.sessionId !== session.id ||
           !validRevision(data.revision) || data.revision < session.revision) throw invalid();
       session.revision = data.revision;

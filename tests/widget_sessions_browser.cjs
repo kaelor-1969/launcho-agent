@@ -43,6 +43,13 @@ const server = http.createServer(async (req, res) => {
     }
     res.writeHead(404); return res.end();
   }
+  if (req.url === '/api/sessions/' + sid) {
+    assert.equal(req.headers['x-session-token'], token);
+    return json({sessionId: sid, revision: 1, history: [
+      {role: 'user', content: 'confirm now'},
+      {role: 'assistant', content: 'answer restored after refresh'},
+    ]});
+  }
   if (req.url === '/') {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.end('<!doctype html><meta name="viewport" content="width=device-width, initial-scale=1"><script defer src="/widget/loader.js"></script>');
@@ -107,7 +114,9 @@ const server = http.createServer(async (req, res) => {
       await evaluate(`doc.querySelector('#message').value = 'confirm now'; doc.querySelector('#form').requestSubmit()`);
       await wait(`doc.querySelector('#review-button').hidden === false`);
       assert.equal(calls.length, 2);
-      assert.deepEqual(calls[1].body, {message: 'confirm now', sessionId: sid});
+      const {requestId, ...chatBody} = calls[1].body;
+      assert.match(requestId, /^[a-f0-9-]{36}$/);
+      assert.deepEqual(chatBody, {message: 'confirm now', sessionId: sid});
       assert.equal(calls[1].token, token);
       await evaluate(`doc.querySelector('#review-button').click()`);
       await wait(`doc.querySelector('#confirm').disabled === false`);
@@ -125,16 +134,25 @@ const server = http.createServer(async (req, res) => {
       await evaluate('LaunchoWidget.close(); LaunchoWidget.open()');
       assert.equal(calls.filter(c => c.url === '/api/sessions').length, 1);
       assert.equal(await evaluate(`doc.querySelectorAll('input[type=tel], [autocomplete=tel], [data-action=pay]').length`), 0);
-      assert.equal(await evaluate(`doc.defaultView.localStorage.length + doc.defaultView.sessionStorage.length`), 0);
+      assert.equal(await evaluate(`doc.defaultView.localStorage.length`), 0);
+      assert.equal(await evaluate(`Object.keys(doc.defaultView.sessionStorage).filter(key => key.startsWith('launcho.chat.session:')).length`), 1);
       assert.equal(await evaluate(`doc.documentElement.scrollWidth <= frame.clientWidth`), true);
       for (const call of calls.slice(1)) {
         assert.equal(call.token, token, 'every owned request must be authenticated');
         assert.equal(JSON.stringify(call.body).includes(token), false);
       }
       assert.equal(await evaluate(`doc.body.textContent.includes('browser-session-token') || doc.body.textContent.includes('browser-confirmation-token')`), false);
-      console.log(`PASS: Chrome ${width}px session, chat, review, manual confirmation retry, relative iframe, memory-only credentials`);
+      console.log(`PASS: Chrome ${width}px session, chat, review, manual confirmation retry, relative iframe, tab-scoped session`);
+
+      await command('Page.reload');
+      await wait('!!window.LaunchoWidget');
+      await evaluate('LaunchoWidget.open()');
+      await wait(`document.querySelector('#launcho-widget').shadowRoot.querySelector('iframe')?.contentDocument?.body?.textContent.includes('answer restored after refresh')`);
+      await evaluate(`window.frame = document.querySelector('#launcho-widget').shadowRoot.querySelector('iframe'); window.doc = frame.contentDocument`);
+      assert.equal(calls.filter(call => call.url === '/api/sessions').length, 1);
 
       // A separate page lifecycle checks failure recovery and invalidated reviews.
+      await evaluate("Object.keys(doc.defaultView.sessionStorage).filter(key => key.startsWith('launcho.chat.session:')).forEach(key => doc.defaultView.sessionStorage.removeItem(key))");
       failSession = true;
       calls.length = 0;
       await command('Page.navigate', {url: base});
@@ -164,6 +182,7 @@ const server = http.createServer(async (req, res) => {
       await evaluate(`doc.querySelector('#review-button').click()`);
       await wait(`doc.querySelector('#confirm').disabled === false`);
       console.log(`PASS: Chrome ${width}px failed session retry, persistent error guidance, discarded stale review, manual review recovery`);
+      await evaluate("Object.keys(doc.defaultView.sessionStorage).filter(key => key.startsWith('launcho.chat.session:')).forEach(key => doc.defaultView.sessionStorage.removeItem(key))");
     }
     calls.length = 0;
     await command('Page.navigate', {url: base + '/widget/demo.html'});
