@@ -153,11 +153,8 @@ def guidance_during_outage(message):
         return 'سلام! در راه‌اندازی فروشگاه چه کمکی می‌خواهید؟'
     if re.search(r'لینک.{0,24}(?:ثبت نام|شروع)|آدرس.{0,24}ثبت نام', message):
         return 'برای شروع ثبت‌نام، فرم رسمی لانچو را باز کنید. https://launcho.ir/start'
-    if re.search(r'کیف\s*(?:و|یا)\s*کفش', message) and re.search(r'فروش|قالب|شروع', message):
-        return (
-            'کیف و کفش را جدا دسته‌بندی کنید و سایز و رنگ کفش‌ها را ثبت کنید. '
-            'برای تنوع زیاد نمونهٔ دیجی‌کالا و برای چیدمان مد نمونهٔ مدا را ببینید. https://launcho.ir/#templates'
-        )
+    if re.search(r'موجودی', message) and re.search(r'رنگ|سایز', message):
+        return 'در پنل موجودی می‌توانید موجودی هر رنگ و سایز را جدا ثبت کنید.'
     if re.search(r'از کجا شروع|چطور.{0,24}(?:بسازم|راه اندازی)|(?:ساخت|راه اندازی) فروشگاه', message):
         return _STORE_START_REPLY
     if re.fullmatch(r'لانچو (?:چیست|چیه|چیه دقیقا|چه کاری انجام می دهد)', message):
@@ -173,10 +170,8 @@ def signup_guidance(question, history):
         return _STORE_START_REPLY
     if question in {'لینک ثبت نام را بده', 'لینک ثبت نام', 'آدرس فرم ثبت نام'}:
         return f'برای ثبت‌نام فرم رسمی لانچو را باز کنید. {_STORE_START_URL}'
-    if (re.search(r'\bکیف(?: ها|های)?\b', question) and 'کفش' not in question
-            and re.search(r'از کجا شروع|(?:ساخت|راه اندازی) فروشگاه|فروشگاه.{0,30}بساز', question)
-            and not re.search(r'قالب|دامنه|درگاه|ارسال|مهاجرت', question)):
-        return 'برای شروع، کیف‌ها را بر اساس نوع دسته‌بندی کنید.'
+    if re.fullmatch(r'برای فروشگاه .+ از کجا شروع کنم', question):
+        return _STORE_DOMAIN_QUESTION
     if not history:
         return None
     last = history[-1]
@@ -190,16 +185,20 @@ def signup_guidance(question, history):
     if previous.endswith(_STORE_READY_QUESTION) and question in {'آماده ام', 'بله', 'ادامه', 'بریم', 'آره'}:
         return f'برای ادامه، فرم رسمی لانچو را باز کنید. {_STORE_START_URL}'
     if previous.endswith(_STORE_DOMAIN_QUESTION):
+        if re.fullmatch(r'(?:تو )?(?:برام|برای من) (?:انجام بده|پیشنهاد بده|انتخاب کن)', question):
+            return f'حتماً، پیشنهاد دامنه را من آماده می‌کنم. {_STORE_DOMAIN_QUESTION}'
         brand = re.sub(r'[ -]+', '', question.lower())
         if re.fullmatch(r'[a-z][a-z0-9]{1,39}', brand):
             return f'پیشنهاد من {brand}.ir است. آزاد بودن و ثبت دامنه را در فرم لانچو بررسی کنید. {_STORE_DOMAIN_CONFIRM}'
-        return f'برای پیشنهاد دامنه، املای لاتین نام برند را بنویسید. {_STORE_DOMAIN_QUESTION}'
+        return _STORE_DOMAIN_QUESTION
     if previous.endswith(_STORE_DOMAIN_CONFIRM):
         if question in {'بله', 'آره', 'باشه', 'بریم', 'ادامه'}:
             return f'نمونه‌های قالب را ببینید. {_STORE_TEMPLATES_URL}\n{_STORE_READY_QUESTION}'
         if question in {'دامنه دیگری', 'اسم دیگری', 'تغییر دامنه'}:
             return _STORE_DOMAIN_QUESTION
-    if previous == _STORE_START_REPLY and re.search(r'می\s*فروشم|^(?:کیف و کفش|پوشاک|لباس|زیورآلات|لوازم آرایشی)$', question):
+    if previous == _STORE_START_REPLY and re.fullmatch(
+        r'(?!.*\b(?:چطور|چگونه|چرا|چیست|چیه|کجاست|آیا)\b)[\w\s،,&/-]{1,120}', question
+    ):
         return _STORE_DOMAIN_QUESTION
     return None
 
@@ -227,6 +226,8 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         return 'از صفحهٔ تماس لانچو با کارشناس ارتباط بگیرید. https://launcho.ir/contact', {}
     if question in {'فروشگاهم فعال شده از کجا شروع کنم', 'بعد از ساخت فروشگاه از کجا شروع کنم'}:
         return 'اولین محصول را با عکس، توضیح و موجودی در پنل ثبت کنید. بعد روش ارسال را بررسی کنید.', {}
+    if _UNRELATED_CREATIVE_REQUEST.search(message):
+        return 'می‌توانم دربارهٔ لانچو و راه‌اندازی سایت یا فروشگاه راهنمایی کنم.', {}
     if not allow_preferences:
         if not is_price_question(message) and '[پوشانده شد]' not in message:
             guidance = signup_guidance(question, history)
@@ -239,8 +240,6 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
     price_reply = price_guidance(message, options, history) if price_query else _PRICE_REPLY
     if price_query and all(_PRICE_QUERY.search(part) for part in clauses):
         return price_reply, {}
-    if _UNRELATED_CREATIVE_REQUEST.search(message):
-        return 'می‌توانم دربارهٔ لانچو و راه‌اندازی سایت یا فروشگاه راهنمایی کنم.', {}
     safe_history = [{'role':item['role'], 'content':redact(item['content'])}
                     for item in (history or [])[-12:] if item['role'] in {'user','assistant'}]
     context = {'preferences':preferences or {}, 'options':{key: value for key, value in (options or {}).items()
@@ -258,6 +257,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
             'پس از انتخاب قالب، دورهٔ اشتراک را بپرس و کاربر را به مرور پیش‌نویس هدایت کن.'
         if allow_preferences else
         '\nحالت فقط راهنمایی است. هیچ اطلاعاتی برای ثبت‌نام جمع نکن. '
+        'در یک یا دو جمله فقط درخواست فعلی را پاسخ بده. امکاناتی مثل موجودی را فقط وقتی مطرح کن که کاربر درباره‌شان پرسیده باشد. '
         'مبلغ، جشنواره، تخفیف، اقساط یا رایگان‌بودن را تأیید نکن. '
         'اگر بخش مشخصی از سؤال بی‌پاسخ است، فقط همان بخش را کوتاه روشن کن. '
         'ادعای ساخت حساب یا فروشگاه، ارسال کد، پذیرش قوانین، پرداخت، یا صدور تخفیف نکن. '
