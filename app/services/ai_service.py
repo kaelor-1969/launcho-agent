@@ -38,6 +38,12 @@ _SENSITIVE_REQUEST = re.compile(
     rf'{_SENSITIVE_FIELD}.{{0,100}}{_REQUEST_VERB}|{_REQUEST_VERB}.{{0,100}}{_SENSITIVE_FIELD}',
     re.I | re.S,
 )
+_ATTACHMENT = r'\b(?:عکس|تصویر|فایل|ویدیو|ویدئو|صدا|عکسها|تصاویر|فایلها|photo|image|file|video)\b'
+_UPLOAD_VERB = r'(?:بفرست|ارسال\s*(?:کن|بفرما)|(?:آپلود|بارگذاری|پیوست)\s*(?:کن|بکن)|\b(?:upload|attach|send)\b)'
+_ATTACHMENT_REQUEST = re.compile(
+    rf'{_ATTACHMENT}[^.!؟?]{{0,70}}{_UPLOAD_VERB}|{_UPLOAD_VERB}[^.!؟?]{{0,70}}{_ATTACHMENT}',
+    re.I,
+)
 _MODEL_URL = re.compile(r'(?:https?://|www\.)[^\s<>"\]\)]+', re.I)
 _OFFICIAL_URLS = {'https://launcho.ir', 'https://launcho.ir/', 'https://launcho.ir/start',
                   'https://launcho.ir/pricing', 'https://launcho.ir/contact'}
@@ -136,6 +142,12 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
     normalized = text.translate(str.maketrans('يك', 'یک')).replace('\u200c', ' ')
     if _SENSITIVE_REQUEST.search(normalized):
         return _FORM_REPLY, {}
+    if _ATTACHMENT_REQUEST.search(normalized):
+        return (
+            'اینجا می‌توانید محصولتان را با متن معرفی کنید. '
+            '**چه محصولی می‌فروشید و چه ویژگی‌ای برای مشتری‌هایتان مهم‌تر است؟**',
+            {},
+        )
     if not allow_preferences and _ACTION_CLAIM.search(normalized):
         return 'برای انجام ثبت‌نام و بررسی وضعیت آن، فرم رسمی لانچو را باز کنید: https://launcho.ir/start', {}
     if not allow_preferences and _PRICE_CLAIM.search(normalized):

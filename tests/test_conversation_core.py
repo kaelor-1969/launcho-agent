@@ -253,6 +253,16 @@ class CoreTests(unittest.TestCase):
 
 
 class PrivacyAndModelTests(unittest.TestCase):
+    def test_text_only_widget_redirects_attachment_requests(self):
+        for answer in ('یک عکس از محصولت بفرست.', 'لطفاً ارسال کنید\nتصویر محصول را.'):
+            response = NS(choices=[NS(message=NS(content=answer, tool_calls=[]))])
+            with self.subTest(answer=answer), patch.object(
+                ai_service.client.chat.completions, 'create', return_value=response
+            ):
+                reply, _ = ai_service.generate_turn('برای معرفی محصول چه کار کنم؟')
+                self.assertIn('با متن', reply)
+                self.assertNotIn(answer, reply)
+
     def test_store_conversation_continues_when_model_reply_is_empty(self):
         first, _ = ai_service.generate_turn('برای ساخت فروشگاه با لانچو از کجا شروع کنم؟')
         history = [{'role': 'assistant', 'content': first}]
