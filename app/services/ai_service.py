@@ -4,7 +4,7 @@ import re
 from openai import OpenAI, APIError
 from pydantic import ValidationError
 from app.core.config import PROJECT_ROOT, settings
-from app.core.privacy import redact
+from app.core.privacy import has_visible_text, redact
 from app.models.schemas import PreferenceUpdate
 from app.prompts.system_prompts import get_system_prompt
 
@@ -49,7 +49,7 @@ _ATTACHMENT_REQUEST = re.compile(
     rf'{_ATTACHMENT}[^.!؟?]{{0,70}}{_UPLOAD_VERB}|{_UPLOAD_VERB}[^.!؟?]{{0,70}}{_ATTACHMENT}',
     re.I,
 )
-_MODEL_URL = re.compile(r'(?:https?://|www\.)[^\s<>"\]\)]+', re.I)
+_MODEL_URL = re.compile(r'(?:https?://|www\.)[^\s<>"\x27\]\)*`]+', re.I)
 _OFFICIAL_URLS = {'https://launcho.ir', 'https://launcho.ir/', 'https://launcho.ir/start',
                   'https://launcho.ir/pricing', 'https://launcho.ir/contact',
                   'https://launcho.ir/features', 'https://launcho.ir/#templates',
@@ -65,6 +65,12 @@ _STORE_START_REPLY = (
     'برای شروع، مشخص کنیم چه چیزی می‌خواهید بفروشید. بعد می‌توانیم دربارهٔ '
     'دسته‌بندی محصولات و قالب مناسب فروشگاه صحبت کنیم. 🛍️\n\n'
     '**چه محصولی می‌خواهید آنلاین بفروشید؟**'
+)
+_FEATURES_REPLY = (
+    'با لانچو می‌توانید سایت یا فروشگاه بسازید. برای فروشگاه، قالب آماده، '
+    'مدیریت موجودی بر اساس رنگ و سایز، کوپن و حراج زمان‌دار دارید. '
+    'ابزار هوش مصنوعی پنل هم برای نوشتن توضیح محصول و آماده‌کردن تصویر کمک می‌کند. '
+    'https://launcho.ir/features'
 )
 
 
@@ -126,10 +132,34 @@ def relevant_knowledge(knowledge, message):
     return '\n'.join([intro, *relevant])
 
 
+def guidance_during_outage(message):
+    """Answer common questions from verified product information during a model outage."""
+    message = message.replace('\u200c', ' ').strip(' ؟?!،.')
+    if re.fullmatch(r'سلام(?: وقت بخیر)?|درود|وقت بخیر', message):
+        return 'سلام! برای انتخاب قالب، راه‌اندازی یا بررسی هزینه‌های فروشگاه راهنمایی می‌خواهید؟'
+    if re.search(r'لینک.{0,24}(?:ثبت نام|شروع)|آدرس.{0,24}ثبت نام', message):
+        return 'برای شروع ثبت‌نام، فرم رسمی لانچو را باز کنید. https://launcho.ir/start'
+    if re.search(r'کیف\s*(?:و|یا)\s*کفش', message) and re.search(r'فروش|قالب|شروع', message):
+        return (
+            'برای شروع، کیف و کفش را دو دسته کنید و برای کفش، سایز و رنگ هر مدل را جدا مشخص کنید. '
+            'اگر تنوع محصول بالاست، نمونهٔ دیجی‌کالا را برای چیدمان و فیلتر مقایسه کنید. '
+            'برای چیدمان مد و پوشاک، نمونهٔ مدا را ببینید. https://launcho.ir/#templates'
+        )
+    if re.search(r'از کجا شروع|چطور.{0,24}(?:بسازم|راه اندازی)|(?:ساخت|راه اندازی) فروشگاه', message):
+        return _STORE_START_REPLY
+    if re.fullmatch(r'لانچو (?:چیست|چیه|چیه دقیقا|چه کاری انجام می دهد)', message):
+        return 'لانچو برای ساخت سایت و فروشگاه آنلاین است. در راه‌اندازی فروشگاه، کارشناس برای تنظیم قالب و آموزش پنل همراهی می‌کند.'
+    return None
+
+
 def generate_turn(message, history=None, preferences=None, options=None, pricing=None, *, allow_preferences=False):
     message = redact(message.strip())
-    if not allow_preferences and message.rstrip('؟?') == 'برای ساخت فروشگاه با لانچو از کجا شروع کنم':
-        return _STORE_START_REPLY, {}
+    if not allow_preferences:
+        question = message.rstrip('؟?').rstrip()
+        if question == 'برای ساخت فروشگاه با لانچو از کجا شروع کنم':
+            return _STORE_START_REPLY, {}
+        if question in {'لانچو چه امکاناتی دارد', 'لانچو چه امکاناتی داره'}:
+            return _FEATURES_REPLY, {}
     clauses = [part.strip() for part in re.split(r'[؟?؛\n]+|\s+و\s+', message) if part.strip()]
     price_query = not allow_preferences and is_price_question(message)
     price_reply = price_guidance(message, options, history) if price_query else _PRICE_REPLY
@@ -157,7 +187,16 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         kwargs.update(tools=tools, tool_choice='auto')
     if settings.AI_TEMPERATURE is not None:
         kwargs['temperature'] = settings.AI_TEMPERATURE
-    response = client.chat.completions.create(**kwargs)
+    try:
+        response = client.chat.completions.create(**kwargs)
+    except APIError as error:
+        fallback = None if allow_preferences else guidance_during_outage(message)
+        if fallback is None:
+            raise
+        logger.warning('Using Launcho guidance during model failure: %s', type(error).__name__)
+        if price_query:
+            fallback = f'{fallback}\n\n{price_reply}'
+        return fallback, {}
     if not response.choices:
         return empty_guidance_reply(message, safe_history), {}
     answer = response.choices[0].message
@@ -202,7 +241,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
 
 def get_ai_response(user_message: str) -> str:
     """Legacy text-only entry point; it has no external writing capability."""
-    if not user_message.strip():
+    if not has_visible_text(user_message):
         return 'لطفاً پیام خود را وارد کنید.'
     if len(user_message) > 5000:
         return 'لطفاً پیام کوتاه‌تری بنویسید.'

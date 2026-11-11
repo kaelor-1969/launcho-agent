@@ -6,6 +6,7 @@ import secrets
 import sqlite3
 import time
 from contextlib import contextmanager
+from app.core.privacy import redact
 
 
 class CoreError(Exception):
@@ -61,7 +62,18 @@ class SessionStore:
             raise CoreError(404, 'session_not_found', 'جلسه معتبر پیدا نشد.')
         if row['expires'] <= time.time():
             raise CoreError(410, 'session_expired', 'جلسه منقضی شده؛ گفتگوی تازه شروع کنید.')
-        return dict(row)
+        session = dict(row)
+        history = json.loads(session['history'])
+        changed = False
+        for turn in history:
+            masked = redact(turn['content'])
+            if masked != turn['content']:
+                turn['content'] = masked
+                changed = True
+        if changed:
+            session['history'] = json.dumps(history, ensure_ascii=False)
+            db.execute('UPDATE sessions SET history=? WHERE id=?', (session['history'], session_id))
+        return session
 
     def create(self):
         sid, token = secrets.token_urlsafe(24), secrets.token_urlsafe(32)

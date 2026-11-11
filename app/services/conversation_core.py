@@ -11,7 +11,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit
 from pydantic import ValidationError
 
 from app.core.config import PROJECT_ROOT
-from app.core.privacy import redact
+from app.core.privacy import has_visible_text, redact
 from app.models.schemas import Preferences, PreferenceUpdate
 from app.services.ai_service import generate_turn, is_price_question
 from app.services.draft_gateway import build_gateway, unwrap, GatewayRejected, GatewayUnavailable
@@ -121,6 +121,8 @@ class ConversationCore:
         return merged
 
     def chat(self, sid, token, message, request_id=None):
+        if not has_visible_text(message):
+            raise CoreError(422, 'invalid_request', 'پیام خالی است.')
         safe = redact(message)
         with self.store.transaction() as db:
             row = self.store.authenticate(db,sid,token)
@@ -168,7 +170,7 @@ class ConversationCore:
                     prefs = json.loads(row['prefs'])
                     reply = 'انتخاب‌ها معتبر نبودند. لطفاً از گزینه‌های مجاز استفاده کنید؛ اطلاعات قبلی حفظ شد.'
             if safe != message:
-                reply = 'اطلاعات تماس یا کد پوشانده شد؛ آن‌ها را فقط در فرم رسمی وارد کنید.\n' + reply
+                reply = 'بخش حساس پیام پیش از پردازش و ذخیره پوشانده شد. اطلاعات ورود را فقط در فرم رسمی وارد کنید.\n' + reply
             user_turn = {'role':'user','content':safe}
             if request_id:
                 user_turn['requestId'] = request_id

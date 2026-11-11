@@ -33,9 +33,15 @@ async function post(url, body, token, timeout = 45000) {
     if (error.name === 'AbortError') throw new Error('دریافت پاسخ طول کشید. می‌توانی دوباره تلاش کنی.');
     if (error.message === 'invalid') throw new Error('پاسخ معتبری دریافت نشد. دوباره تلاش کن.');
     if (error.message === 'http') {
-      error.message = error.code === 'conversation_busy'
-        ? 'پاسخ پیام قبلی هنوز در حال آماده‌شدن است. چند لحظه بعد دوباره تلاش کن.'
-        : 'ارسال درخواست انجام نشد. دوباره تلاش کن.';
+      if (error.code === 'conversation_busy') {
+        error.message = 'پاسخ پیام قبلی هنوز در حال آماده‌شدن است. چند لحظه بعد دوباره تلاش کن.';
+      } else if (error.code === 'model_rate_limited' || error.status === 429) {
+        error.message = 'سرویس پاسخ‌گویی به محدودیت مصرف رسیده. کمی بعد دوباره تلاش کن.';
+      } else if (error.code === 'model_unavailable' || [502, 503, 504].includes(error.status)) {
+        error.message = 'سرویس پاسخ‌گویی موقتاً در دسترس نیست. کمی بعد دوباره تلاش کن.';
+      } else {
+        error.message = 'ارسال درخواست انجام نشد. دوباره تلاش کن.';
+      }
       throw error;
     }
     throw new Error('ارتباط برقرار نشد. اتصال اینترنتت را بررسی کن.');
