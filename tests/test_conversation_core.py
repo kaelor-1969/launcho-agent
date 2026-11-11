@@ -299,6 +299,18 @@ class PrivacyAndModelTests(unittest.TestCase):
         self.assertIn('عکس، رنگ و سایزها', reply)
         self.assertNotIn('https://', reply)
 
+    def test_widget_starters_work_without_model(self):
+        import re
+
+        html = (Path(__file__).resolve().parents[1] / 'frontend' / 'widget.html').read_text(encoding='utf-8')
+        starters = re.findall(r'data-question="([^"]+)"', html)
+        self.assertEqual(len(starters), 3)
+        with patch.object(ai_service.client.chat.completions, 'create') as call:
+            replies = [ai_service.generate_turn(question)[0] for question in starters]
+        call.assert_not_called()
+        self.assertIn('https://launcho.ir/features', replies[1])
+        self.assertIn('https://launcho.ir/pricing', replies[2])
+
     def test_store_starter_guides_before_referring_to_pricing(self):
         with patch.object(ai_service.client.chat.completions, 'create') as call:
             reply, update = ai_service.generate_turn('برای ساخت فروشگاه با لانچو از کجا شروع کنم؟')

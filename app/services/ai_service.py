@@ -65,6 +65,12 @@ _STORE_START_REPLY = (
     'دسته‌بندی محصولات و قالب مناسب فروشگاه صحبت کنیم. 🛍️\n\n'
     '**چه محصولی می‌خواهید آنلاین بفروشید؟**'
 )
+_FEATURES_REPLY = (
+    'با لانچو می‌توانید سایت یا فروشگاه بسازید. برای فروشگاه، قالب آماده، '
+    'مدیریت موجودی بر اساس رنگ و سایز، کوپن و حراج زمان‌دار دارید. '
+    'ابزار هوش مصنوعی پنل هم برای نوشتن توضیح محصول و آماده‌کردن تصویر کمک می‌کند. '
+    'https://launcho.ir/features'
+)
 
 
 def is_price_question(message):
@@ -147,8 +153,12 @@ def guidance_during_outage(message):
 
 def generate_turn(message, history=None, preferences=None, options=None, pricing=None, *, allow_preferences=False):
     message = redact(message.strip())
-    if not allow_preferences and message.rstrip('؟?') == 'برای ساخت فروشگاه با لانچو از کجا شروع کنم':
-        return _STORE_START_REPLY, {}
+    if not allow_preferences:
+        question = message.rstrip('؟?').rstrip()
+        if question == 'برای ساخت فروشگاه با لانچو از کجا شروع کنم':
+            return _STORE_START_REPLY, {}
+        if question in {'لانچو چه امکاناتی دارد', 'لانچو چه امکاناتی داره'}:
+            return _FEATURES_REPLY, {}
     clauses = [part.strip() for part in re.split(r'[؟?؛\n]+|\s+و\s+', message) if part.strip()]
     price_query = not allow_preferences and is_price_question(message)
     price_reply = price_guidance(message, options, history) if price_query else _PRICE_REPLY
