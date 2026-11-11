@@ -423,7 +423,7 @@ class PrivacyAndModelTests(unittest.TestCase):
         response = NS(choices=[NS(message=NS(content=(sentence + ' ') * 40, tool_calls=[]))])
         with patch.object(ai_service.client.chat.completions, 'create', return_value=response):
             reply, _ = ai_service.generate_turn('چطور محصولاتم را آماده کنم؟')
-        self.assertLessEqual(len(reply), 420)
+        self.assertLessEqual(len(reply), 280)
         self.assertTrue(reply.endswith(sentence))
 
     def test_price_question_uses_official_referral_without_calling_model(self):
