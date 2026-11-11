@@ -43,6 +43,25 @@ _OFFICIAL_URLS = {'https://launcho.ir', 'https://launcho.ir/', 'https://launcho.
                   'https://launcho.ir/pricing', 'https://launcho.ir/contact'}
 _PRICE_REPLY = 'برای استعلام تعرفه و شرایط پرداخت، صفحه رسمی لانچو را ببینید: https://launcho.ir/pricing'
 _FORM_REPLY = 'اطلاعات ورود و تأیید را فقط در فرم رسمی لانچو وارد کنید: https://launcho.ir/start'
+_STORE_START_REPLY = (
+    'برای شروع، مشخص کنیم چه چیزی می‌خواهید بفروشید. بعد می‌توانیم دربارهٔ '
+    'دسته‌بندی محصولات و قالب مناسب فروشگاه صحبت کنیم. 🛍️\n\n'
+    '**چه محصولی می‌خواهید آنلاین بفروشید؟**'
+)
+
+
+def empty_guidance_reply(message, history):
+    if any(item['role'] == 'assistant' and item['content'] == _STORE_START_REPLY for item in history):
+        if re.search(r'لباس|پوشاک', message):
+            return (
+                'برای فروش پوشاک، چند محصول پرفروش را برای شروع انتخاب کنید و برای هرکدام '
+                'عکس، رنگ و سایزها را آماده کنید. **محصولاتتان الان دسته‌بندی مشخصی دارند؟**'
+            )
+        return (
+            'برای شروع، چند محصول اصلی‌تان را انتخاب کنید و برای هرکدام عکس و توضیح کوتاه آماده کنید. '
+            '**عکس و توضیحات محصولات را از قبل دارید؟**'
+        )
+    return 'پاسخ کامل آماده نشد. اگر سؤال را کمی مشخص‌تر بپرسید، می‌توانم بهتر راهنمایی کنم.'
 _ACTION_CLAIM = re.compile(
     r'(?:ثبت\s*نام|حساب|پیش\s*نویس|پرداخت).{0,45}با\s*موفقیت.{0,25}(?:شد|کردم)'
     r'|(?:برایتان|برای\s*شما).{0,35}(?:حساب|پیش\s*نویس).{0,20}(?:ساختم|ایجاد کردم)',
@@ -71,12 +90,7 @@ def relevant_knowledge(knowledge, message):
 def generate_turn(message, history=None, preferences=None, options=None, pricing=None, *, allow_preferences=False):
     message = redact(message.strip())
     if not allow_preferences and message.rstrip('؟?') == 'برای ساخت فروشگاه با لانچو از کجا شروع کنم':
-        return (
-            'برای شروع، مشخص کنیم چه چیزی می‌خواهید بفروشید. بعد می‌توانیم دربارهٔ '
-            'دسته‌بندی محصولات و قالب مناسب فروشگاه صحبت کنیم. 🛍️\n\n'
-            '**چه محصولی می‌خواهید آنلاین بفروشید؟**',
-            {},
-        )
+        return _STORE_START_REPLY, {}
     clauses = [part.strip() for part in re.split(r'[؟?؛\n]+|\s+و\s+', message) if part.strip()]
     price_query = not allow_preferences and bool(_PRICE_QUERY.search(message))
     if price_query and all(_PRICE_QUERY.search(part) for part in clauses):
@@ -105,12 +119,12 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         kwargs['temperature'] = settings.AI_TEMPERATURE
     response = client.chat.completions.create(**kwargs)
     if not response.choices:
-        return 'پاسخی دریافت نشد. لطفاً کمی بعد تلاش کنید.', {}
+        return empty_guidance_reply(message, safe_history), {}
     answer = response.choices[0].message
     calls = getattr(answer,'tool_calls',None) or []
     if calls:
         if not allow_preferences:
-            return 'می‌توانم مراحل را توضیح بدهم. برای انجام ثبت‌نام از فرم رسمی استفاده کنید: https://launcho.ir/start', {}
+            return empty_guidance_reply(message, safe_history), {}
         if len(calls) != 1 or calls[0].function.name != 'update_signup_preferences':
             return 'عملیات درخواستی مجاز نیست. پیش‌نویس فقط پس از مرور و دکمه تأیید ساخته می‌شود.', {}
         try:
@@ -130,7 +144,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         lambda match: match[0] if match[0].rstrip('.,،؛') in _OFFICIAL_URLS else '[پیوند تأییدنشده حذف شد]',
         text,
     )
-    text = redact(text) or 'پاسخ سرویس خالی بود.'
+    text = redact(text) or empty_guidance_reply(message, safe_history)
     if price_query and 'https://launcho.ir/pricing' not in text:
         text = f'{text}\n\n{_PRICE_REPLY}'
     return text[:12000], {}

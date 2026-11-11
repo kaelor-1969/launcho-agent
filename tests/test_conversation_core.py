@@ -253,6 +253,15 @@ class CoreTests(unittest.TestCase):
 
 
 class PrivacyAndModelTests(unittest.TestCase):
+    def test_store_conversation_continues_when_model_reply_is_empty(self):
+        first, _ = ai_service.generate_turn('برای ساخت فروشگاه با لانچو از کجا شروع کنم؟')
+        history = [{'role': 'assistant', 'content': first}]
+        response = NS(choices=[NS(message=NS(content='', tool_calls=[]))])
+        with patch.object(ai_service.client.chat.completions, 'create', return_value=response):
+            reply, _ = ai_service.generate_turn('لباس زنانه می‌فروشم.', history)
+        self.assertIn('عکس، رنگ و سایزها', reply)
+        self.assertNotIn('https://', reply)
+
     def test_store_starter_guides_before_referring_to_pricing(self):
         with patch.object(ai_service.client.chat.completions, 'create') as call:
             reply, update = ai_service.generate_turn('برای ساخت فروشگاه با لانچو از کجا شروع کنم؟')
