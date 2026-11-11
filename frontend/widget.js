@@ -1,4 +1,4 @@
-import { createSessionApi, relativeUrl } from './api.js?v=2';
+import { createSessionApi, relativeUrl } from './api.js?v=3';
 import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js';
 
 const $ = (id) => document.getElementById(id);
@@ -12,7 +12,7 @@ try {
   if (['http:', 'https:'].includes(url.protocol) && url.origin === params.get('parentOrigin')) parentOrigin = url.origin;
 } catch { /* Standalone preview does not send messages to a parent. */ }
 let apiUrl = '/api/chat';
-const sessionApi = createSessionApi(parentOrigin || 'standalone');
+const sessionApi = createSessionApi();
 let sessionReady = false;
 let sessionStarting = false;
 let review = null;
@@ -91,17 +91,7 @@ async function initializeSession() {
   sessionStarting = true;
   updateInput();
   try {
-    const history = await sessionApi.start();
-    for (const turn of history) {
-      if (['user', 'assistant'].includes(turn?.role) && typeof turn.content === 'string') {
-        appendMessage(turn.role, turn.content);
-      }
-    }
-    if (history.length) {
-      $('welcome').classList.add('compact');
-      $('welcome-description').hidden = true;
-      scrollToBottom(true);
-    }
+    await sessionApi.start();
     sessionReady = true;
     showError('');
   } catch {

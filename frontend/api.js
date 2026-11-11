@@ -1,4 +1,4 @@
-// Persist only the session capability in the widget's own tab storage.
+// Session credentials stay in memory for the lifetime of the widget.
 export function relativeUrl(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
   try {
@@ -13,7 +13,7 @@ async function post(url, body, token, timeout = 45000) {
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
     const response = await fetch(url, {
-      method: body === undefined ? 'GET' : 'POST', credentials: 'omit', cache: 'no-store',
+      method: 'POST', credentials: 'omit', cache: 'no-store',
       headers: { 'Content-Type': 'application/json', ...(token ? {'X-Session-Token': token} : {}) },
       body: JSON.stringify(body), signal: controller.signal,
     });
@@ -47,48 +47,18 @@ const invalid = () => new Error('پاسخ معتبری دریافت نشد. دو
 
 const sessionEnded = error => ['session_not_found', 'session_expired'].includes(error.code);
 
-export function createSessionApi(scope = 'standalone') {
-  const storageKey = 'launcho.chat.session:' + scope;
+export function createSessionApi() {
   let session, initializing;
-  function save(value) {
-    try {
-      if (value) sessionStorage.setItem(storageKey, JSON.stringify({id: value.id, token: value.token}));
-      else sessionStorage.removeItem(storageKey);
-    } catch { /* Some browsers block storage in an embedded widget. */ }
-  }
-  function savedSession() {
-    try {
-      const value = JSON.parse(sessionStorage.getItem(storageKey));
-      if (typeof value?.id === 'string' && typeof value.token === 'string') return value;
-    } catch { /* Continue without tab storage. */ }
-    return null;
-  }
-  async function connect() {
-    const saved = savedSession();
-    if (saved) {
-      try {
-        const data = await post('/api/sessions/' + encodeURIComponent(saved.id), undefined, saved.token);
-        if (data.sessionId !== saved.id || !validRevision(data.revision) || !Array.isArray(data.history)) throw invalid();
-        session = {...saved, revision: data.revision};
-        return data.history;
-      } catch (error) {
-        if (!sessionEnded(error)) throw error;
-        save(null);
-      }
-    }
-    const data = await post('/api/sessions', {});
-    if (typeof data.sessionId !== 'string' || !data.sessionId ||
-        typeof data.sessionToken !== 'string' || !data.sessionToken || !validRevision(data.revision)) throw invalid();
-    session = { id: data.sessionId, token: data.sessionToken, revision: data.revision };
-    save(session);
-    return [];
-  }
   async function start() {
-    if (session) return [];
+    if (session) return;
     if (!initializing) {
-      initializing = connect().finally(() => { initializing = null; });
+      initializing = post('/api/sessions', {}).then(data => {
+        if (typeof data.sessionId !== 'string' || !data.sessionId ||
+            typeof data.sessionToken !== 'string' || !data.sessionToken || !validRevision(data.revision)) throw invalid();
+        session = { id: data.sessionId, token: data.sessionToken, revision: data.revision };
+      }).finally(() => { initializing = null; });
     }
-    return initializing;
+    await initializing;
   }
   function endpoint(action) { return `/api/sessions/${encodeURIComponent(session.id)}/${action}`; }
   return {
@@ -104,7 +74,6 @@ export function createSessionApi(scope = 'standalone') {
       } catch (error) {
         if (!sessionEnded(error)) throw error;
         session = null;
-        save(null);
         await start();
         data = await send();
       }

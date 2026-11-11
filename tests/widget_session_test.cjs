@@ -23,7 +23,7 @@ class Element {
   blur() {}
 }
 
-async function widget({sessionFailure = false, canConfirm = true, embedded = false, storage = new Map(), history = []} = {}) {
+async function widget({sessionFailure = false, canConfirm = true, embedded = false} = {}) {
   const nodes = new Map();
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
@@ -47,11 +47,6 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   const context = vm.createContext({
     URL, URLSearchParams, AbortController, setTimeout, clearTimeout, location, window,
     crypto: require('node:crypto').webcrypto,
-    sessionStorage: {
-      getItem: key => storage.get(key) ?? null,
-      setItem: (key, value) => storage.set(key, value),
-      removeItem: key => storage.delete(key),
-    },
     matchMedia: () => ({matches: false, addEventListener() {}}),
     ResizeObserver: class {observe() {}},
     document: {getElementById: get, documentElement: {dataset: {}}, addEventListener() {},
@@ -79,8 +74,6 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
           revision++;
           data = {reply: 'ready <script>bad()</script>', sessionId: sid, revision,
             nextAction: 'review'};
-        } else if (options.method === 'GET' && url === '/api/sessions/' + sid) {
-          data = {sessionId: sid, revision, history};
         } else if (url.endsWith('/review')) {
           if (failReview) throw new TypeError('review response lost after server invalidated previous review');
           data = {...review, revision};
@@ -211,8 +204,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   await failed.send();
   assert.equal(failed.calls.at(-1).url, '/api/chat');
 
-  const storage = new Map();
-  const offline = await widget({storage});
+  const offline = await widget();
   offline.failChat('offline');
   await offline.send('keep my message');
   const originalRequest = offline.calls.at(-1).body;
@@ -221,19 +213,14 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   await offline.settle();
   assert.deepEqual(offline.calls.at(-1).body, originalRequest);
   assert.equal(offline.calls.filter(call => call.url === '/api/sessions').length, 1);
-  assert.equal([...storage.values()][0].includes(originalRequest.message), false);
+  assert.equal(JSON.stringify(offline.get('messages').children).split('keep my message').length, 2);
 
-  const restored = await widget({storage, history: [
-    {role: 'user', content: 'keep my message'},
-    {role: 'assistant', content: 'previous answer'},
-  ]});
-  assert.deepEqual(restored.calls.map(call => call.url), ['/api/sessions/session-id-for-testing']);
-  assert.match(JSON.stringify(restored.get('messages').children), /previous answer/);
-  restored.failChat('session_expired');
-  await restored.send('continue after expiry');
-  assert.deepEqual(restored.calls.slice(1).map(call => call.url), ['/api/chat', '/api/sessions', '/api/chat']);
-  assert.equal(restored.calls[1].body.requestId, restored.calls[3].body.requestId);
-  assert.match(JSON.stringify(restored.get('messages').children), /previous answer/);
+  offline.failChat('session_expired');
+  await offline.send('continue after expiry');
+  const [expired, newSession, retried] = offline.calls.slice(-3);
+  assert.deepEqual([expired.url, newSession.url, retried.url], ['/api/chat', '/api/sessions', '/api/chat']);
+  assert.equal(expired.body.requestId, retried.body.requestId);
+  assert.match(JSON.stringify(offline.get('messages').children), /keep my message/);
 
   const readonly = await widget({canConfirm: false});
   await readonly.send(); await readonly.get('review-button').emit('click');
