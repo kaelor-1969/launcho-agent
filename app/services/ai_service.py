@@ -68,6 +68,9 @@ _PRICE_REPLY = (
 _DEMO_OFFER_LABEL = 'پیشنهاد آزمایشی'
 _FORM_REPLY = 'اطلاعات ورود و تأیید را فقط در فرم رسمی لانچو وارد کنید: https://launcho.ir/start'
 _STORE_START_REPLY = 'چه محصولی می‌خواهید آنلاین بفروشید؟'
+_STORE_STYLE_QUESTION = 'نمایش عکس محصول مهم‌تر است یا جست‌وجو و فیلتر؟'
+_STORE_READY_QUESTION = 'برای ادامه در فرم رسمی آماده‌اید؟'
+_STORE_START_URL = 'https://launcho.ir/start'
 _FEATURES_URL = 'https://launcho.ir/features'
 
 
@@ -156,6 +159,36 @@ def guidance_during_outage(message):
     return None
 
 
+def signup_guidance(question, history):
+    if question in {'برای ساخت فروشگاه با لانچو از کجا شروع کنم', 'می خواهم فروشگاه بسازم',
+                    'می خوام فروشگاه بسازم', 'ثبت نام را شروع کن'}:
+        return _STORE_START_REPLY
+    if question in {'لینک ثبت نام را بده', 'لینک ثبت نام', 'آدرس فرم ثبت نام'}:
+        return f'برای ثبت‌نام فرم رسمی لانچو را باز کنید. {_STORE_START_URL}'
+    if not history:
+        return None
+    last = history[-1]
+    if last['role'] != 'assistant':
+        return None
+    previous = last['content']
+    if _PRICE_REPLY in previous and len(history) >= 3 and history[-3]['role'] == 'assistant':
+        previous = history[-3]['content']
+    if previous.endswith((_STORE_STYLE_QUESTION, _STORE_READY_QUESTION)) and question in {'فعلا نه', 'فعلاً نه', 'نه'}:
+        return 'باشه. هر وقت خواستید ادامه می‌دهیم.'
+    if previous.endswith(_STORE_READY_QUESTION) and question in {'آماده ام', 'بله', 'ادامه', 'بریم', 'آره'}:
+        return f'برای ادامه، فرم رسمی لانچو را باز کنید. {_STORE_START_URL}'
+    if previous.endswith(_STORE_STYLE_QUESTION):
+        if question in {'عکس', 'تصویر', 'عکس محصول', 'نمایش عکس', 'نمایش محصول'}:
+            return f'نمونه‌ای با عکس‌های بزرگ انتخاب کنید. {_STORE_READY_QUESTION}'
+        if question in {'فیلتر', 'جستجو', 'جست وجو', 'جست وجو و فیلتر', 'فیلتر رنگ و سایز'}:
+            return f'نمونه‌ای با فیلتر رنگ و سایز انتخاب کنید. {_STORE_READY_QUESTION}'
+    if previous == _STORE_START_REPLY and re.search(r'می\s*فروشم|^(?:کیف و کفش|پوشاک|لباس|زیورآلات|لوازم آرایشی)$', question):
+        if re.search(r'لباس|پوشاک|کفش', question):
+            return f'برای چند محصول اصلی، عکس، رنگ و سایزها را آماده کنید. {_STORE_STYLE_QUESTION}'
+        return _STORE_STYLE_QUESTION
+    return None
+
+
 def concise_reply(text, limit=280):
     text = re.sub(
         r'^(?:از|با توجه به|طبق|بر اساس) اطلاعات (?:موجود|تأییدشده|تأیید شده)'
@@ -176,8 +209,10 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
     message = redact(message.strip())
     if not allow_preferences:
         question = ' '.join(message.replace('\u200c', ' ').rstrip('؟?!.').split())
-        if question == 'برای ساخت فروشگاه با لانچو از کجا شروع کنم':
-            return _STORE_START_REPLY, {}
+        if not is_price_question(message) and '[پوشانده شد]' not in message:
+            guidance = signup_guidance(question, history)
+            if guidance:
+                return guidance, {}
         if re.fullmatch(r'(?:لانچو چه امکاناتی (?:دارد|داره)|امکانات لانچو(?: چیه| چیست)?|امکانات)', question):
             return features_reply(options), {}
     clauses = [part.strip() for part in re.split(r'[؟?؛\n]+|\s+و\s+', message) if part.strip()]

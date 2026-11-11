@@ -450,9 +450,27 @@ class PrivacyAndModelTests(unittest.TestCase):
         text = '**https://launcho.ir/start** و **https://launcho.ir.evil.example/start**'
         response = NS(choices=[NS(message=NS(content=text, tool_calls=[]))])
         with patch.object(ai_service.client.chat.completions, 'create', return_value=response):
-            reply, _ = ai_service.generate_turn('لینک ثبت‌نام را بده')
+            reply, _ = ai_service.generate_turn('آدرس صفحه شروع ثبت‌نام کجاست؟')
         self.assertIn('**https://launcho.ir/start**', reply)
         self.assertNotIn('evil.example', reply)
+
+    def test_chat_guides_signup_and_hands_off_after_user_is_ready(self):
+        history = []
+        with patch.object(ai_service.client.chat.completions, 'create') as model:
+            for message, expected in (
+                ('می‌خواهم فروشگاه بسازم', 'چه محصولی'),
+                ('کیف و کفش', 'جست‌وجو و فیلتر'),
+                ('هزینه چقدر است؟', 'https://launcho.ir/pricing'),
+                ('فیلتر', 'برای ادامه در فرم رسمی آماده‌اید؟'),
+                ('آماده‌ام', 'https://launcho.ir/start'),
+            ):
+                reply, update = ai_service.generate_turn(message, history)
+                self.assertIn(expected, reply)
+                self.assertEqual(update, {})
+                if message != 'آماده‌ام':
+                    self.assertNotIn('https://launcho.ir/start', reply)
+                history.extend([{'role':'user','content':message}, {'role':'assistant','content':reply}])
+        model.assert_not_called()
 
     def test_guidance_replaces_unsupported_price_and_sensitive_request(self):
         for text, link in (
