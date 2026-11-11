@@ -13,7 +13,7 @@ from pydantic import ValidationError
 from app.core.config import PROJECT_ROOT
 from app.core.privacy import redact
 from app.models.schemas import Preferences, PreferenceUpdate
-from app.services.ai_service import generate_turn
+from app.services.ai_service import generate_turn, is_price_question
 from app.services.draft_gateway import build_gateway, unwrap, GatewayRejected, GatewayUnavailable
 from app.services.session_store import CoreError, SessionStore, digest
 
@@ -138,15 +138,25 @@ class ConversationCore:
         try:
             prefs = json.loads(row['prefs'])
             options, pricing = {}, {}
-            if self.gateway.mode == 'live':
+            if self.gateway.mode in {'live', 'local_mock'}:
                 try:
                     options, pricing = self.data(prefs['kind'])
+                    if self.gateway.mode == 'local_mock':
+                        options, pricing = {}, {}
                 except CoreError:
                     pass
             service_info = getattr(self.gateway, 'get_service_info', None)
             if service_info is not None:
                 try:
                     options = {**options, 'serviceInfo': service_info()}
+                except GatewayUnavailable:
+                    pass
+            match_offers = getattr(self.gateway, 'match_price_offers', None)
+            if match_offers and is_price_question(safe):
+                try:
+                    offers = unwrap(match_offers(prefs['kind'])).get('offers')
+                    if isinstance(offers, list):
+                        options = {**options, 'demoOffers': offers}
                 except GatewayUnavailable:
                     pass
             reply, update = self.model(safe, history, prefs, options, pricing)
