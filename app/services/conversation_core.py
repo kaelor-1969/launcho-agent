@@ -129,13 +129,12 @@ class ConversationCore:
             db.execute('UPDATE sessions SET chat_until=? WHERE id=?',(lease,sid))
         try:
             prefs = json.loads(row['prefs'])
-            try:
-                options, pricing = self.data(prefs['kind'])
-            except CoreError:
-                options, pricing = {}, {}
-            if self.gateway.mode != 'live':
-                # Fixtures may guide choices, but must not masquerade as live prices.
-                pricing = {'mode':'mock','notice':'داده نمونه است؛ عدد یا زمان اعلام نکن.'}
+            options, pricing = {}, {}
+            if self.gateway.mode == 'live':
+                try:
+                    options, pricing = self.data(prefs['kind'])
+                except CoreError:
+                    pass
             service_info = getattr(self.gateway, 'get_service_info', None)
             if service_info is not None:
                 try:
