@@ -253,6 +253,14 @@ class CoreTests(unittest.TestCase):
 
 
 class PrivacyAndModelTests(unittest.TestCase):
+    def test_store_starter_guides_before_referring_to_pricing(self):
+        with patch.object(ai_service.client.chat.completions, 'create') as call:
+            reply, update = ai_service.generate_turn('برای ساخت فروشگاه با لانچو از کجا شروع کنم؟')
+        call.assert_not_called()
+        self.assertIn('چه محصولی', reply)
+        self.assertNotIn('https://', reply)
+        self.assertEqual(update, {})
+
     def test_redaction_is_idempotent_and_preserves_normal_guidance(self):
         guidance = 'رمز عبور و کد تأیید فقط در فرم رسمی وارد می‌شوند.'
         self.assertEqual(redact(guidance), guidance)

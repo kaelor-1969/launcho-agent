@@ -70,6 +70,13 @@ def relevant_knowledge(knowledge, message):
 
 def generate_turn(message, history=None, preferences=None, options=None, pricing=None, *, allow_preferences=False):
     message = redact(message.strip())
+    if not allow_preferences and message.rstrip('؟?') == 'برای ساخت فروشگاه با لانچو از کجا شروع کنم':
+        return (
+            'برای شروع، مشخص کنیم چه چیزی می‌خواهید بفروشید. بعد می‌توانیم دربارهٔ '
+            'دسته‌بندی محصولات و قالب مناسب فروشگاه صحبت کنیم. 🛍️\n\n'
+            '**چه محصولی می‌خواهید آنلاین بفروشید؟**',
+            {},
+        )
     clauses = [part.strip() for part in re.split(r'[؟?؛\n]+|\s+و\s+', message) if part.strip()]
     price_query = not allow_preferences and bool(_PRICE_QUERY.search(message))
     if price_query and all(_PRICE_QUERY.search(part) for part in clauses):
