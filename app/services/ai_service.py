@@ -166,13 +166,13 @@ def signup_guidance(question, history):
     if question in {'برای ساخت فروشگاه با لانچو از کجا شروع کنم', 'می خواهم فروشگاه بسازم',
                     'می خوام فروشگاه بسازم', 'ثبت نام را شروع کن'}:
         return _STORE_START_REPLY
-    if re.search(r'\bمراحل ثبت نام(?: رو| را)?(?: برام| برای من)? (?:انجام بده|شروع کن)\b', question):
-        return _STORE_START_REPLY
     if question in {'لینک ثبت نام را بده', 'لینک ثبت نام', 'آدرس فرم ثبت نام'}:
         return f'برای ثبت‌نام فرم رسمی لانچو را باز کنید. {_STORE_START_URL}'
     if re.fullmatch(r'برای فروشگاه .+ از کجا شروع کنم', question):
         return _STORE_DOMAIN_QUESTION
     if not history:
+        if re.search(r'\b(?:مراحل )?ثبت نام(?: رو| را)?(?: برام| برای من)? (?:انجام بده|شروع کن)\b', question):
+            return _STORE_START_REPLY
         return None
     last = history[-1]
     if last['role'] != 'assistant':
@@ -200,6 +200,8 @@ def signup_guidance(question, history):
         r'(?!.*\b(?:چطور|چگونه|چرا|چیست|چیه|کجاست|آیا)\b)[\w\s،,&/-]{1,120}', question
     ):
         return _STORE_DOMAIN_QUESTION
+    if re.search(r'\b(?:مراحل )?ثبت نام(?: رو| را)?(?: برام| برای من)? (?:انجام بده|شروع کن)\b', question):
+        return _STORE_START_REPLY
     return None
 
 

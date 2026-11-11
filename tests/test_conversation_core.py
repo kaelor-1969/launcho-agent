@@ -489,7 +489,11 @@ class PrivacyAndModelTests(unittest.TestCase):
 
     def test_business_types_get_one_direct_next_step(self):
         with patch.object(ai_service.client.chat.completions, 'create') as model:
-            for business in ('کیف‌فروشی', 'تعمیر موبایل', 'آموزش زبان', 'ابزار صنعتی', 'قهوه تخصصی'):
+            for business in (
+                'کیف‌فروشی', 'تعمیر موبایل', 'آموزش زبان', 'ابزار صنعتی', 'قهوه تخصصی',
+                'کیف و کفش از لانچو خوشم اومده ثبت نام رو برام انجام بده',
+                'آموزش زبان، مراحل ثبت نام رو برام انجام بده',
+            ):
                 with self.subTest(business=business):
                     history = [{'role': 'assistant', 'content': ai_service._STORE_START_REPLY}]
                     reply, _ = ai_service.generate_turn(business, history)
