@@ -319,6 +319,18 @@ class PrivacyAndModelTests(unittest.TestCase):
         self.assertNotIn('https://', reply)
         self.assertEqual(update, {})
 
+    def test_features_use_mock_service_info_without_follow_up(self):
+        from app.mock_launcho import service_info
+
+        payload = service_info('Bearer local-simulation')['data']
+        with patch.object(ai_service.client.chat.completions, 'create') as model:
+            reply, _ = ai_service.generate_turn('امکانات لانچو چیه؟', options={'serviceInfo': payload})
+        model.assert_not_called()
+        for feature in payload['featureSummary']:
+            self.assertIn(feature, reply)
+        self.assertNotIn('؟', reply)
+        self.assertLessEqual(len(reply), 220)
+
     def test_redaction_is_idempotent_and_preserves_normal_guidance(self):
         guidance = 'رمز عبور و کد تأیید فقط در فرم رسمی وارد می‌شوند.'
         self.assertEqual(redact(guidance), guidance)
@@ -411,7 +423,7 @@ class PrivacyAndModelTests(unittest.TestCase):
         response = NS(choices=[NS(message=NS(content=(sentence + ' ') * 40, tool_calls=[]))])
         with patch.object(ai_service.client.chat.completions, 'create', return_value=response):
             reply, _ = ai_service.generate_turn('چطور محصولاتم را آماده کنم؟')
-        self.assertLessEqual(len(reply), 620)
+        self.assertLessEqual(len(reply), 420)
         self.assertTrue(reply.endswith(sentence))
 
     def test_price_question_uses_official_referral_without_calling_model(self):

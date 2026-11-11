@@ -20,15 +20,22 @@ tools = [{'type':'function','function':{
 }}]
 
 
+def get_public_knowledge():
+    try:
+        return json.loads((PROJECT_ROOT / 'content' / 'launcho-public.json').read_text(encoding='utf-8'))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
 def get_launcho_knowledge():
     content = PROJECT_ROOT / 'content'
     try:
         knowledge = (content / 'launchu-knowledge.md').read_text(encoding='utf-8')
-        public = json.loads((content / 'launcho-public.json').read_text(encoding='utf-8'))
-    except (FileNotFoundError, json.JSONDecodeError):
+    except FileNotFoundError:
         return 'اطلاعات متنی هنوز در دسترس نیست.'
-    official_topics = '\n'.join(f'## {title}\n{facts}' for title, facts in public['topics'].items())
-    return redact(f"{public['overview']}\n{official_topics}\n{knowledge}")
+    public = get_public_knowledge()
+    official_topics = '\n'.join(f'## {title}\n{facts}' for title, facts in public.get('topics', {}).items())
+    return redact(f"{public.get('overview', '')}\n{official_topics}\n{knowledge}")
 
 
 
@@ -65,12 +72,21 @@ _STORE_START_REPLY = (
     'دسته‌بندی محصولات و قالب مناسب فروشگاه صحبت کنیم. 🛍️\n\n'
     '**چه محصولی می‌خواهید آنلاین بفروشید؟**'
 )
-_FEATURES_REPLY = (
-    'با لانچو می‌توانید سایت یا فروشگاه بسازید. برای فروشگاه، قالب آماده، '
-    'مدیریت موجودی بر اساس رنگ و سایز، کوپن و حراج زمان‌دار دارید. '
-    'ابزار هوش مصنوعی پنل هم برای نوشتن توضیح محصول و آماده‌کردن تصویر کمک می‌کند. '
-    'https://launcho.ir/features'
-)
+_FEATURES_URL = 'https://launcho.ir/features'
+
+
+def features_reply(options):
+    features = (options or {}).get('serviceInfo', {}).get('featureSummary')
+    if not isinstance(features, list) or not features or not all(
+        isinstance(feature, str) and 0 < len(feature.strip()) <= 70
+        and not _MODEL_URL.search(feature) and not _PRICE_CLAIM.search(feature)
+        for feature in features
+    ):
+        features = get_public_knowledge().get('featureSummary', [])
+    if not features:
+        return f'امکانات فروشگاه‌ساز لانچو را اینجا ببینید. {_FEATURES_URL}'
+    summary = '، '.join(feature.strip() for feature in features[:3])
+    return redact(f'با لانچو فروشگاه آنلاین می‌سازید و این ابزارها را دارید: {summary}.\n{_FEATURES_URL}')
 
 
 def is_price_question(message):
@@ -154,11 +170,11 @@ def guidance_during_outage(message):
 def generate_turn(message, history=None, preferences=None, options=None, pricing=None, *, allow_preferences=False):
     message = redact(message.strip())
     if not allow_preferences:
-        question = message.rstrip('؟?').rstrip()
+        question = ' '.join(message.replace('\u200c', ' ').rstrip('؟?!.').split())
         if question == 'برای ساخت فروشگاه با لانچو از کجا شروع کنم':
             return _STORE_START_REPLY, {}
-        if question in {'لانچو چه امکاناتی دارد', 'لانچو چه امکاناتی داره'}:
-            return _FEATURES_REPLY, {}
+        if re.fullmatch(r'(?:لانچو چه امکاناتی (?:دارد|داره)|امکانات لانچو(?: چیه| چیست)?|امکانات)', question):
+            return features_reply(options), {}
     clauses = [part.strip() for part in re.split(r'[؟?؛\n]+|\s+و\s+', message) if part.strip()]
     price_query = not allow_preferences and is_price_question(message)
     price_reply = price_guidance(message, options, history) if price_query else _PRICE_REPLY
@@ -174,7 +190,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
     policy = '' if allow_preferences else (
         '\nحالت فقط راهنمایی است. هیچ اطلاعاتی برای ثبت‌نام جمع نکن. '
         'مبلغ، جشنواره، تخفیف، اقساط یا رایگان‌بودن را تأیید نکن. '
-        'داده ناکافی را صریح بگو و به صفحه رسمی مرتبط ارجاع بده. '
+        'اگر بخش مشخصی از سؤال بی‌پاسخ است، فقط همان بخش را کوتاه روشن کن. '
         'ادعای ساخت حساب یا فروشگاه، ارسال کد، پذیرش قوانین، پرداخت، یا صدور تخفیف نکن. '
         'فقط به پرسش‌های مرتبط با لانچو و راه‌اندازی سایت یا فروشگاه پاسخ بده.'
     )
@@ -229,8 +245,8 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         text,
     )
     text = redact(text) or empty_guidance_reply(message, safe_history)
-    if len(text) > 620:
-        short = text[:620].rsplit(' ', 1)[0]
+    if len(text) > 420:
+        short = text[:420].rsplit(' ', 1)[0]
         sentences = list(re.finditer(r'[.!؟](?=\s|$)', short))
         text = short[:sentences[-1].end()] if sentences else short.rstrip() + '…'
     if price_query and ('https://launcho.ir/pricing' not in text or _DEMO_OFFER_LABEL in price_reply):
