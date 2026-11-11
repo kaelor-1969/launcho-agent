@@ -18,7 +18,8 @@ class OfferRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
     kind: ServiceKind
-    planMonths: int | None = Field(default=None, ge=1, le=120)
+    # Optional in the demo; it validates a supported period, not campaign eligibility.
+    planMonths: Literal[3, 6, 12] | None = None
     step: int = Field(ge=0, le=4)
     objections: list[Literal['price', 'trust', 'complexity', 'time', 'template', 'domain', 'other']]
     needs: list[Literal['low_upfront', 'fast_launch', 'own_domain', 'support', 'other']]
@@ -28,12 +29,16 @@ class OfferRequest(BaseModel):
 def response(data, authorization):
     if authorization != 'Bearer local-simulation':
         raise HTTPException(status_code=401)
-    return {'ok': True, 'data': data}
+    return {'ok': True, 'data': data, 'simulation': True, 'notice': fixture['simulationNotice']}
 
 
 @app.get('/pricing')
-def pricing(authorization: str = Header(default='')):
-    return response(fixture['pricing'], authorization)
+def pricing(authorization: str = Header(default=''), kind: ServiceKind | None = None):
+    data = fixture['pricing']
+    if kind is not None:
+        data = {key: value for key, value in data.items() if key != 'serviceDetails'}
+        data = {**data, 'kind': kind, **fixture['pricing']['serviceDetails'][kind]}
+    return response(data, authorization)
 
 
 @app.get('/signup-options')
