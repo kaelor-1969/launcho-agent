@@ -1,5 +1,14 @@
 {
-  "source": "launcho-api-v1.md (contract example, not current website data)",
+  "source": "Internal demo fixture; not an official Launcho API contract or live pricing feed",
+  "reviewedAt": "2026-11-11",
+  "referenceSources": [
+    "https://launcho.ir/pricing",
+    "https://launcho.ir/start",
+    "https://launcho.ir/start?kind=website",
+    "https://launcho.ir/site-builder",
+    "https://launcho.ir/installments"
+  ],
+  "simulationNotice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست.",
   "pricing": {
     "currency": "toman",
     "setupFees": {
@@ -42,25 +51,56 @@
       {
         "tld": "com",
         "includedInSetup": false,
-        "annualFee": 1200000
+        "annualFee": 4200000
       }
     ],
-    "setupIncludes": [
-      "پیگیری اداری درگاه پرداخت",
-      "پیگیری اینماد"
-    ],
-    "planIncludes": [
-      "فروشگاه کامل با قالب‌های آماده"
-    ],
-    "installment": {
-      "count": 4,
-      "monthlyPart": 3750000,
-      "line": "متن آماده لانچو"
+    "giftUsage": {
+      "renewsMonthly": true,
+      "rollover": false,
+      "uses": ["هوش مصنوعی", "پیامک از خط اشتراکی"]
+    },
+    "serviceDetails": {
+      "shop": {
+        "setupIncludes": [
+          "ثبت دامنهٔ ir",
+          "ساخت فروشگاه و تنظیم قالب",
+          "آموزش کار با پنل",
+          "پیگیری اداری درگاه پرداخت و اینماد",
+          "ثبت‌نام مالیاتی و ثبت‌نام در ترب",
+          "اتصال گوگل آنالیتیکس"
+        ],
+        "planIncludes": [
+          "فروشگاه با قالب‌های آماده، کاتالوگ، سبد خرید و مدیریت سفارش",
+          "ابزارهای هوش مصنوعی با مصرف اعتبار",
+          "میزبانی، SSL، پشتیبان‌گیری، پشتیبانی فنی و به‌روزرسانی"
+        ],
+        "installment": {
+          "count": 4,
+          "monthlyPart": 3750000,
+          "scope": "setup_only",
+          "line": "فقط هزینهٔ راه‌اندازی فروشگاه در چهار قسط پرداخت می‌شود؛ اشتراک و هزینهٔ دامنه در پرداخت اول کامل تسویه می‌شوند. شرایط فعلی را در صفحهٔ رسمی اقساط بررسی کنید."
+        }
+      },
+      "website": {
+        "setupIncludes": ["ثبت دامنهٔ ir", "راه‌اندازی سایت با قالب‌های آماده"],
+        "planIncludes": [
+          "سایت بدون کاتالوگ، سبد خرید و درگاه؛ با قالب آماده و صفحه‌ساز بلوکی",
+          "میزبانی، SSL و پشتیبان‌گیری"
+        ],
+        "installment": {
+          "count": 4,
+          "monthlyPart": 1250000,
+          "scope": "setup_only",
+          "line": "فقط هزینهٔ راه‌اندازی سایت در چهار قسط پرداخت می‌شود؛ اشتراک و هزینهٔ دامنه در پرداخت اول کامل تسویه می‌شوند. شرایط فعلی را در صفحهٔ رسمی اقساط بررسی کنید."
+        }
+      }
     }
   },
   "signupOptions": {
     "shop": {
       "kind": "shop",
+      "availability": "unavailable",
+      "notice": "گزینه‌های قابل ثبت تا دریافت دادهٔ مورد تأیید خالی‌اند؛ این فهرست نمایندهٔ گزینه‌های سایت واقعی نیست.",
       "steps": [],
       "businessCategories": [],
       "templateCategories": [],
@@ -68,6 +108,8 @@
     },
     "website": {
       "kind": "website",
+      "availability": "unavailable",
+      "notice": "گزینه‌های قابل ثبت تا دریافت دادهٔ مورد تأیید خالی‌اند؛ این فهرست نمایندهٔ گزینه‌های سایت واقعی نیست.",
       "steps": [],
       "businessCategories": [],
       "templateCategories": [],
@@ -85,8 +127,8 @@
     {
       "id": "demo_campaign",
       "type": "discount",
-      "title": "جشنوارهٔ نمونه",
-      "line": "در این سناریوی آزمایشی، شرایط جشنواره را می‌توانید در مرحلهٔ پرداخت بررسی کنید.",
+      "title": "جشنوارهٔ آزمایشی",
+      "line": "این جشنواره صرفاً آزمایشی است و برای خرید اعتبار ندارد؛ هیچ تخفیفی اعمال نمی‌شود.",
       "expiresAt": null
     }
   ]

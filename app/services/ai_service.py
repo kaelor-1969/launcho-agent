@@ -56,7 +56,8 @@ _OFFICIAL_URLS = {'https://launcho.ir', 'https://launcho.ir/', 'https://launcho.
                   'https://launcho.ir/store-setup', 'https://launcho.ir/installments'}
 _PRICE_REPLY = (
     'برای کنترل هزینه، می‌توانید اول امکانات ضروری را مشخص کنید یا شرایط اقساط راه‌اندازی را '
-    'در تعرفهٔ رسمی بررسی کنید. هزینهٔ راه‌اندازی و اشتراک جدا هستند. https://launcho.ir/pricing'
+    'در تعرفهٔ رسمی بررسی کنید. هزینهٔ راه‌اندازی و اشتراک جدا هستند. '
+    'دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing'
 )
 _DEMO_OFFER_LABEL = 'پیشنهاد آزمایشی'
 _FORM_REPLY = 'اطلاعات ورود و تأیید را فقط در فرم رسمی لانچو وارد کنید: https://launcho.ir/start'
@@ -77,13 +78,13 @@ def is_price_question(message):
 def price_guidance(message, options, history):
     reply = _PRICE_REPLY
     if re.search(r'جشنواره|تخفیف', message):
-        reply = 'پیشنهاد خرید فعالی برای تأیید در دسترسم نیست. ' + reply
+        reply = 'جشنواره یا کد تخفیف فعالی برای تأیید در دسترسم نیست. ' + reply
     if any(turn['role'] == 'assistant' and _DEMO_OFFER_LABEL in turn['content'] for turn in history or []):
         return reply
     for offer in (options or {}).get('demoOffers', []):
         if isinstance(offer, dict) and offer.get('id') == 'demo_campaign':
             line = offer.get('line')
-            if isinstance(line, str) and line.strip():
+            if isinstance(line, str) and line.strip() and not _PRICE_CLAIM.search(line):
                 return f'{_DEMO_OFFER_LABEL} — {line.strip()}\n{_PRICE_REPLY}'
     return reply
 
