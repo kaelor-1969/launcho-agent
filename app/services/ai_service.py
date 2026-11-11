@@ -165,6 +165,10 @@ def signup_guidance(question, history):
         return _STORE_START_REPLY
     if question in {'لینک ثبت نام را بده', 'لینک ثبت نام', 'آدرس فرم ثبت نام'}:
         return f'برای ثبت‌نام فرم رسمی لانچو را باز کنید. {_STORE_START_URL}'
+    if (re.search(r'\bکیف(?: ها|های)?\b', question) and 'کفش' not in question
+            and re.search(r'از کجا شروع|(?:ساخت|راه اندازی) فروشگاه|فروشگاه.{0,30}بساز', question)
+            and not re.search(r'قالب|دامنه|درگاه|ارسال|مهاجرت', question)):
+        return 'برای شروع، کیف‌ها را بر اساس نوع دسته‌بندی کنید.'
     if not history:
         return None
     last = history[-1]

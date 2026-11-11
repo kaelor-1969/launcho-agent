@@ -454,6 +454,12 @@ class PrivacyAndModelTests(unittest.TestCase):
         self.assertIn('**https://launcho.ir/start**', reply)
         self.assertNotIn('evil.example', reply)
 
+    def test_bag_store_gets_one_direct_next_step(self):
+        with patch.object(ai_service.client.chat.completions, 'create') as model:
+            reply, _ = ai_service.generate_turn('برای فروشگاه کیف از کجا شروع کنم؟')
+        model.assert_not_called()
+        self.assertEqual(reply, 'برای شروع، کیف‌ها را بر اساس نوع دسته‌بندی کنید.')
+
     def test_chat_guides_signup_and_hands_off_after_user_is_ready(self):
         history = []
         with patch.object(ai_service.client.chat.completions, 'create') as model:
