@@ -24,7 +24,7 @@ from app.core.privacy import redact
 from app.main import app
 from app.models.schemas import ConfirmRequest, Preferences
 from app.services.conversation_core import ConversationCore
-from app.services.draft_gateway import ExistingReadOnlyGateway, GatewayRejected
+from app.services.draft_gateway import ExistingReadOnlyGateway, GatewayRejected, LaunchoDraftGateway
 from app.services.session_store import SessionStore, CoreError
 from app.services import ai_service
 
@@ -85,6 +85,40 @@ class CoreTests(unittest.TestCase):
         self.assert_core_error('session_not_found',lambda:fresh.get_session(self.sid,'wrong'))
         text=Path(self.core.store.path).read_bytes()
         self.assertNotIn(self.token.encode(),text)
+
+    def test_live_draft_transport_preserves_key_and_status_is_session_owned(self):
+        gateway = LaunchoDraftGateway('https://example.invalid/api/assistant/v1', 'test-token')
+        self.core.gateway = gateway
+        draft = self.gateway.create_signup_draft(CHOICES, 'fixture')
+        endpoint = 'https://example.invalid/api/assistant/v1/signup-drafts'
+        payload = httpx.Response(201, json=draft, request=httpx.Request('POST', endpoint))
+        with patch.object(gateway, 'get_signup_options', self.gateway.get_signup_options), \
+                patch.object(gateway, 'get_pricing', self.gateway.get_pricing), \
+                patch('app.services.draft_gateway.httpx.post', return_value=payload) as send:
+            revision = self.core.edit(self.sid, self.token, 0, CHOICES)['revision']
+            review = self.core.prepare_review(self.sid, self.token, revision)
+            request = ConfirmRequest(**{field:review[field] for field in ('revision','reviewId','confirmationToken')},
+                                     confirmed=True)
+            self.core.confirm(self.sid, self.token, request)
+            self.core.confirm(self.sid, self.token, request)
+        send.assert_called_once()
+        self.assertEqual(send.call_args.args, (endpoint,))
+        self.assertTrue(send.call_args.kwargs['headers']['Idempotency-Key'])
+        with patch.object(gateway, 'get_draft_status', return_value={'ref':'sd_mockreference','status':'paid'}) as read:
+            with self.assertRaises(CoreError):
+                self.core.draft_status(self.sid, 'invalid-token')
+            read.assert_not_called()
+            self.assertEqual(self.core.draft_status(self.sid, self.token), {'status':'paid'})
+        read.assert_called_once_with('sd_mockreference')
+        with patch.object(gateway, 'match_checkout_offers', return_value={'offers':[
+            {'type':'discount','line':'پیشنهاد منقضی','expiresAt':'2000-01-01T00:00:00Z'},
+            {'type':'payment_option','line':'پرداخت قسطی در فرم'},
+        ]}) as match:
+            self.assertIsNone(self.core.checkout_offer('هزینه بالاست', [], {'kind':'shop'}))
+            match.assert_not_called()
+            self.assertEqual(self.core.checkout_offer('هزینه بالاست', [], {'kind':'shop', **CHOICES}),
+                             'پرداخت قسطی در فرم')
+        match.assert_called_once_with('shop', 3)
 
     def test_chat_retry_replays_saved_answer(self):
         calls = []

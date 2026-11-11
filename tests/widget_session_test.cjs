@@ -56,7 +56,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
     fetch: async (url, options) => {
       assert.ok(url.startsWith('/') && !url.startsWith('//'), 'fetch must use a relative URL');
       const body = options.body === undefined ? undefined : JSON.parse(options.body);
-      calls.push({url, body, headers: options.headers});
+      calls.push({url, body, headers: options.headers, method: options.method});
       let data;
       if (url === '/api/sessions') {
         if (failSession) throw new TypeError('offline');
@@ -78,6 +78,8 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
         } else if (url.endsWith('/review')) {
           if (failReview) throw new TypeError('review response lost after server invalidated previous review');
           data = {...review, revision};
+        } else if (url.endsWith('/draft-status')) {
+          data = {status: 'paid'};
         } else if (url.endsWith('/confirm')) {
           if (rejectConfirm) return {ok: false, status: 410,
             json: async () => ({detail: {code: 'review_expired', message: 'private-detail'}})};
@@ -206,6 +208,10 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   w.releaseConfirmation(); await pending;
   assert.equal(w.get('confirm').hidden, true);
   assert.equal(w.get('review-summary').children[0].href, 'https://launcho.ir/start?signup=sd_testdraft');
+  await w.get('review-summary').children[1].emit('click');
+  assert.equal(w.calls.at(-1).method, 'GET');
+  assert.match(w.calls.at(-1).url, /\/draft-status$/);
+  assert.match(w.get('review-notice').textContent, /پرداخت ثبت شده/);
 
   const failed = await widget({sessionFailure: true});
   await failed.send();

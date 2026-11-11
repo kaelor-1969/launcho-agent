@@ -13,7 +13,7 @@ async function post(url, body, token, timeout = 45000) {
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
     const response = await fetch(url, {
-      method: 'POST', credentials: 'omit', cache: 'no-store',
+      method: body === undefined ? 'GET' : 'POST', credentials: 'omit', cache: 'no-store',
       headers: { 'Content-Type': 'application/json', ...(token ? {'X-Session-Token': token} : {}) },
       body: JSON.stringify(body), signal: controller.signal,
     });
@@ -95,6 +95,10 @@ export function createSessionApi() {
       if (!data.draft && (!data.summary || typeof data.summary !== 'object' || Array.isArray(data.summary) ||
           typeof data.reviewId !== 'string' || typeof data.confirmationToken !== 'string')) throw invalid();
       return data;
+    },
+    async draftStatus() {
+      await start();
+      return post(endpoint('draft-status'), undefined, session.token);
     },
     // Called only from the visible confirm button, never from chat/model output.
     async confirm(review) {

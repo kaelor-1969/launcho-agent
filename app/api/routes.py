@@ -49,7 +49,9 @@ def chat(request: ChatRequest, response: Response, x_session_token: str | None =
 @router.post('/api/sessions',status_code=201)
 def create_session(response: Response):
     no_store(response)
-    return run(lambda:get_core().create_session())
+    result = run(lambda:get_core().create_session())
+    logger.info('launcho_event=session_started')
+    return result
 
 
 @router.get('/api/sessions/{session_id}')
@@ -77,7 +79,18 @@ def review(session_id: str, request: ReviewRequest, response: Response,
 def confirm(session_id: str, request: ConfirmRequest, response: Response,
             x_session_token: str | None = Header(default=None)):
     no_store(response)
-    return run(lambda:get_core().confirm(session_id,x_session_token,request))
+    result = run(lambda:get_core().confirm(session_id,x_session_token,request))
+    if not result['replayed']:
+        logger.info('launcho_event=draft_created')
+    return result
+
+
+@router.get('/api/sessions/{session_id}/draft-status')
+def draft_status(session_id: str, response: Response, x_session_token: str | None = Header(default=None)):
+    no_store(response)
+    result = run(lambda:get_core().draft_status(session_id, x_session_token))
+    logger.info('launcho_event=draft_status_checked status=%s', result['status'])
+    return result
 
 
 @router.post('/api/sessions/resume')

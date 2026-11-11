@@ -16,7 +16,7 @@ python -m venv .venv
 Copy-Item .env.example .env
 ```
 
-اگر `.env` موجود است آن را بازنویسی نکنید. برای چت واقعی سه متغیر `AI_API_KEY`، `AI_BASE_URL` و `AI_MODEL_NAME` را با اطلاعات سرور تنظیم کنید. `LAUNCHO_API_URL` و `LAUNCHO_API_KEY` فعلاً مصرف نمی‌شوند. هیچ کلیدی نباید در frontend، تگ نصب یا URL قرار بگیرد.
+اگر `.env` موجود است آن را بازنویسی نکنید. برای چت واقعی سه متغیر `AI_API_KEY`، `AI_BASE_URL` و `AI_MODEL_NAME` را با اطلاعات سرور تنظیم کنید. اتصال رسمی لانچو از `LAUNCHO_API_URL` و `LAUNCHO_API_KEY` استفاده می‌کند. فعال‌سازی پیش‌نویس در [راهنمای اجرا](docs/local-launcho-simulation.md) توضیح داده شده است. کلیدها فقط در سرور تنظیم شوند.
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000

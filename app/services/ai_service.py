@@ -66,6 +66,7 @@ _PRICE_REPLY = (
     'https://launcho.ir/pricing'
 )
 _DEMO_OFFER_LABEL = 'پیشنهاد آزمایشی'
+CHECKOUT_OFFER_LABEL = 'پیشنهاد لانچو'
 _FORM_REPLY = 'اطلاعات ورود و تأیید را فقط در فرم رسمی لانچو وارد کنید: https://launcho.ir/start'
 _STORE_START_REPLY = 'چه محصولی می‌خواهید آنلاین بفروشید؟'
 _STORE_STYLE_QUESTION = 'نمایش عکس محصول مهم‌تر است یا جست‌وجو و فیلتر؟'
@@ -96,6 +97,9 @@ def is_price_question(message):
 
 
 def price_guidance(message, options, history):
+    offer = (options or {}).get('checkoutOffer')
+    if offer:
+        return f'{CHECKOUT_OFFER_LABEL} — {offer}\nشرایط نهایی در فرم رسمی مشخص می‌شود. https://launcho.ir/pricing'
     reply = _PRICE_REPLY
     if re.search(r'جشنواره|تخفیف', message):
         reply = 'پیشنهاد فعالی برای تأیید ندارم. ' + reply
@@ -211,8 +215,12 @@ def concise_reply(text, limit=280):
 
 def generate_turn(message, history=None, preferences=None, options=None, pricing=None, *, allow_preferences=False):
     message = redact(message.strip())
+    question = ' '.join(message.replace('\u200c', ' ').rstrip('؟?!.').split())
+    if question in {'تماس با پشتیبانی', 'با کارشناس صحبت کنم', 'می خواهم با کارشناس صحبت کنم'}:
+        return 'از صفحهٔ تماس لانچو با کارشناس ارتباط بگیرید. https://launcho.ir/contact', {}
+    if question in {'فروشگاهم فعال شده از کجا شروع کنم', 'بعد از ساخت فروشگاه از کجا شروع کنم'}:
+        return 'اولین محصول را با عکس، توضیح و موجودی در پنل ثبت کنید. بعد روش ارسال را بررسی کنید.', {}
     if not allow_preferences:
-        question = ' '.join(message.replace('\u200c', ' ').rstrip('؟?!.').split())
         if not is_price_question(message) and '[پوشانده شد]' not in message:
             guidance = signup_guidance(question, history)
             if guidance:
@@ -220,7 +228,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         if re.fullmatch(r'(?:لانچو چه امکاناتی (?:دارد|داره)|امکانات لانچو(?: چیه| چیست)?|امکانات)', question):
             return features_reply(options), {}
     clauses = [part.strip() for part in re.split(r'[؟?؛\n]+|\s+و\s+', message) if part.strip()]
-    price_query = not allow_preferences and is_price_question(message)
+    price_query = is_price_question(message)
     price_reply = price_guidance(message, options, history) if price_query else _PRICE_REPLY
     if price_query and all(_PRICE_QUERY.search(part) for part in clauses):
         return price_reply, {}
@@ -228,10 +236,16 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         return 'می‌توانم دربارهٔ لانچو و راه‌اندازی سایت یا فروشگاه راهنمایی کنم.', {}
     safe_history = [{'role':item['role'], 'content':redact(item['content'])}
                     for item in (history or [])[-12:] if item['role'] in {'user','assistant'}]
-    context = {'preferences':preferences or {}, 'options':{key: value for key, value in (options or {}).items() if key != 'demoOffers'},
-               'pricing':(pricing or {}) if allow_preferences else {}}
+    context = {'preferences':preferences or {}, 'options':{key: value for key, value in (options or {}).items()
+                                                           if key not in {'demoOffers', 'checkoutOffer'}}}
+    if allow_preferences:
+        context['planMonths'] = [plan['months'] for plan in (pricing or {}).get('plans', []) if type(plan.get('months')) is int]
+        context['domainSuffixes'] = [domain['tld'] for domain in (pricing or {}).get('domains', []) if isinstance(domain.get('tld'), str)]
     knowledge = relevant_knowledge(get_launcho_knowledge(), message)
-    policy = '' if allow_preferences else (
+    policy = (
+        '\nفقط وقتی کاربر ساخت فروشگاه را شروع کرده، اطلاعات ناقص را یکی‌یکی بپرس. '
+        'هر نوبت انتخاب صریح را با ابزار ثبت کن. بعد از ثبت، مرحلهٔ بعد را بر اساس اطلاعات جلسه انتخاب کن.'
+        if allow_preferences else
         '\nحالت فقط راهنمایی است. هیچ اطلاعاتی برای ثبت‌نام جمع نکن. '
         'مبلغ، جشنواره، تخفیف، اقساط یا رایگان‌بودن را تأیید نکن. '
         'اگر بخش مشخصی از سؤال بی‌پاسخ است، فقط همان بخش را کوتاه روشن کن. '
@@ -267,7 +281,20 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
             return 'عملیات درخواستی مجاز نیست. پیش‌نویس فقط پس از مرور و دکمه تأیید ساخته می‌شود.', {}
         try:
             update = PreferenceUpdate.model_validate_json(calls[0].function.arguments)
-            return 'انتخاب‌های شما دریافت شد. برای ساخت پیش‌نویس، خلاصه را مرور و دکمه تأیید را بزنید.', update.model_dump(exclude_unset=True, mode='json')
+            selections = update.model_dump(exclude_unset=True, mode='json')
+            merged = {**(preferences or {}), **selections}
+            if not merged.get('businessName'):
+                return 'اسم کسب‌وکارت چیست؟', selections
+            if not merged.get('category'):
+                return 'چه محصولی می‌فروشی؟', selections
+            if not merged.get('template'):
+                return 'ظاهر محصول مهم‌تر است یا جست‌وجو و فیلتر؟', selections
+            if not merged.get('planMonths'):
+                periods = '، '.join(str(months) for months in context['planMonths'][:4])
+                return (f'دورهٔ چندماهه را می‌خواهی؟ {periods}' if periods else 'کدام دورهٔ اشتراک را می‌خواهی؟'), selections
+            if not merged.get('domain'):
+                return 'دامنه داری یا دامنهٔ تازه می‌خواهی؟', selections
+            return 'خلاصه را مرور کن و اگر درست است، تأیید کن.', selections
         except ValidationError:
             return 'اطلاعات انتخابی معتبر نبود. لطفاً نام کسب‌وکار، دسته‌بندی، دوره و قالب را مشخص کنید.', {}
     text = (answer.content or '').strip()
@@ -279,16 +306,17 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
             'محصول و ویژگی اصلی‌اش را با متن معرفی کنید.',
             {},
         )
-    if not allow_preferences and _ACTION_CLAIM.search(normalized):
+    if _ACTION_CLAIM.search(normalized):
         return 'برای انجام ثبت‌نام و بررسی وضعیت آن، فرم رسمی لانچو را باز کنید: https://launcho.ir/start', {}
-    if not allow_preferences and _PRICE_CLAIM.search(normalized):
+    if _PRICE_CLAIM.search(normalized):
         return price_reply, {}
     text = _MODEL_URL.sub(
         lambda match: match[0] if match[0].rstrip('.,،؛') in _OFFICIAL_URLS else '[پیوند تأییدنشده حذف شد]',
         text,
     )
     text = concise_reply(redact(text)) or empty_guidance_reply(message, safe_history)
-    if price_query and ('https://launcho.ir/pricing' not in text or _DEMO_OFFER_LABEL in price_reply):
+    if price_query and ('https://launcho.ir/pricing' not in text
+                        or price_reply.startswith((_DEMO_OFFER_LABEL, CHECKOUT_OFFER_LABEL))):
         text = f'{concise_reply(text, limit=140)}\n\n{price_reply}'
     return text, {}
 
