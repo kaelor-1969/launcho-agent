@@ -103,15 +103,27 @@ class CoreTests(unittest.TestCase):
 
     def test_redaction_before_model_and_history(self):
         captured=[]
-        def model(*args):captured.append(args);return 'کد تأیید: ۱۲۳۴۵۶',{}
+        def model(*args):captured.append(args);return 'one-time passcode: ۱۲۳۴۵۶',{}
         self.core.model=model
-        self.core.chat(self.sid,self.token,'شماره من ۰۹۱۲۳۴۵۶۷۸۹ و کد تأیید: ۱۲۳۴۵۶')
+        self.core.chat(self.sid,self.token,'شماره من ۰۹۱۲۳۴۵۶۷۸۹ و گذرواژه: SampleSecret و one-time passcode: ۷۸۹۰۱۲')
         self.core.chat(self.sid,self.token,'ادامه')
         stored=self.core.get_session(self.sid,self.token)
         representation=json.dumps([captured,stored],ensure_ascii=False)
-        for secret in ['۰۹۱۲۳۴۵۶۷۸۹','۱۲۳۴۵۶','09123456789','123456']:
+        for secret in ['۰۹۱۲۳۴۵۶۷۸۹','۱۲۳۴۵۶','09123456789','123456','SampleSecret','۷۸۹۰۱۲']:
             self.assertNotIn(secret,representation)
         self.assertTrue(captured[1][1])
+
+    def test_existing_history_is_scrubbed_on_access(self):
+        old = [{'role':'user','content':'گذرواژه: LegacySecret'},
+               {'role':'assistant','content':'one-time passcode: 654321'}]
+        with self.core.store.transaction() as db:
+            db.execute('UPDATE sessions SET history=? WHERE id=?', (json.dumps(old), self.sid))
+        history = self.core.get_session(self.sid,self.token)['history']
+        self.assertEqual([turn['content'] for turn in history],
+                         ['گذرواژه: [پوشانده شد]', 'one-time passcode: [پوشانده شد]'])
+        with self.core.store.transaction() as db:
+            row = db.execute('SELECT history FROM sessions WHERE id=?', (self.sid,)).fetchone()
+        self.assertEqual(json.loads(row['history']), history)
 
     def test_safe_model_update_is_saved(self):
         self.core.model=lambda *args:('انتخاب دریافت شد',CHOICES)
@@ -397,6 +409,14 @@ class PrivacyAndModelTests(unittest.TestCase):
         self.assertIn('https://launcho.ir/pricing', reply)
         self.assertEqual(update, {})
 
+    def test_bold_official_url_survives_and_impostor_is_removed(self):
+        text = '**https://launcho.ir/start** و **https://launcho.ir.evil.example/start**'
+        response = NS(choices=[NS(message=NS(content=text, tool_calls=[]))])
+        with patch.object(ai_service.client.chat.completions, 'create', return_value=response):
+            reply, _ = ai_service.generate_turn('لینک ثبت‌نام را بده')
+        self.assertIn('**https://launcho.ir/start**', reply)
+        self.assertNotIn('evil.example', reply)
+
     def test_guidance_replaces_unsupported_price_and_sensitive_request(self):
         for text, link in (
             ('اشتراک ۲۴۰٬۰۰۰ تومان است.', 'https://launcho.ir/pricing'),
@@ -412,6 +432,15 @@ class PrivacyAndModelTests(unittest.TestCase):
 
 
 class EndpointTests(unittest.IsolatedAsyncioTestCase):
+    async def test_invisible_chat_is_rejected_and_persian_joiner_survives(self):
+        with patch('app.api.routes.get_ai_response', return_value='پاسخ') as model:
+            blank = await self.client.post('/api/chat', json={'message':'\u200b\u200c\u202e\ufe0f'})
+            self.assertEqual(blank.status_code, 422)
+            model.assert_not_called()
+            valid = await self.client.post('/api/chat', json={'message':'می‌روم'})
+            self.assertEqual(valid.status_code, 200)
+            model.assert_called_once_with('می‌روم')
+
     async def test_invalid_chat_body_does_not_echo_rejected_input(self):
         marker = 'QA_FAKE_REJECTED_INPUT'
         response = await self.client.post('/api/chat', json={'message': {'otp': marker}})

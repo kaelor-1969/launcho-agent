@@ -75,10 +75,14 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') { event.preventDefault(); notify('close'); }
 });
 
+function hasVisibleText(message) {
+  return /[\p{L}\p{N}\p{P}\p{S}]/u.test(message);
+}
+
 function updateInput() {
   const length = Array.from(input.value.trim()).length;
   const blocked = pending || sessionStarting || confirmationPending || (!demoMode && !sessionReady);
-  $('send').disabled = blocked || !configured || length === 0 || length > 5000;
+  $('send').disabled = blocked || !configured || !hasVisibleText(input.value) || length > 5000;
   $('retry').disabled = pending || sessionStarting;
   $('review-button').disabled = blocked || !configured || Boolean(failed);
   $('confirm').disabled = pending || !review?.canConfirm;
@@ -112,6 +116,29 @@ function scrollToBottom(force = false) {
 scrollArea.addEventListener('scroll', () => {
   followBottom = scrollArea.scrollHeight - scrollArea.scrollTop - scrollArea.clientHeight < 80;
 }, { passive: true });
+const officialChatUrls = new Set([
+  'https://launcho.ir', 'https://launcho.ir/', 'https://launcho.ir/start',
+  'https://launcho.ir/pricing', 'https://launcho.ir/contact', 'https://launcho.ir/features',
+  'https://launcho.ir/#templates', 'https://launcho.ir/store-setup', 'https://launcho.ir/installments',
+]);
+
+function appendReplyText(parent, text) {
+  let offset = 0;
+  for (const match of text.matchAll(/https?:\/\/[^\s<>"'\]\)*`]+/gi)) {
+    const address = match[0].replace(/[.,،؛]+$/, '');
+    if (!officialChatUrls.has(address)) continue;
+    parent.append(document.createTextNode(text.slice(offset, match.index)));
+    const link = document.createElement('a');
+    link.href = address;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = address;
+    parent.append(link);
+    offset = match.index + address.length;
+  }
+  parent.append(document.createTextNode(text.slice(offset)));
+}
+
 function appendMessage(role, message) {
   const row = document.createElement('div');
   row.className = `message-row role-${role}`;
@@ -128,16 +155,16 @@ function appendMessage(role, message) {
   if (role === 'user') {
     bubble.textContent = message;
   } else {
-    // Render only bold markers. Every other character stays plain text.
+    // Build text, bold spans, and approved links without parsing HTML.
     let offset = 0;
     for (const match of message.matchAll(/\*\*([^*\r\n]+)\*\*/g)) {
-      bubble.append(document.createTextNode(message.slice(offset, match.index)));
+      appendReplyText(bubble, message.slice(offset, match.index));
       const bold = document.createElement('strong');
-      bold.textContent = match[1];
+      appendReplyText(bold, match[1]);
       bubble.append(bold);
       offset = match.index + match[0].length;
     }
-    bubble.append(document.createTextNode(message.slice(offset)));
+    appendReplyText(bubble, message.slice(offset));
   }
   const speaker = document.createElement('span');
   speaker.className = 'sr-only';
@@ -149,7 +176,7 @@ function appendMessage(role, message) {
 async function submit(message, retry = false) {
   if (pending || sessionStarting || confirmationPending || (!demoMode && !sessionReady) || !configured || workflowActive()) return;
   message = message.trim();
-  if (!message) return;
+  if (!hasVisibleText(message)) return;
   if (Array.from(message).length > 5000) {
     showError('پیامت باید حداکثر ۵۰۰۰ کاراکتر باشد.');
     return;

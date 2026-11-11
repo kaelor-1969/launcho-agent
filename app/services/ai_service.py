@@ -4,7 +4,7 @@ import re
 from openai import OpenAI, APIError
 from pydantic import ValidationError
 from app.core.config import PROJECT_ROOT, settings
-from app.core.privacy import redact
+from app.core.privacy import has_visible_text, redact
 from app.models.schemas import PreferenceUpdate
 from app.prompts.system_prompts import get_system_prompt
 
@@ -49,7 +49,7 @@ _ATTACHMENT_REQUEST = re.compile(
     rf'{_ATTACHMENT}[^.!؟?]{{0,70}}{_UPLOAD_VERB}|{_UPLOAD_VERB}[^.!؟?]{{0,70}}{_ATTACHMENT}',
     re.I,
 )
-_MODEL_URL = re.compile(r'(?:https?://|www\.)[^\s<>"\]\)]+', re.I)
+_MODEL_URL = re.compile(r'(?:https?://|www\.)[^\s<>"\x27\]\)*`]+', re.I)
 _OFFICIAL_URLS = {'https://launcho.ir', 'https://launcho.ir/', 'https://launcho.ir/start',
                   'https://launcho.ir/pricing', 'https://launcho.ir/contact',
                   'https://launcho.ir/features', 'https://launcho.ir/#templates',
@@ -201,7 +201,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
 
 def get_ai_response(user_message: str) -> str:
     """Legacy text-only entry point; it has no external writing capability."""
-    if not user_message.strip():
+    if not has_visible_text(user_message):
         return 'لطفاً پیام خود را وارد کنید.'
     if len(user_message) > 5000:
         return 'لطفاً پیام کوتاه‌تری بنویسید.'
