@@ -190,6 +190,8 @@ def signup_guidance(question, history):
     if previous.endswith(_STORE_READY_QUESTION) and question in {'آماده ام', 'بله', 'ادامه', 'بریم', 'آره'}:
         return f'برای ادامه، فرم رسمی لانچو را باز کنید. {_STORE_START_URL}'
     if previous.endswith(_STORE_DOMAIN_QUESTION):
+        if re.fullmatch(r'(?:تو )?(?:برام|برای من) (?:انجام بده|پیشنهاد بده|انتخاب کن)', question):
+            return f'حتماً، پیشنهاد دامنه را من آماده می‌کنم. {_STORE_DOMAIN_QUESTION}'
         brand = re.sub(r'[ -]+', '', question.lower())
         if re.fullmatch(r'[a-z][a-z0-9]{1,39}', brand):
             return f'پیشنهاد من {brand}.ir است. آزاد بودن و ثبت دامنه را در فرم لانچو بررسی کنید. {_STORE_DOMAIN_CONFIRM}'
@@ -199,7 +201,9 @@ def signup_guidance(question, history):
             return f'نمونه‌های قالب را ببینید. {_STORE_TEMPLATES_URL}\n{_STORE_READY_QUESTION}'
         if question in {'دامنه دیگری', 'اسم دیگری', 'تغییر دامنه'}:
             return _STORE_DOMAIN_QUESTION
-    if previous == _STORE_START_REPLY and re.search(r'می\s*فروشم|^(?:کیف و کفش|پوشاک|لباس|زیورآلات|لوازم آرایشی)$', question):
+    if previous == _STORE_START_REPLY and re.search(
+        r'می\s*فروشم|فروش(?:ی|گاه)$|^(?:کیف(?: و کفش)?|کفش|پوشاک|لباس|زیورآلات|لوازم آرایشی)$', question
+    ):
         return _STORE_DOMAIN_QUESTION
     return None
 

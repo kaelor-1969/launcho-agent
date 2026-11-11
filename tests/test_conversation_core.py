@@ -499,7 +499,8 @@ class PrivacyAndModelTests(unittest.TestCase):
         with patch.object(ai_service.client.chat.completions, 'create') as model:
             for message, expected in (
                 ('من از لانچو خوشم اومده مراحل ثبت نام رو برام انجام بده', 'چه محصولی'),
-                ('کیف و کفش', 'اسم برندتان'),
+                ('کیف‌فروشی', 'اسم برندتان'),
+                ('تو برام انجام بده', 'پیشنهاد دامنه را من آماده می‌کنم'),
                 ('هزینه چقدر است؟', 'https://launcho.ir/pricing'),
                 ('Kif Sara', 'kifsara.ir'),
                 ('بله', 'https://launcho.ir/#templates'),
