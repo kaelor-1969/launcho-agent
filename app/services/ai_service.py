@@ -69,9 +69,11 @@ _DEMO_OFFER_LABEL = 'پیشنهاد آزمایشی'
 CHECKOUT_OFFER_LABEL = 'پیشنهاد لانچو'
 _FORM_REPLY = 'اطلاعات ورود و تأیید را فقط در فرم رسمی لانچو وارد کنید: https://launcho.ir/start'
 _STORE_START_REPLY = 'چه محصولی می‌خواهید آنلاین بفروشید؟'
-_STORE_STYLE_QUESTION = 'نمایش عکس محصول مهم‌تر است یا جست‌وجو و فیلتر؟'
+_STORE_DOMAIN_QUESTION = 'اسم برندتان را با حروف انگلیسی می‌نویسید تا یک دامنه پیشنهاد بدهم؟'
+_STORE_DOMAIN_CONFIRM = 'با این نام سراغ انتخاب قالب برویم؟'
 _STORE_READY_QUESTION = 'برای ادامه در فرم رسمی آماده‌اید؟'
 _STORE_START_URL = 'https://launcho.ir/start'
+_STORE_TEMPLATES_URL = 'https://launcho.ir/#templates'
 _FEATURES_URL = 'https://launcho.ir/features'
 
 
@@ -167,6 +169,8 @@ def signup_guidance(question, history):
     if question in {'برای ساخت فروشگاه با لانچو از کجا شروع کنم', 'می خواهم فروشگاه بسازم',
                     'می خوام فروشگاه بسازم', 'ثبت نام را شروع کن'}:
         return _STORE_START_REPLY
+    if re.search(r'\bمراحل ثبت نام(?: رو| را)?(?: برام| برای من)? (?:انجام بده|شروع کن)\b', question):
+        return _STORE_START_REPLY
     if question in {'لینک ثبت نام را بده', 'لینک ثبت نام', 'آدرس فرم ثبت نام'}:
         return f'برای ثبت‌نام فرم رسمی لانچو را باز کنید. {_STORE_START_URL}'
     if (re.search(r'\bکیف(?: ها|های)?\b', question) and 'کفش' not in question
@@ -181,19 +185,22 @@ def signup_guidance(question, history):
     previous = last['content']
     if _PRICE_REPLY in previous and len(history) >= 3 and history[-3]['role'] == 'assistant':
         previous = history[-3]['content']
-    if previous.endswith((_STORE_STYLE_QUESTION, _STORE_READY_QUESTION)) and question in {'فعلا نه', 'فعلاً نه', 'نه'}:
+    if previous.endswith((_STORE_DOMAIN_QUESTION, _STORE_DOMAIN_CONFIRM, _STORE_READY_QUESTION)) and question in {'فعلا نه', 'فعلاً نه', 'نه'}:
         return 'باشه. هر وقت خواستید ادامه می‌دهیم.'
     if previous.endswith(_STORE_READY_QUESTION) and question in {'آماده ام', 'بله', 'ادامه', 'بریم', 'آره'}:
         return f'برای ادامه، فرم رسمی لانچو را باز کنید. {_STORE_START_URL}'
-    if previous.endswith(_STORE_STYLE_QUESTION):
-        if question in {'عکس', 'تصویر', 'عکس محصول', 'نمایش عکس', 'نمایش محصول'}:
-            return f'نمونه‌ای با عکس‌های بزرگ انتخاب کنید. {_STORE_READY_QUESTION}'
-        if question in {'فیلتر', 'جستجو', 'جست وجو', 'جست وجو و فیلتر', 'فیلتر رنگ و سایز'}:
-            return f'نمونه‌ای با فیلتر رنگ و سایز انتخاب کنید. {_STORE_READY_QUESTION}'
+    if previous.endswith(_STORE_DOMAIN_QUESTION):
+        brand = re.sub(r'[ -]+', '', question.lower())
+        if re.fullmatch(r'[a-z][a-z0-9]{1,39}', brand):
+            return f'پیشنهاد من {brand}.ir است. آزاد بودن و ثبت دامنه را در فرم لانچو بررسی کنید. {_STORE_DOMAIN_CONFIRM}'
+        return f'برای پیشنهاد دامنه، املای لاتین نام برند را بنویسید. {_STORE_DOMAIN_QUESTION}'
+    if previous.endswith(_STORE_DOMAIN_CONFIRM):
+        if question in {'بله', 'آره', 'باشه', 'بریم', 'ادامه'}:
+            return f'نمونه‌های قالب را ببینید. {_STORE_TEMPLATES_URL}\n{_STORE_READY_QUESTION}'
+        if question in {'دامنه دیگری', 'اسم دیگری', 'تغییر دامنه'}:
+            return _STORE_DOMAIN_QUESTION
     if previous == _STORE_START_REPLY and re.search(r'می\s*فروشم|^(?:کیف و کفش|پوشاک|لباس|زیورآلات|لوازم آرایشی)$', question):
-        if re.search(r'لباس|پوشاک|کفش', question):
-            return f'برای چند محصول اصلی، عکس، رنگ و سایزها را آماده کنید. {_STORE_STYLE_QUESTION}'
-        return _STORE_STYLE_QUESTION
+        return _STORE_DOMAIN_QUESTION
     return None
 
 
@@ -245,6 +252,10 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
     policy = (
         '\nفقط وقتی کاربر ساخت فروشگاه را شروع کرده، اطلاعات ناقص را یکی‌یکی بپرس. '
         'هر نوبت انتخاب صریح را با ابزار ثبت کن. بعد از ثبت، مرحلهٔ بعد را بر اساس اطلاعات جلسه انتخاب کن.'
+            ' ابتدا نوع کسب‌وکار، نام و دسته‌بندی را روشن کن، سپس یک دامنهٔ متناسب پیشنهاد بده. '
+            'دامنه را فقط پس از انتخاب صریح به عنوان ترجیح ذخیره کن و آزادی یا ثبت آن را ادعا نکن. '
+            'بعد از انتخاب دامنه، پیوند https://launcho.ir/#templates را برای بررسی قالب بده. '
+            'پس از انتخاب قالب، دورهٔ اشتراک را بپرس و کاربر را به مرور پیش‌نویس هدایت کن.'
         if allow_preferences else
         '\nحالت فقط راهنمایی است. هیچ اطلاعاتی برای ثبت‌نام جمع نکن. '
         'مبلغ، جشنواره، تخفیف، اقساط یا رایگان‌بودن را تأیید نکن. '
@@ -287,13 +298,13 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
                 return 'اسم کسب‌وکارت چیست؟', selections
             if not merged.get('category'):
                 return 'چه محصولی می‌فروشی؟', selections
+            if not merged.get('domain'):
+                return 'دامنه‌ای داری یا با نام برندت یک دامنه پیشنهاد بدهم؟', selections
             if not merged.get('template'):
-                return 'ظاهر محصول مهم‌تر است یا جست‌وجو و فیلتر؟', selections
+                return f'نمونه‌های قالب را ببین و انتخابت را بگو. {_STORE_TEMPLATES_URL}', selections
             if not merged.get('planMonths'):
                 periods = '، '.join(str(months) for months in context['planMonths'][:4])
                 return (f'دورهٔ چندماهه را می‌خواهی؟ {periods}' if periods else 'کدام دورهٔ اشتراک را می‌خواهی؟'), selections
-            if not merged.get('domain'):
-                return 'دامنه داری یا دامنهٔ تازه می‌خواهی؟', selections
             return 'خلاصه را مرور کن و اگر درست است، تأیید کن.', selections
         except ValidationError:
             return 'اطلاعات انتخابی معتبر نبود. لطفاً نام کسب‌وکار، دسته‌بندی، دوره و قالب را مشخص کنید.', {}

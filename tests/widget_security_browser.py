@@ -79,7 +79,7 @@ async def check(browser, base, name, mobile):
         await page.route('**/__xss_probe__/**', probe)
         await page.route('**/api/**', api)
         await page.goto(base.rstrip('/') + '/widget/demo.html')
-        launcher = page.locator('#launcho-widget button')
+        launcher = page.locator('#launcho-widget .launcher')
         await launcher.click()
         f = page.frame_locator('#launcho-widget iframe')
         entry = f.locator('#message')

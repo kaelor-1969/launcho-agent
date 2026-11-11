@@ -29,7 +29,7 @@ async def check(browser, base, name, width, height, mobile):
     await page.route('**/api/**', block_api)
     response = await page.goto(base.rstrip('/') + '/widget/demo.html')
     assert response.status == 200
-    launcher = page.locator('#launcho-widget button')
+    launcher = page.locator('#launcho-widget .launcher')
     panel = page.locator('#launcho-widget .panel')
     await expect(launcher).to_have_attribute('aria-expanded', 'false')
     await expect(panel).to_be_hidden()
@@ -179,7 +179,7 @@ async def check_transport(browser, base, mobile):
     await page.route('**/widget/demo.html', installation)
     try:
         await page.goto(base.rstrip('/') + '/widget/demo.html')
-        launcher = page.locator('#launcho-widget button')
+        launcher = page.locator('#launcho-widget .launcher')
         await launcher.click()
         f = page.frame_locator('#launcho-widget iframe')
         entry = f.locator('#message')
