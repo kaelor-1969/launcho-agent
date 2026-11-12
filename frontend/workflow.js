@@ -1,4 +1,4 @@
-import { createWorkflowApi, validateView, validTemplate } from './workflow-api.js?v=2';
+import { createWorkflowApi, validateView, validTemplate } from './workflow-api.js?v=3';
 
 const root = document.getElementById('workflow');
 let adapter, view, busy = false, started = false, lastRequest, draftKey;
@@ -16,7 +16,7 @@ export async function configureWorkflow(options, notify) {
   if (initializing) return initializing;
   if (adapter || started) return;
   if (options.demo === true) {
-    initializing = import('./workflow-demo.js?v=2').then(({createDemoWorkflow}) => {
+    initializing = import('./workflow-demo.js?v=3').then(({createDemoWorkflow}) => {
       demoFactory = createDemoWorkflow;
       adapter = createDemoWorkflow();
       const badge = element('p', 'حالت نمایشی', 'demo-badge');

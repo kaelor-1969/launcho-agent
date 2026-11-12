@@ -1,5 +1,5 @@
 import { createSessionApi, relativeUrl } from './api.js?v=5';
-import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js?v=2';
+import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js?v=3';
 
 const $ = (id) => document.getElementById(id);
 const input = $('message');
@@ -187,6 +187,11 @@ async function submit(message, retry = false) {
   }
   // A failed turn must be resolved before sending another, preserving order.
   if (failed && !retry) { showError('ابتدا پیام قبلی را با «تلاش مجدد» ارسال کن.', true); return; }
+  if (demoMode && /(?:مراحل\s+)?ثبت[\s‌]*نام\s+(?:(?:رو|را)\s+)?(?:(?:برام|برای من)\s+)?(?:انجام بده|شروع کن)/u.test(message)) {
+    input.value = '';
+    startWorkflow();
+    return;
+  }
   const requestId = retry ? failed.requestId : globalThis.crypto?.randomUUID?.();
   pending = true;
   failed = null;

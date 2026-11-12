@@ -24,11 +24,11 @@ export function validateView(v, {demo = false} = {}) {
   if (!v || !text(v.sessionId, 200) || !Number.isSafeInteger(v.revision) || v.revision < 0 || !text(v.title) ||
       !['field', 'template', 'review', 'draft'].includes(v.kind) ||
       !Array.isArray(v.actions) || v.actions.length > 20 ||
-      !v.actions.every(a => a && (actions.has(a.id) || (demo && demoActions.has(a.id))) && text(a.label, 200)) ||
+      !v.actions.every(a => a && (actions.has(a.id) || (demo && (demoActions.has(a.id) || a.id === 'edit:domainName'))) && text(a.label, 200)) ||
       (v.rows !== undefined && (!Array.isArray(v.rows) || !v.rows.every(r => r && text(r.label, 200) && typeof r.value === 'string'))) ||
       (v.template !== undefined && !validTemplate(v.template))) throw new Error('پاسخ معتبر نیست. دوباره تلاش کن.');
   if (['mobile', 'setupPayment', 'domain', 'domainStatus', 'quote', 'checkoutUrl', 'transactionId', 'paymentStatus', 'verified'].some(key => key in v)) throw new Error('این اطلاعات خارج از محدودهٔ دستیار است.');
-  if (v.kind === 'field' && (!fields.includes(v.field) ||
+  if (v.kind === 'field' && (!(fields.includes(v.field) || (demo && v.field === 'domainName')) ||
       (v.options !== undefined && (!Array.isArray(v.options) || !v.options.every(o => o && text(o.id,200) && text(o.label,200)))))) throw new Error('پاسخ معتبر نیست.');
   if (v.actions.some(a => a.id === 'createDraft') && v.kind !== 'review') throw new Error('اطلاعات مرور کامل نیست.');
   if (v.kind === 'draft' && (!text(v.draftId,200) || v.confirmed !== true || !safeDraftUrl(v.draftUrl))) throw new Error('پیش‌نویس یا لینک آن معتبر نیست.');
