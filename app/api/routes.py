@@ -1,4 +1,7 @@
 import logging
+import re
+from fastapi.responses import HTMLResponse
+from app.services.draft_gateway import GatewayUnavailable
 from fastapi import APIRouter, Header, HTTPException, Response
 from openai import APIError, RateLimitError
 from pydantic import ValidationError
@@ -44,6 +47,40 @@ def chat(request: ChatRequest, response: Response, x_session_token: str | None =
         return run(lambda:get_core().chat(request.sessionId,x_session_token,request.message,request.requestId))
     # Legacy widget remains compatible, but has no memory or draft-writing ability.
     return run(lambda:ChatResponse(reply=redact(get_ai_response(redact(request.message)))))
+
+
+@router.get('/api/local-signup-options')
+def local_signup_options(response: Response, kind: str = 'shop'):
+    no_store(response)
+    core = get_core()
+    if core.gateway.mode != 'local_mock':
+        raise HTTPException(404)
+    if kind not in {'shop', 'website'}:
+        raise HTTPException(422)
+    options, pricing = run(lambda: core.data(kind))
+    return {**options, 'periods': [item['months'] for item in pricing['plans']],
+            'suffixes': [item['tld'] for item in pricing['domains']]}
+
+
+@router.get('/api/local-drafts/{ref}/preview')
+def local_draft_preview(ref: str):
+    core = get_core()
+    if core.gateway.mode != 'local_mock' or not re.fullmatch(r'sd_[A-Za-z0-9_-]{4,128}', ref):
+        raise HTTPException(404)
+    try:
+        status = core.gateway.get_draft_status(ref)
+    except GatewayUnavailable:
+        raise HTTPException(404, detail='پیش‌نویس محلی در دسترس نیست.') from None
+    if status.get('ref') != ref or status.get('status') not in {'draft', 'expired'}:
+        raise HTTPException(404)
+    if status['status'] == 'expired':
+        raise HTTPException(410, detail='پیش‌نویس آزمایشی منقضی شده است.')
+    return HTMLResponse(
+        '<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8">'
+        '<title>پیش‌نویس آزمایشی</title><h1>پیش‌نویس آزمایشی آماده است</h1>'
+        '<p>حساب، فروشگاه و پرداختی ایجاد نشده است.</p></html>',
+        headers={'Cache-Control': 'no-store'},
+    )
 
 
 @router.post('/api/sessions',status_code=201)

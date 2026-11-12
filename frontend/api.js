@@ -8,12 +8,12 @@ export function relativeUrl(value) {
   } catch { return null; }
 }
 
-async function post(url, body, token, timeout = 45000) {
+async function post(url, body, token, timeout = 45000, method = body === undefined ? 'GET' : 'POST') {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
     const response = await fetch(url, {
-      method: body === undefined ? 'GET' : 'POST', credentials: 'omit', cache: 'no-store',
+      method, credentials: 'omit', cache: 'no-store',
       headers: { 'Content-Type': 'application/json', ...(token ? {'X-Session-Token': token} : {}) },
       body: JSON.stringify(body), signal: controller.signal,
     });
@@ -56,15 +56,16 @@ const sessionEnded = error => ['session_not_found', 'session_expired'].includes(
 export function createSessionApi() {
   let session, initializing;
   async function start() {
-    if (session) return;
+    if (session) return session;
     if (!initializing) {
       initializing = post('/api/sessions', {}).then(data => {
         if (typeof data.sessionId !== 'string' || !data.sessionId ||
             typeof data.sessionToken !== 'string' || !data.sessionToken || !validRevision(data.revision)) throw invalid();
-        session = { id: data.sessionId, token: data.sessionToken, revision: data.revision };
+        session = { id: data.sessionId, token: data.sessionToken, revision: data.revision, mode: data.adapterMode };
       }).finally(() => { initializing = null; });
     }
     await initializing;
+    return session;
   }
   function endpoint(action) { return `/api/sessions/${encodeURIComponent(session.id)}/${action}`; }
   return {
@@ -85,6 +86,17 @@ export function createSessionApi() {
       }
       if (typeof data.reply !== 'string' || !data.reply.trim() || data.sessionId !== session.id ||
           !validRevision(data.revision) || data.revision < session.revision) throw invalid();
+      session.revision = data.revision;
+      return data;
+    },
+    async localOptions(kind) {
+      return post('/api/local-signup-options?kind=' + encodeURIComponent(kind));
+    },
+    async savePreferences(preferences) {
+      await start();
+      const data = await post(endpoint('preferences'), {revision: session.revision, preferences},
+                              session.token, 45000, 'PATCH');
+      if (data.sessionId !== session.id || !validRevision(data.revision)) throw invalid();
       session.revision = data.revision;
       return data;
     },

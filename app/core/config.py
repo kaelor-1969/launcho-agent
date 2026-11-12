@@ -23,7 +23,7 @@ class Settings:
         self.LAUNCHO_API_KEY = os.getenv("LAUNCHO_API_KEY", "").strip()
         self.LAUNCHO_ENABLE_DRAFTS = os.getenv("LAUNCHO_ENABLE_DRAFTS", "").strip() == "1"
         for name in ("AI_API_KEY", "AI_MODEL_NAME"):
-            if not getattr(self, name):
+            if not self.LAUNCHO_MOCK_URL and not getattr(self, name):
                 raise RuntimeError(f"{name} is missing. Configure the project-root .env.")
         url = urlsplit(self.AI_BASE_URL)
         if url.scheme != "https" or not url.hostname or url.username or url.password:

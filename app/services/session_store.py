@@ -36,6 +36,9 @@ class SessionStore:
                     payload TEXT NOT NULL, idem TEXT NOT NULL UNIQUE, status TEXT NOT NULL,
                     started REAL NOT NULL DEFAULT 0, result TEXT
                 );
+                CREATE TABLE IF NOT EXISTS shown_local_offers (
+                    session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE
+                );
                 CREATE INDEX IF NOT EXISTS review_owner ON reviews(session_id);
             ''')
 
