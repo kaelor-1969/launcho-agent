@@ -1,4 +1,4 @@
-import { createSessionApi, relativeUrl } from './api.js?v=5';
+import { createSessionApi, relativeUrl } from './api.js?v=6';
 import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js?v=3';
 
 const $ = (id) => document.getElementById(id);
@@ -95,7 +95,8 @@ async function initializeSession() {
   sessionStarting = true;
   updateInput();
   try {
-    await sessionApi.start();
+    const session = await sessionApi.start();
+    if (session.mode === 'local_mock') await initializeLocalSignup();
     sessionReady = true;
     showError('');
   } catch {
@@ -105,6 +106,85 @@ async function initializeSession() {
     updateInput();
   }
 }
+let localOptions;
+async function initializeLocalSignup() {
+
+  const form = $('local-signup');
+  const fill = (name, values) => {
+    const select = form.elements[name];
+    const previous = select.value;
+    select.replaceChildren(...values.map(([value, label]) => new Option(label, value)));
+    if (values.some(([value]) => value === previous)) select.value = previous;
+  };
+
+  const updatePreview = () => {
+    const link = $('local-template-preview');
+    const template = localOptions?.templates.find(item => item.id === form.elements.template.value);
+    link.hidden = true;
+    link.removeAttribute('href');
+    if (!template?.previewUrl) return;
+    try {
+      const url = new URL(template.previewUrl);
+      if (url.origin === 'https://demo.launcho.ir' && !url.username && !url.password) {
+        link.href = url.href;
+        link.hidden = false;
+      }
+    } catch { /* The template remains selectable without a preview. */ }
+  };
+  const updateTemplates = () => {
+    if (!localOptions) return;
+    const category = form.elements.category.value;
+    fill('template', localOptions.templates.filter(item => item.available).map(item => [
+      item.id, item.label + (item.recommendedFor?.includes(category) ? ' (پیشنهادی)' : ''),
+    ]));
+    updatePreview();
+  };
+  const loadOptions = async () => {
+    const kind = form.elements.kind.value;
+    const button = form.querySelector('button');
+    button.disabled = true;
+    try {
+      const options = await sessionApi.localOptions(kind);
+      if (form.elements.kind.value !== kind) return;
+      localOptions = options;
+      fill('category', options.businessCategories.map(item => [item.id, item.label]));
+      fill('planMonths', options.periods.map(value => [String(value), String(value)]));
+      fill('tld', options.suffixes.map(value => [value, value]));
+      updateTemplates();
+      $('local-signup-status').textContent = '';
+      button.disabled = false;
+    } catch (error) {
+      if (form.elements.kind.value === kind) $('local-signup-status').textContent = error.message;
+    }
+  };
+  form.elements.category.onchange = updateTemplates;
+  form.elements.template.onchange = updatePreview;
+  form.elements.kind.onchange = loadOptions;
+  await loadOptions();
+  form.hidden = false;
+  form.onsubmit = async event => {
+    event.preventDefault();
+    const button = form.querySelector('button');
+    button.disabled = true;
+    const status = $('local-signup-status');
+    status.textContent = '';
+    const fields = Object.fromEntries(new FormData(form));
+    try {
+      await sessionApi.savePreferences({
+        kind: fields.kind, businessName: fields.businessName, category: fields.category,
+        template: fields.template, planMonths: Number(fields.planMonths),
+        domain: {label: fields.label, tld: fields.tld},
+      });
+      $('review-button').hidden = false;
+      $('review-button').click();
+    } catch (error) {
+      status.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  };
+}
+
 function showError(message, retry = false) {
   $('error-text').textContent = message;
   $('error').hidden = !message;
@@ -266,12 +346,15 @@ const draftStatusText = new Map([
 
 function showDraft(draft) {
   // Accept only the official continuation URL from the structured server result.
-  const url = new URL(draft.confirmUrl);
-  if (url.origin !== 'https://launcho.ir' || url.pathname !== '/start' || url.hash ||
-      url.username || url.password || !/^sd_[A-Za-z0-9_-]{4,128}$/.test(draft.ref) ||
-      url.search !== `?signup=${draft.ref}` || draft.status !== 'draft') throw new Error('لینک پیش‌نویس معتبر نیست.');
+  const local = draft.adapterMode === 'local_mock' || (localOptions && draft.confirmUrl?.startsWith('/api/local-drafts/'));
+  const url = new URL(draft.confirmUrl, location.origin);
+  const allowed = local
+    ? url.origin === location.origin && url.pathname === `/api/local-drafts/${draft.ref}/preview` && !url.search
+    : url.origin === 'https://launcho.ir' && url.pathname === '/start' && url.search === `?signup=${draft.ref}`;
+  if (!allowed || url.hash || url.username || url.password ||
+      !/^sd_[A-Za-z0-9_-]{4,128}$/.test(draft.ref) || draft.status !== 'draft') throw new Error('لینک پیش‌نویس معتبر نیست.');
   const link = document.createElement('a');
-  link.textContent = 'ادامه در فرم رسمی لانچو';
+  link.textContent = local ? 'باز کردن پیش‌نویس آزمایشی' : 'ادامه در فرم رسمی لانچو';
   link.href = url.href;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
@@ -291,7 +374,7 @@ function showDraft(draft) {
   });
   $('review-summary').replaceChildren(link, statusButton);
   $('confirm').hidden = true;
-  $('review-notice').textContent = 'شماره موبایل و اطلاعات پرداخت را فقط در فرم رسمی لانچو وارد کن.';
+  $('review-notice').textContent = local ? 'این پیش‌نویس فقط برای توسعهٔ محلی است.' : 'شماره موبایل و اطلاعات پرداخت را فقط در فرم رسمی لانچو وارد کن.';
   $('session-review').hidden = false;
 }
 
@@ -313,8 +396,8 @@ $('review-button').addEventListener('click', async () => {
       const domain = summary.domain;
       for (const [label, value] of [
         ['نوع', summary.kind === 'website' ? 'وب‌سایت' : 'فروشگاه'],
-        ['نام کسب‌وکار', summary.businessName], ['دسته‌بندی', summary.category],
-        ['دوره اشتراک (ماه)', summary.planMonths], ['قالب', summary.template],
+        ['نام کسب‌وکار', summary.businessName], ['دسته‌بندی', localOptions?.businessCategories.find(item => item.id === summary.category)?.label ?? summary.category],
+        ['دوره اشتراک (ماه)', summary.planMonths], ['قالب', localOptions?.templates.find(item => item.id === summary.template)?.label ?? summary.template],
         ['دامنه', domain?.ownDomain || (domain ? `${domain.label}.${domain.tld}` : '')],
       ]) {
         const dt = document.createElement('dt'), dd = document.createElement('dd');

@@ -33,6 +33,19 @@
       <div id="waiting" class="waiting" role="status" hidden><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>در حال نوشتن…</span></div>
       <section id="workflow" aria-label="مراحل ساخت فروشگاه" hidden></section>
       <button id="leave-workflow" type="button" hidden>بازگشت به گفتگو</button>
+      <form id="local-signup" class="flow-card" hidden>
+        <h2>پیش‌نویس آزمایشی</h2>
+        <label>نوع سرویس <select name="kind"><option value="shop">فروشگاه</option><option value="website">سایت</option></select></label>
+        <label>نام فروشگاه <input name="businessName" maxlength="80" required></label>
+        <label>صنف <select name="category" required></select></label>
+        <label>قالب <select name="template" required></select></label>
+        <a id="local-template-preview" target="_blank" rel="noopener noreferrer" hidden>مشاهده نمونهٔ قالب</a>
+        <label>دوره اشتراک (ماه) <select name="planMonths" required></select></label>
+        <label>نام لاتین دامنه <input name="label" maxlength="63" pattern="[a-z0-9]+(-[a-z0-9]+)*" required></label>
+        <label>پسوند <select name="tld" required></select></label>
+        <button type="submit">ذخیره و مرور</button>
+        <p id="local-signup-status" role="status"></p>
+      </form>
       <button id="review-button" type="button" hidden>مرور خلاصه و تأیید</button>
       <section id="session-review" class="flow-card" aria-labelledby="review-title" hidden>
         <h2 id="review-title">مرور اطلاعات</h2>

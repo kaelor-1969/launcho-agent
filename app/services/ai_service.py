@@ -10,7 +10,7 @@ from app.prompts.system_prompts import get_system_prompt
 
 logger = logging.getLogger(__name__)
 # Gateway configuration and transport remain unchanged.
-client = OpenAI(base_url=settings.AI_BASE_URL, api_key=settings.AI_API_KEY,
+client = OpenAI(base_url=settings.AI_BASE_URL, api_key=settings.AI_API_KEY or 'local-placeholder',
                 timeout=settings.AI_TIMEOUT_SECONDS, max_retries=0)
 
 tools = [{'type':'function','function':{
@@ -255,6 +255,8 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
     price_reply = price_guidance(message, options, history) if price_query else _PRICE_REPLY
     if price_query and all(_PRICE_QUERY.search(part) for part in clauses):
         return price_reply, {}
+    if not settings.AI_API_KEY or not settings.AI_MODEL_NAME:
+        return ('برای تنظیم اطلاعات فروشگاه، از فرم ساخت پیش‌نویس در ویجت استفاده کن.', {})
     safe_history = [{'role':item['role'], 'content':redact(item['content'])}
                     for item in (history or [])[-12:] if item['role'] in {'user','assistant'}]
     context = {'preferences':preferences or {}, 'options':{key: value for key, value in (options or {}).items()

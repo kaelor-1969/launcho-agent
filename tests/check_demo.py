@@ -65,7 +65,7 @@ def check_demo(client, host):
     response = client.post(f"{AGENT_URL}/api/sessions", json={})
     response.raise_for_status()
     session = response.json()
-    if session.get("adapterMode") != "local_mock" or session.get("canCreateDraft") is not False:
+    if session.get("adapterMode") != "local_mock" or session.get("canCreateDraft") is not True:
         raise RuntimeError("The agent session did not use the read-only local mock.")
     request_id = str(uuid4())
     first = chat(client, session, PRICE_QUESTION, request_id)
@@ -109,7 +109,8 @@ def run_demo(args):
             wait_for_server(client, AGENT_URL, servers[1])
             session = check_demo(client, host)
             if args.env_file is not None:
-                reply = chat(client, session, "برای فروشگاه کیف و کفش از کجا شروع کنم؟")
+                # Signup starters can succeed locally even when the model is unavailable.
+                reply = chat(client, session, "آیا امکان مهاجرت اطلاعات از سرویس فعلی را دارم؟")
                 print(f"Live model reply ({len(reply)} characters). Review its content in the widget.")
             if args.keep_open:
                 input(f"Open {HOST_URL} on your browser. Press Enter here to stop both servers. ")
