@@ -40,7 +40,7 @@
   if (script.dataset.apiUrl) options.apiUrl = relativeApi(script.dataset.apiUrl) || options.apiUrl;
   if (script.dataset.workflowUrl) options.workflowUrl = relativeApi(script.dataset.workflowUrl);
   for (const key of ['offset', 'mobileOffset']) if (script.dataset[key] && Number.isFinite(Number(script.dataset[key]))) options[key] = Math.max(0, Math.min(240, Number(script.dataset[key])));
-  let host, shadow, button, resizeButton, panel, frame, feedback, ready = false, opened = false;
+  let host, shadow, button, resizeButton, panel, frame, feedback, ready = false, opened = script.dataset.autoOpen !== 'false';
   let expanded = false;
   let askButton, templateHint, templateHintTimer;
   const systemTheme = matchMedia('(prefers-color-scheme: dark)');
