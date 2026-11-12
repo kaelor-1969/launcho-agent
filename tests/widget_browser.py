@@ -35,7 +35,7 @@ async def main():
     class Host(BaseHTTPRequestHandler):
         def do_GET(self):
             body = f'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-            <script src="{base}/widget/loader.js" data-theme="light"></script></head>
+            <script src="{base}/widget/loader.js" data-theme="light" data-auto-open="false"></script></head>
             <body><button id="host-action">Host action</button><p>Separate origin installation</p></body></html>'''.encode()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -95,7 +95,7 @@ async def main():
                     await expect(page.locator("#launcho-widget")).to_have_count(1)
                     assert await page.locator("iframe").count() == 0, "Iframe must load lazily"
                     await page.evaluate("LaunchoWidget.setTheme('" + theme + "')")
-                    launcher = page.locator("#launcho-widget button")
+                    launcher = page.locator("#launcho-widget .launcher")
                     await launcher.click()
                     frame = page.locator("#launcho-widget iframe")
                     await expect(frame).to_have_attribute("referrerpolicy", "no-referrer")
@@ -253,7 +253,7 @@ async def main():
                         await preview.route("**/api/chat", lambda route: route.fulfill(json={"reply": "از کجا شروع کنیم؟"}))
                         await preview.goto(host_url)
                         await preview.evaluate("LaunchoWidget.setTheme('" + theme + "')")
-                        await preview.locator("#launcho-widget button").click()
+                        await preview.locator("#launcho-widget .launcher").click()
                         preview_chat = preview.frame_locator("#launcho-widget iframe")
                         await expect(preview_chat.locator("#message")).to_be_focused()
                         await preview_chat.locator("#message").fill("می‌خوام فروشگاهم رو بسازم")

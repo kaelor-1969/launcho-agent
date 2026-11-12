@@ -48,7 +48,11 @@ def signup_options(kind: ServiceKind, authorization: str = Header(default='')):
 
 @app.get('/service-info')
 def service_info(authorization: str = Header(default='')):
-    return response({**fixture['serviceInfo'], 'overview': public['overview']}, authorization)
+    return response({
+        **fixture['serviceInfo'],
+        'overview': public['overview'],
+        'featureSummary': public['featureSummary'],
+    }, authorization)
 
 
 @app.post('/offers/match')

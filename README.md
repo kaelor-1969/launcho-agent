@@ -16,7 +16,7 @@ python -m venv .venv
 Copy-Item .env.example .env
 ```
 
-اگر `.env` موجود است آن را بازنویسی نکنید. برای چت واقعی سه متغیر `AI_API_KEY`، `AI_BASE_URL` و `AI_MODEL_NAME` را با اطلاعات سرور تنظیم کنید. `LAUNCHO_API_URL` و `LAUNCHO_API_KEY` فعلاً مصرف نمی‌شوند. هیچ کلیدی نباید در frontend، تگ نصب یا URL قرار بگیرد.
+اگر `.env` موجود است آن را بازنویسی نکنید. برای چت واقعی سه متغیر `AI_API_KEY`، `AI_BASE_URL` و `AI_MODEL_NAME` را با اطلاعات سرور تنظیم کنید. اتصال رسمی لانچو از `LAUNCHO_API_URL` و `LAUNCHO_API_KEY` استفاده می‌کند. فعال‌سازی پیش‌نویس در [راهنمای اجرا](docs/local-launcho-simulation.md) توضیح داده شده است. کلیدها فقط در سرور تنظیم شوند.
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
@@ -48,6 +48,8 @@ python tests/widget_preview_server.py --port 8000
 ```
 
 برای نصب روی سایت اصلی، اسکریپت را از دامنهٔ جداگانهٔ ویجت (مثل `https://ag.launchox.ir`) بارگذاری کنید. iframe فقط بعد از بازکردن ویجت ساخته می‌شود. iframe و `/api/chat` روی مبدأ loader قرار دارند و `data-api-url` هم به همان مبدأ محدود است. در نصب واقعی از HTTPS استفاده کنید. `data-demo="true"` فقط برای نمونه است.
+
+برای تعیین اندازهٔ اولیهٔ پنجره، `data-width="480"` و `data-height="600"` را به تگ نصب اضافه کنید. مقادیر بر حسب پیکسل‌اند و پنجره با فضای قابل نمایش تطبیق پیدا می‌کند. در دسکتاپ، کاربر با دکمهٔ کنار دکمهٔ گفتگو بین اندازهٔ اولیه و حالت بزرگ جابه‌جا می‌شود.
 
 ```javascript
 LaunchoWidget.configure({theme:'light', position:'right', offset:24, mobileOffset:16});

@@ -22,6 +22,11 @@
     "serviceKinds": ["https://launcho.ir/site-builder"]
   },
   "reviewedOn": "2026-11-11",
+  "featureSummary": [
+    "قالب آماده و مدیریت موجودی رنگ و سایز",
+    "کوپن و حراج زمان‌دار",
+    "کمک هوش مصنوعی برای توضیح و تصویر محصول"
+  ],
   "sourceNotes": {
     "overview": ["صفحهٔ اصلی، بخش معرفی و همراهی کارشناس (https://launcho.ir/#launch)"],
     "قالب فروشگاه کیف و کفش پوشاک دسته‌بندی و موجودی": ["صفحهٔ اصلی، انتخاب صنف و بخش قابلیت‌ها (https://launcho.ir/)", "نمونه‌های قالب (https://launcho.ir/#templates)"],

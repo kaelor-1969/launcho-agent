@@ -1,8 +1,9 @@
-import { createWorkflowApi, validateView, validTemplate } from './workflow-api.js';
+import { createWorkflowApi, validateView, validTemplate } from './workflow-api.js?v=3';
 
 const root = document.getElementById('workflow');
 let adapter, view, busy = false, started = false, lastRequest, draftKey;
 let initializing;
+let demoFactory;
 let notifyHost = () => {};
 const element = (tag, content, cls) => {
   const node = document.createElement(tag);
@@ -15,20 +16,36 @@ export async function configureWorkflow(options, notify) {
   if (initializing) return initializing;
   if (adapter || started) return;
   if (options.demo === true) {
-    initializing = import('./workflow-demo.js').then(({createDemoWorkflow}) => {
+    initializing = import('./workflow-demo.js?v=3').then(({createDemoWorkflow}) => {
+      demoFactory = createDemoWorkflow;
       adapter = createDemoWorkflow();
-      const badge = element('p', 'حالت نمایشی — بک‌اند ساخت آماده نیست؛ فروشگاه واقعی ساخته نمی‌شود.', 'demo-badge');
+      const badge = element('p', 'حالت نمایشی', 'demo-badge');
       document.querySelector('.header').after(badge);
+      const leave = document.getElementById('leave-workflow');
+      leave.addEventListener('click', () => {
+        if (busy) return;
+        started = false;
+        view = lastRequest = draftKey = null;
+        adapter = demoFactory();
+        root.replaceChildren();
+        root.hidden = true;
+        leave.hidden = true;
+        document.querySelector('.starters').hidden = false;
+        document.getElementById('form').hidden = false;
+        document.getElementById('message').focus();
+      });
     });
     await initializing;
   } else adapter = createWorkflowApi(options.workflowUrl);
 }
 export function workflowActive() { return started; }
 export async function startWorkflow() {
+  if (started) return;
   started = true;
   document.querySelector('.starters').hidden = true;
   document.getElementById('form').hidden = true;
   root.hidden = false;
+  if (demoFactory) document.getElementById('leave-workflow').hidden = false;
   if (!adapter) {
     root.replaceChildren(element('p', 'شروع ساخت فروشگاه فعلاً در دسترس نیست. کمی بعد دوباره تلاش کن.', 'flow-card'));
     return;
@@ -48,7 +65,7 @@ async function request(action, data = {}, retryPayload) {
     ...(action === 'createDraft' ? {idempotencyKey: draftKey} : {}) };
   lastRequest = payload;
   try {
-    const next = validateView(await adapter.request(payload));
+    const next = validateView(await adapter.request(payload), {demo: Boolean(demoFactory)});
     if (view && (next.sessionId !== view.sessionId || next.revision < view.revision)) throw new Error('پاسخ مربوط به این مرحله نیست.');
     if (next.kind === 'review' && action !== 'createDraft') draftKey = null;
     view = next;
@@ -91,11 +108,17 @@ function render() {
     const label = element('label', view.label || view.title); label.htmlFor = 'flow-value'; card.append(label);
     if (view.options) {
       field = element('select');
+      if (demoFactory) {
+        const placeholder = element('option', 'انتخاب کن');
+        placeholder.value = '';
+        placeholder.disabled = true;
+        field.append(placeholder);
+      }
       for (const option of view.options) { const o = element('option', option.label); o.value = option.id; field.append(o); }
     } else {
       field = element('input'); field.type = 'text'; field.maxLength = 200;
     }
-    field.id='flow-value'; field.value=view.value || field.value || ''; card.append(field);
+    field.id='flow-value'; field.value=view.value || (demoFactory ? '' : field.value); card.append(field);
   }
   for (const action of view.actions) {
     const button = element('button', action.label, ['createDraft','next'].includes(action.id) ? 'primary' : '');

@@ -1,5 +1,5 @@
-import { createSessionApi, relativeUrl } from './api.js?v=4';
-import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js';
+import { createSessionApi, relativeUrl } from './api.js?v=5';
+import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js?v=3';
 
 const $ = (id) => document.getElementById(id);
 const input = $('message');
@@ -133,6 +133,10 @@ function appendReplyText(parent, text) {
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.textContent = address;
+    if (address === 'https://launcho.ir/#templates') {
+      link.textContent = 'مشاهدهٔ قالب‌های لانچو';
+      link.addEventListener('click', () => notify('templates-link-opened'));
+    }
     parent.append(link);
     offset = match.index + address.length;
   }
@@ -193,6 +197,11 @@ async function submit(message, retry = false) {
   }
   // A failed turn must be resolved before sending another, preserving order.
   if (failed && !retry) { showError('ابتدا پیام قبلی را با «تلاش مجدد» ارسال کن.', true); return; }
+  if (demoMode && /(?:مراحل\s+)?ثبت[\s‌]*نام\s+(?:(?:رو|را)\s+)?(?:(?:برام|برای من)\s+)?(?:انجام بده|شروع کن)/u.test(message)) {
+    input.value = '';
+    startWorkflow();
+    return;
+  }
   const requestId = retry ? failed.requestId : globalThis.crypto?.randomUUID?.();
   pending = true;
   failed = null;
@@ -245,6 +254,16 @@ $('retry').addEventListener('click', () => {
   else if (failed) submit(failed.message, true);
 });
 
+const draftStatusText = new Map([
+  ['draft', 'پیش‌نویس آماده است. فرم را باز کنید.'],
+  ['opened', 'شمارهٔ موبایل را در فرم رسمی تأیید کنید.'],
+  ['mobile_verified', 'ثبت‌نام را در فرم رسمی کامل کنید.'],
+  ['invoiced', 'فاکتور در لانچو آمادهٔ بررسی است.'],
+  ['paid', 'پرداخت ثبت شده و فروشگاه در انتظار فعال‌سازی است.'],
+  ['active', 'فروشگاه فعال است. برای شروع، اولین محصول را از پنل اضافه کنید.'],
+  ['expired', 'پیش‌نویس منقضی شده است. برای ادامه پیش‌نویس تازه بسازید.'],
+]);
+
 function showDraft(draft) {
   // Accept only the official continuation URL from the structured server result.
   const url = new URL(draft.confirmUrl);
@@ -254,8 +273,23 @@ function showDraft(draft) {
   const link = document.createElement('a');
   link.textContent = 'ادامه در فرم رسمی لانچو';
   link.href = url.href;
-  link.target = '_top';
-  $('review-summary').replaceChildren(link);
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  const statusButton = document.createElement('button');
+  statusButton.type = 'button';
+  statusButton.textContent = 'بررسی وضعیت ثبت‌نام';
+  statusButton.addEventListener('click', async () => {
+    statusButton.disabled = true;
+    try {
+      const result = await sessionApi.draftStatus();
+      $('review-notice').textContent = draftStatusText.get(result.status) || 'وضعیت ثبت‌نام دریافت نشد.';
+    } catch {
+      $('review-notice').textContent = 'پیگیری وضعیت فعلاً در دسترس نیست. کمی بعد دوباره بررسی کنید.';
+    } finally {
+      statusButton.disabled = false;
+    }
+  });
+  $('review-summary').replaceChildren(link, statusButton);
   $('confirm').hidden = true;
   $('review-notice').textContent = 'شماره موبایل و اطلاعات پرداخت را فقط در فرم رسمی لانچو وارد کن.';
   $('session-review').hidden = false;
