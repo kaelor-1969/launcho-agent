@@ -224,6 +224,11 @@ def concise_reply(text, limit=280):
 def generate_turn(message, history=None, preferences=None, options=None, pricing=None, *, allow_preferences=False):
     message = redact(message.strip())
     question = ' '.join(message.replace('\u200c', ' ').rstrip('؟?!.').split())
+    if re.fullmatch(
+        r'(?:من )?(?:از لانچو خوشم (?:اومده|آمده|اومد|آمد)|لانچو رو دوست دارم|لانچو را دوست دارم)',
+        question,
+    ):
+        return f'برای شروع، نوع کسب‌وکارتان را در فرم ثبت‌نام لانچو انتخاب کنید. {_STORE_START_URL}', {}
     if question in {'تماس با پشتیبانی', 'با کارشناس صحبت کنم', 'می خواهم با کارشناس صحبت کنم'}:
         return 'از صفحهٔ تماس لانچو با کارشناس ارتباط بگیرید. https://launcho.ir/contact', {}
     if question in {'فروشگاهم فعال شده از کجا شروع کنم', 'بعد از ساخت فروشگاه از کجا شروع کنم'}:

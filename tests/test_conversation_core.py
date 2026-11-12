@@ -520,6 +520,14 @@ class PrivacyAndModelTests(unittest.TestCase):
                 history.extend([{'role':'user','content':message}, {'role':'assistant','content':reply}])
         model.assert_not_called()
 
+    def test_explicit_interest_offers_signup_directly(self):
+        with patch.object(ai_service.client.chat.completions, 'create') as model:
+            reply, update = ai_service.generate_turn('من از لانچو خوشم اومده')
+        self.assertIn('نوع کسب‌وکارتان', reply)
+        self.assertTrue(reply.endswith('https://launcho.ir/start'))
+        self.assertEqual(update, {})
+        model.assert_not_called()
+
     def test_guidance_replaces_unsupported_price_and_sensitive_request(self):
         for text, link in (
             ('اشتراک ۲۴۰٬۰۰۰ تومان است.', 'https://launcho.ir/pricing'),
