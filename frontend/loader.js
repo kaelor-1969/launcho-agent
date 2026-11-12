@@ -42,7 +42,7 @@
   for (const key of ['offset', 'mobileOffset']) if (script.dataset[key] && Number.isFinite(Number(script.dataset[key]))) options[key] = Math.max(0, Math.min(240, Number(script.dataset[key])));
   let host, shadow, button, resizeButton, panel, frame, feedback, ready = false, opened = false;
   let expanded = false;
-  let templateHint, templateHintTimer;
+  let askButton, templateHint, templateHintTimer;
   const systemTheme = matchMedia('(prefers-color-scheme: dark)');
   let loadTimer;
   function post(type, payload = {}) {
@@ -61,6 +61,7 @@
     opened = value;
     if (!host) return;
     panel.hidden = !opened;
+    askButton.hidden = opened;
     if (opened) {
       clearTimeout(templateHintTimer);
       templateHint.hidden = true;
@@ -165,6 +166,8 @@
         .resize{position:fixed;bottom:calc(var(--offset) + 9px + env(safe-area-inset-bottom) + var(--viewport-lift));right:calc(var(--offset) + var(--size) + 8px + env(safe-area-inset-right));display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);cursor:pointer}
         :host([data-position=left]) .resize{right:auto;left:calc(var(--offset) + var(--size) + 8px + env(safe-area-inset-left))}
         .resize svg{width:17px;height:17px}
+        .ask{position:fixed;bottom:calc(var(--offset) + 7px + env(safe-area-inset-bottom) + var(--viewport-lift));right:calc(var(--offset) + var(--size) + 8px + env(safe-area-inset-right));min-height:44px;max-width:calc(100vw - var(--size) - var(--offset) - 24px);padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:14px/1.5 Tahoma,sans-serif;direction:rtl;cursor:pointer;box-shadow:var(--shadow)}
+        :host([data-position=left]) .ask{right:auto;left:calc(var(--offset) + var(--size) + 8px + env(safe-area-inset-left))}
         .template-hint{position:fixed;bottom:calc(var(--offset) + var(--size) + 8px + env(safe-area-inset-bottom) + var(--viewport-lift));right:calc(var(--offset) + env(safe-area-inset-right));max-width:calc(100vw - 48px);margin:0;padding:9px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:13px/1.5 Tahoma,sans-serif;text-align:center;direction:rtl;pointer-events:none;box-shadow:var(--shadow)}
         :host([data-position=left]) .template-hint{right:auto;left:calc(var(--offset) + env(safe-area-inset-left))}
         :host([data-position=left]) .launcher,:host([data-position=left]) .panel{right:auto;left:calc(var(--offset) + env(safe-area-inset-left))}
@@ -178,6 +181,13 @@
     feedback = shadow.querySelector('.feedback');
     button = shadow.querySelector('button');
     button.className = 'launcher';
+    askButton = document.createElement('button');
+    askButton.type = 'button';
+    askButton.className = 'ask';
+    askButton.textContent = 'از هوش مصنوعی بپرس';
+    askButton.setAttribute('aria-controls', 'launcho-panel');
+    askButton.addEventListener('click', () => setOpen(true));
+    shadow.append(askButton);
     templateHint = document.createElement('p');
     templateHint.className = 'template-hint';
     templateHint.setAttribute('role', 'status');
