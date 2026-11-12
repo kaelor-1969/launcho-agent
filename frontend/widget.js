@@ -149,10 +149,20 @@ function appendMessage(role, message) {
   const avatar = document.createElement('span');
   avatar.className = 'avatar';
   avatar.setAttribute('aria-hidden', 'true');
-  const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-  use.setAttribute('href', role === 'user' ? '#person' : '#bot-avatar');
-  icon.append(use);
+  let icon;
+  if (role === 'user') {
+    icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', '#person');
+    icon.append(use);
+  } else {
+    icon = document.createElement('img');
+    icon.src = new URL('./assets/phoenix-avatar-left.png', import.meta.url).href;
+    icon.alt = '';
+    icon.className = 'assistant-avatar';
+    icon.width = 42;
+    icon.height = 42;
+  }
   avatar.append(icon);
   const bubble = document.createElement('p');
   bubble.className = `bubble ${role}`;
