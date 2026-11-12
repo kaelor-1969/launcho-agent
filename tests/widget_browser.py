@@ -35,7 +35,7 @@ async def main():
     class Host(BaseHTTPRequestHandler):
         def do_GET(self):
             body = f'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-            <script src="{base}/widget/loader.js" data-theme="light"></script></head>
+            <script src="{base}/widget/loader.js" data-theme="light" data-auto-open="false"></script></head>
             <body><button id="host-action">Host action</button><p>Separate origin installation</p></body></html>'''.encode()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")

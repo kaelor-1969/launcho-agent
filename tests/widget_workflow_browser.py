@@ -177,7 +177,7 @@ async def run_workflow_checks(browser, base):
         await page.goto(base + '/widget/widget.html')
         await page.evaluate("""url => {
             const script=document.createElement('script'); script.src=url+'/widget/loader.js';
-            script.dataset.workflowUrl=url+'/test-workflow';document.body.append(script);
+            script.dataset.workflowUrl=url+'/test-workflow';script.dataset.autoOpen='false';document.body.append(script);
         }""",base)
         await page.locator('#launcho-widget .launcher').click()
         chat = page.frame_locator('#launcho-widget iframe')
