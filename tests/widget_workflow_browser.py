@@ -58,14 +58,8 @@ async def run_workflow_checks(browser, base):
             await expect(chat.locator('#workflow h2')).to_have_text('دسته‌بندی را مشخص کن')
             await entry.select_option('سایر')
             await chat.locator('[data-action=next]').click()
-            await expect(chat.locator('#workflow h2')).to_have_text('دوره اشتراک را مشخص کن')
-            await chat.locator('[data-action=costHelp]').click()
-            await expect(chat.locator('#workflow')).to_contain_text('دورهٔ سه‌ماهه')
-            await expect(entry).to_have_value('')
-            await entry.select_option('6')
-            await entry.press('Escape')
-            await launcher.click()
-            await expect(entry).to_have_value('6')
+            await expect(chat.locator('#workflow h2')).to_have_text('دامنهٔ پیشنهادی را مشخص کن')
+            await entry.fill('Sara Shop')
             await chat.locator('[data-action=next]').click()
             await expect(chat.locator('#workflow h2')).to_have_text('قالب فروشگاهت را انتخاب کن')
             await chat.locator('[data-action="style:catalog"]').click()
@@ -75,16 +69,25 @@ async def run_workflow_checks(browser, base):
             await chat.locator('[data-action=browseTemplates]').click()
             await expect(launcher).to_have_attribute('aria-expanded','false')
             await page.locator('#choose-template').click()
+            await expect(chat.locator('#workflow h2')).to_have_text('دوره اشتراک را مشخص کن')
+            await chat.locator('[data-action=costHelp]').click()
+            await expect(chat.locator('#workflow')).to_contain_text('دورهٔ سه‌ماهه')
+            await expect(entry).to_have_value('')
+            await entry.select_option('6')
+            await entry.press('Escape')
+            await launcher.click()
+            await expect(entry).to_have_value('6')
+            await chat.locator('[data-action=next]').click()
             await expect(chat.locator('#workflow h2')).to_have_text('مرور اطلاعات')
-            await expect(chat.locator('#workflow dt')).to_have_text(['نام کسب‌وکار','دسته‌بندی','دوره اشتراک','قالب'])
-            await expect(chat.locator('#workflow dd')).to_have_text(['فروشگاه من','سایر','شش‌ماهه','الماس'])
+            await expect(chat.locator('#workflow dt')).to_have_text(['نام کسب‌وکار','دسته‌بندی','دامنهٔ پیشنهادی','قالب','دوره اشتراک'])
+            await expect(chat.locator('#workflow dd')).to_have_text(['فروشگاه من','سایر','sarashop.ir','الماس','شش‌ماهه'])
             await expect(chat.locator('#workflow a')).to_have_count(0)
             await page.screenshot(path=str(OUTPUT/f'flow-{width}-review.png'))
 
             # Every editable field returns directly to review; the plan stays put.
             for field, value in [('businessName','نام اصلاح‌شده'),('category','زیبایی'),('subscription','12'),('template',None)]:
                 await chat.locator('[data-action=edit]').click()
-                await expect(chat.locator('#workflow button')).to_have_count(4)
+                await expect(chat.locator('#workflow button')).to_have_count(5)
                 await chat.locator(f'[data-action="edit:{field}"]').click()
                 if field == 'template':
                     await chat.locator('[data-action=browseTemplates]').click()
@@ -96,7 +99,7 @@ async def run_workflow_checks(browser, base):
                         await entry.select_option(value)
                     await chat.locator('[data-action=next]').click()
                 await expect(chat.locator('#workflow h2')).to_have_text('مرور اطلاعات')
-            await expect(chat.locator('#workflow dd')).to_have_text(['نام اصلاح‌شده','زیبایی','سالانه','الماس'])
+            await expect(chat.locator('#workflow dd')).to_have_text(['نام اصلاح‌شده','زیبایی','sarashop.ir','الماس','سالانه'])
             await chat.locator('[data-action=createDraft]').click()
             await expect(chat.locator('[data-action=createDraft]')).to_be_disabled()
             await expect(chat.locator('#workflow h2')).to_have_text('پیش‌نویس نمایشی آماده شد.')
@@ -234,12 +237,14 @@ async def run_workflow_checks(browser, base):
                     if(!rejected) throw new Error('Out-of-sequence action accepted');
                 }
                 await send('next',{value:'name'}); await send('next',{value:'سایر'});
+                const template=await send('next',{value:'Sara Shop'});
+                if(template.kind!=='template') throw new Error('Wrong order');
+                const subscription=await send('selectTemplate',{template:{id:'almas',name:'Almas',image:base+'/widget/assets/template-almas.webp'}});
+                if(subscription.field!=='subscription') throw new Error('Wrong order');
                 let rejected=false;
                 try {await send('next',{value:'invalid-plan'});} catch {rejected=true;}
                 if(!rejected) throw new Error('Invalid plan accepted');
-                const template=await send('next',{value:plan});
-                if(template.kind!=='template') throw new Error('Wrong order');
-                const review=await send('selectTemplate',{template:{id:'almas',name:'Almas',image:base+'/widget/assets/template-almas.webp'}});
+                const review=await send('next',{value:plan});
                 if(review.kind!=='review' || 'quote' in review) throw new Error('Unexpected review');
                 const draft=await send('createDraft');
                 if(draft.kind!=='draft' || draft.actions.length || !draft.draftUrl) throw new Error('Unexpected draft');

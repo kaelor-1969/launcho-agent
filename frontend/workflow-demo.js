@@ -4,8 +4,8 @@ export function createDemoWorkflow() {
   const state = {};
   let step = 'businessName', editing = false, revision = 0;
   const sessionId = crypto.randomUUID();
-  const fields = ['businessName','category','subscription','template'];
-  const labels = {businessName:'نام کسب‌وکار',category:'دسته‌بندی',subscription:'دوره اشتراک',template:'قالب'};
+  const fields = ['businessName','category','domainName','template','subscription'];
+  const labels = {businessName:'نام کسب‌وکار',category:'دسته‌بندی',domainName:'دامنهٔ پیشنهادی',subscription:'دوره اشتراک',template:'قالب'};
   const plans = [{id:'3',label:'سه‌ماهه'},{id:'6',label:'شش‌ماهه'},{id:'12',label:'سالانه'}];
   const categories = ['کیف و کفش','پوشاک','زیبایی','سایر'].map(label => ({id:label,label}));
   let showCostHelp = false, style;
@@ -14,9 +14,9 @@ export function createDemoWorkflow() {
   function review() {
     step = 'review';
     return envelope({kind:'review', title:'مرور اطلاعات',
-      rows:[...['businessName','category'].map(f=>({label:labels[f],value:state[f]})),
-        {label:labels.subscription,value:plans.find(p=>p.id===state.subscription).label},
-        {label:'قالب',value:state.template.name}],
+      rows:[...['businessName','category','domainName'].map(f=>({label:labels[f],value:state[f]})),
+        {label:'قالب',value:state.template.name},
+        {label:labels.subscription,value:plans.find(p=>p.id===state.subscription).label}],
       actions:[action('createDraft','تأیید و ساخت پیش‌نویس نمایشی'),action('edit','ویرایش اطلاعات')]});
   }
   function field() {
@@ -32,6 +32,7 @@ export function createDemoWorkflow() {
     return envelope({kind:'field', field:step, label:labels[step], value:state[step] || '',
       title:step==='businessName' ? 'اسم کسب‌وکارت چیه؟' : `${labels[step]} را مشخص کن`,
       ...(step==='category' ? {options:categories} : {}),
+      ...(step==='domainName' ? {description:'نام برند را به لاتین بنویس. دامنهٔ ‎.ir فقط برای نمایش پیشنهاد می‌شود.'} : {}),
       ...(step==='subscription' ? {options:plans} : {}),
       ...(step==='subscription' && showCostHelp ? {
         description:'برای تعهد کوتاه‌تر، دورهٔ سه‌ماهه را بررسی کن. شرایط اقساط و جشنوارهٔ قابل استفاده در فرم رسمی مشخص می‌شود.',
@@ -64,7 +65,12 @@ export function createDemoWorkflow() {
       if (step==='businessName' && (typeof data.value !== 'string' || !/\p{L}/u.test(data.value))) {
         throw new Error('نام کسب‌وکار را وارد کن.');
       }
-      state[step]=data.value; return advance();
+      if (step==='domainName') {
+        const label = typeof data.value === 'string' ? data.value.toLowerCase().replace(/\.ir$/, '').replace(/\s+/g, '') : '';
+        if (!/^[a-z][a-z0-9-]{0,38}[a-z0-9]$/.test(label)) throw new Error('نام دامنه را با حروف لاتین وارد کن.');
+        state.domainName = label + '.ir';
+      } else state[step]=data.value;
+      return advance();
     }
     if (a==='edit' && step==='review') return envelope({kind:'review',title:'کدام اطلاعات را ویرایش می‌کنی؟',actions:fields.map(f=>action(`edit:${f}`,labels[f]))});
     if (a.startsWith('edit:') && step==='review' && fields.includes(a.slice(5))) {step=a.slice(5); editing=true; return field();}
