@@ -51,7 +51,7 @@
     if (!host) return;
     panel.hidden = !opened;
     button.setAttribute('aria-expanded', String(opened));
-    button.setAttribute('aria-label', 'دستیار لانچو');
+    button.setAttribute('aria-label', opened ? 'بستن گفتگو' : 'دستیار لانچو');
     button.dataset.open = String(opened);
     if (opened && !frame) {
       frame = document.createElement('iframe');
@@ -124,11 +124,17 @@
     shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = `
       <style>
-        :host{--blue:#143ef2;--mid-blue:#0d8ae5;--turquoise:#00d8d1;--white:#fff;--surface:#f7f8ff;--ink:#152a56;--line:#cbdaf1;--button-line:#ffffff40;--button-shadow:0 5px 12px #008ca83b;--offset:var(--desktop-offset,24px);--gap:16px;--size:58px;--radius:32px;--frame-gradient:conic-gradient(var(--blue),var(--mid-blue),var(--turquoise),var(--mid-blue),var(--blue));--frame-duration:6s;--frame-width:3px;--shadow:0 14px 34px #22509838;--viewport-height:100dvh;--viewport-lift:0px}
+        :host{--blue:#143ef2;--mid-blue:#0d8ae5;--turquoise:#00d8d1;--white:#fff;--surface:#f7f8ff;--ink:#152a56;--line:#cbdaf1;--button-line:#ffffffb3;--button-shadow:0 5px 16px #5138a83d;--offset:var(--desktop-offset,24px);--gap:16px;--size:58px;--radius:32px;--frame-gradient:conic-gradient(var(--blue),var(--mid-blue),var(--turquoise),var(--mid-blue),var(--blue));--frame-duration:6s;--frame-width:3px;--shadow:0 14px 34px #22509838;--viewport-height:100dvh;--viewport-lift:0px}
         :host([data-theme=dark]){--surface:#091525;--ink:#eef6f3;--line:#12394c;--shadow:0 12px 48px #0004}
         *{box-sizing:border-box} [hidden]{display:none!important}
-        button{all:initial;box-sizing:border-box;position:fixed;bottom:calc(var(--offset) + env(safe-area-inset-bottom) + var(--viewport-lift));right:calc(var(--offset) + env(safe-area-inset-right));width:var(--size);height:var(--size);border-radius:50%;border:1px solid var(--button-line);background:linear-gradient(135deg,#174BFF 0%,#087DDF 55%,#009EAE 100%);color:var(--white);box-shadow:var(--button-shadow);display:grid;place-items:center;cursor:pointer;transition:transform 180ms;pointer-events:auto}
-        button:hover{transform:translateY(-2px)}button:focus-visible{outline:3px solid var(--blue);outline-offset:4px}
+        button{all:initial;box-sizing:border-box;position:fixed;bottom:calc(var(--offset) + env(safe-area-inset-bottom) + var(--viewport-lift));right:calc(var(--offset) + env(safe-area-inset-right));width:var(--size);height:var(--size);border-radius:50%;border:1.5px solid var(--button-line);background:linear-gradient(135deg,#8750d5 0%,#6042dc 48%,#176fea 100%);color:var(--white);box-shadow:var(--button-shadow),inset 0 0 0 2px #ffffff1f;display:grid;place-items:center;cursor:pointer;transition:transform 180ms;pointer-events:auto}
+        @media(hover:hover){button:hover{transform:translateY(-2px) scale(1.06)}}button:focus-visible{outline:3px solid var(--blue);outline-offset:4px}
+        .mascot{display:block;width:52px;height:52px;object-fit:contain;pointer-events:none}
+        .launcher-hint{position:absolute;right:calc(100% + 12px);white-space:nowrap;padding:7px 12px;border-radius:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 4px 12px #152a561a;font:13px/1.7 Tahoma,sans-serif;direction:rtl;opacity:0;visibility:hidden;pointer-events:none;transition:opacity 180ms}
+        button[data-open=false]:focus-visible .launcher-hint{opacity:1;visibility:visible}
+        @media(hover:hover){button[data-open=false]:hover .launcher-hint{opacity:1;visibility:visible}}
+        :host([data-position=left]) .launcher-hint{right:auto;left:calc(100% + 12px)}
+        button[data-open=true] .mascot{display:none}button[data-open=true] .close{display:block}
         svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}button .close{display:none}button[data-open=true]{box-shadow:var(--button-shadow),inset 0 0 0 2px var(--button-line)}
         .panel{position:fixed;right:calc(var(--offset) + env(safe-area-inset-right));bottom:calc(var(--offset) + var(--size) + var(--gap) + env(safe-area-inset-bottom) + var(--viewport-lift));width:380px;max-width:calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right));height:450px;max-height:calc(var(--viewport-height) - var(--offset) - var(--offset) - var(--size) - var(--gap) - env(safe-area-inset-bottom) - env(safe-area-inset-top));padding:var(--frame-width);border:0;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);background:var(--surface);pointer-events:auto}
         /* The iframe covers the center of the rotating gradient, leaving only the rim visible. */
@@ -138,13 +144,14 @@
         .feedback{position:absolute;z-index:1;inset:var(--frame-width);border-radius:calc(var(--radius) - var(--frame-width));background:var(--surface);display:grid;place-items:center;margin:0;padding:24px;text-align:center;font:14px/2 Tahoma,sans-serif;color:var(--ink);direction:rtl}
         :host([data-position=left]) button,:host([data-position=left]) .panel{right:auto;left:calc(var(--offset) + env(safe-area-inset-left))}
         @media(max-width:480px){:host{--offset:var(--mobile-offset,16px);--gap:12px}.panel{right:calc(12px + env(safe-area-inset-right));width:calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right))}:host([data-position=left]) .panel{left:calc(12px + env(safe-area-inset-left))}}
-        @media(prefers-reduced-motion:reduce){button{transition:none}.panel::before{animation:none}}
+        @media(prefers-reduced-motion:reduce){button,.launcher-hint{transition:none}button:hover{transform:none}.panel::before{animation:none}}
       </style>
       <div class="panel" id="launcho-panel" hidden><p class="feedback" role="status">در حال آماده‌سازی گفتگو…</p></div>
-      <button type="button" aria-label="دستیار لانچو" aria-expanded="false" aria-controls="launcho-panel" data-open="false"><svg class="bubble" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M5 3h14a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4H9l-5 4v-4a4 4 0 0 1-4-4V7a5 5 0 0 1 5-4Z"/><g fill="#00cbd8" stroke="none"><circle cx="6" cy="10.5" r="1.3"/><circle cx="11.5" cy="10.5" r="1.3"/><circle cx="17" cy="10.5" r="1.3"/></g></svg><svg class="close" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button>`;
+      <button type="button" aria-label="دستیار لانچو" aria-expanded="false" aria-controls="launcho-panel" data-open="false"><img class="mascot" alt="" width="52" height="52"><span class="launcher-hint" aria-hidden="true">از لانچو بپرس</span><svg class="close" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button>`;
     panel = shadow.querySelector('.panel');
     feedback = shadow.querySelector('.feedback');
     button = shadow.querySelector('button');
+    shadow.querySelector('.mascot').src = new URL('./assets/phoenix-launcher-front.png', script.src).href;
     button.addEventListener('click', () => setOpen(!opened));
     shadow.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && opened) { event.preventDefault(); setOpen(false); }
