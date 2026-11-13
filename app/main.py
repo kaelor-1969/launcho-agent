@@ -110,6 +110,7 @@ def readiness():
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(router)
 mimetypes.add_type("font/woff2", ".woff2")
+mimetypes.add_type("image/webp", ".webp")
 app.mount("/widget", StaticFiles(directory=Path(__file__).resolve().parents[1] / "frontend"), name="widget")
 
 
