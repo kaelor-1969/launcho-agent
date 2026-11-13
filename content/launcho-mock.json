@@ -58,7 +58,10 @@
     "giftUsage": {
       "renewsMonthly": true,
       "rollover": false,
-      "uses": ["هوش مصنوعی", "پیامک از خط اشتراکی"]
+      "uses": [
+        "هوش مصنوعی",
+        "پیامک از خط اشتراکی"
+      ]
     },
     "serviceDetails": {
       "shop": {
@@ -83,7 +86,10 @@
         }
       },
       "website": {
-        "setupIncludes": ["ثبت دامنهٔ ir", "راه‌اندازی سایت با قالب‌های آماده"],
+        "setupIncludes": [
+          "ثبت دامنهٔ ir",
+          "راه‌اندازی سایت با قالب‌های آماده"
+        ],
         "planIncludes": [
           "سایت بدون کاتالوگ، سبد خرید و درگاه؛ با قالب آماده و صفحه‌ساز بلوکی",
           "میزبانی، SSL و پشتیبان‌گیری"
@@ -105,7 +111,14 @@
       "steps": [],
       "businessCategories": [],
       "templateCategories": [],
-      "templates": []
+      "templates": [],
+      "catalogVersion": "1.0.0",
+      "approvalStatus": "pending",
+      "source": {
+        "type": "internal_fixture",
+        "reference": "content/launcho-mock.json"
+      },
+      "reviewedAt": "2026-11-12"
     },
     "website": {
       "kind": "website",
@@ -114,7 +127,14 @@
       "steps": [],
       "businessCategories": [],
       "templateCategories": [],
-      "templates": []
+      "templates": [],
+      "catalogVersion": "1.0.0",
+      "approvalStatus": "pending",
+      "source": {
+        "type": "internal_fixture",
+        "reference": "content/launcho-mock.json"
+      },
+      "reviewedAt": "2026-11-12"
     }
   },
   "serviceInfo": {

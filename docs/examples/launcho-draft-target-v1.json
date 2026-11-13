@@ -1,0 +1,140 @@
+{
+  "contractVersion": "local-mock-v1.1.0",
+  "status": "proposed-not-implemented",
+  "referenceClock": "2026-11-12T12:00:00Z",
+  "cases": [
+    {
+      "name": "create",
+      "request": {
+        "method": "POST",
+        "path": "/signup-drafts",
+        "headers": {
+          "Authorization": "Bearer local-simulation",
+          "Idempotency-Key": "contract_example_key_01"
+        },
+        "json": {
+          "kind": "shop",
+          "businessName": "test shop",
+          "category": "test-category",
+          "planMonths": 3,
+          "template": "test-template",
+          "domain": {
+            "label": "example",
+            "tld": "ir"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "ref": "sd_contract_test",
+            "status": "draft",
+            "createdAt": "2026-11-12T12:00:00Z",
+            "expiresAt": "2026-11-13T12:00:00Z",
+            "confirmUrl": "https://launcho.ir/start?signup=sd_contract_test",
+            "quote": {
+              "total": 17400000,
+              "isFinal": false
+            }
+          },
+          "simulation": true,
+          "notice": "Test fixture only. This URL was not issued by Launcho; do not open or deliver it."
+        }
+      }
+    },
+    {
+      "name": "status-draft",
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "ref": "sd_contract_test",
+            "status": "draft",
+            "createdAt": "2026-11-12T12:00:00Z",
+            "expiresAt": "2026-11-13T12:00:00Z"
+          },
+          "simulation": true
+        }
+      }
+    },
+    {
+      "name": "status-expired",
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "ref": "sd_contract_test",
+            "createdAt": "2026-11-12T12:00:00Z",
+            "expiresAt": "2026-11-13T12:00:00Z",
+            "status": "expired"
+          },
+          "simulation": true
+        }
+      }
+    },
+    {
+      "name": "conflict",
+      "response": {
+        "status": 409,
+        "json": {
+          "ok": false,
+          "error": {
+            "code": "idempotency_conflict",
+            "message": "Test error message"
+          },
+          "simulation": true,
+          "notice": "Simulation only"
+        }
+      }
+    },
+    {
+      "name": "replay-expired",
+      "response": {
+        "status": 410,
+        "json": {
+          "ok": false,
+          "error": {
+            "code": "draft_expired",
+            "message": "Test error message"
+          },
+          "simulation": true,
+          "notice": "Simulation only"
+        }
+      }
+    },
+    {
+      "name": "status-missing",
+      "response": {
+        "status": 404,
+        "json": {
+          "ok": false,
+          "error": {
+            "code": "draft_not_found",
+            "message": "Test error message"
+          },
+          "simulation": true,
+          "notice": "Simulation only"
+        }
+      }
+    },
+    {
+      "name": "invalid-input",
+      "response": {
+        "status": 422,
+        "json": {
+          "ok": false,
+          "error": {
+            "code": "invalid_request",
+            "message": "Test error message"
+          },
+          "simulation": true,
+          "notice": "Simulation only"
+        }
+      }
+    }
+  ]
+}

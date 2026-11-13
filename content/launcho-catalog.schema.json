@@ -1,0 +1,279 @@
+{
+  "$defs": {
+    "BusinessCategory": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "shop",
+            "website"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "approvalStatus": {
+          "enum": [
+            "test_only",
+            "pending",
+            "approved",
+            "inactive"
+          ],
+          "title": "Approvalstatus",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/CatalogSource"
+        },
+        "reviewedAt": {
+          "format": "date",
+          "title": "Reviewedat",
+          "type": "string"
+        },
+        "approvalEvidence": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approvalevidence"
+        },
+        "label": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind",
+        "available",
+        "approvalStatus",
+        "source",
+        "reviewedAt",
+        "label"
+      ],
+      "title": "BusinessCategory",
+      "type": "object"
+    },
+    "CatalogSource": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "internal_fixture",
+            "official_api",
+            "official_page",
+            "unverified"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "reference": {
+          "minLength": 1,
+          "title": "Reference",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "reference"
+      ],
+      "title": "CatalogSource",
+      "type": "object"
+    },
+    "Template": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "shop",
+            "website"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "approvalStatus": {
+          "enum": [
+            "test_only",
+            "pending",
+            "approved",
+            "inactive"
+          ],
+          "title": "Approvalstatus",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/CatalogSource"
+        },
+        "reviewedAt": {
+          "format": "date",
+          "title": "Reviewedat",
+          "type": "string"
+        },
+        "approvalEvidence": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approvalevidence"
+        },
+        "compatibleCategoryIds": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Compatiblecategoryids"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind",
+        "available",
+        "approvalStatus",
+        "source",
+        "reviewedAt",
+        "compatibleCategoryIds"
+      ],
+      "title": "Template",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "catalogVersion": {
+      "const": "1.0.0",
+      "title": "Catalogversion",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "shop",
+        "website"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "availability": {
+      "enum": [
+        "unavailable",
+        "test_only",
+        "available"
+      ],
+      "title": "Availability",
+      "type": "string"
+    },
+    "notice": {
+      "minLength": 1,
+      "title": "Notice",
+      "type": "string"
+    },
+    "approvalStatus": {
+      "enum": [
+        "test_only",
+        "pending",
+        "approved",
+        "inactive"
+      ],
+      "title": "Approvalstatus",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/CatalogSource"
+    },
+    "reviewedAt": {
+      "format": "date",
+      "title": "Reviewedat",
+      "type": "string"
+    },
+    "steps": {
+      "items": {},
+      "title": "Steps",
+      "type": "array"
+    },
+    "businessCategories": {
+      "items": {
+        "$ref": "#/$defs/BusinessCategory"
+      },
+      "title": "Businesscategories",
+      "type": "array"
+    },
+    "templateCategories": {
+      "items": {},
+      "title": "Templatecategories",
+      "type": "array"
+    },
+    "templates": {
+      "items": {
+        "$ref": "#/$defs/Template"
+      },
+      "title": "Templates",
+      "type": "array"
+    }
+  },
+  "required": [
+    "catalogVersion",
+    "kind",
+    "availability",
+    "notice",
+    "approvalStatus",
+    "source",
+    "reviewedAt",
+    "businessCategories",
+    "templates"
+  ],
+  "title": "SignupCatalog",
+  "type": "object"
+}

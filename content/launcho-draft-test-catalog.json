@@ -1,0 +1,102 @@
+{
+  "source": "Internal synthetic fixtures for persistent mock draft tests; not official Launcho options",
+  "approvalStatus": "test_only",
+  "signupOptions": {
+    "shop": {
+      "kind": "shop",
+      "availability": "test_only",
+      "notice": "این گزینه‌ها فقط برای آزمون پیش‌نویس mock هستند؛ قالب یا صنف واقعی قابل ثبت نیستند.",
+      "steps": [],
+      "businessCategories": [
+        {
+          "id": "test-category",
+          "label": "صنف آزمایشی",
+          "approvalStatus": "test_only",
+          "kind": "shop",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-draft-test-catalog.json"
+          },
+          "reviewedAt": "2026-11-12",
+          "approvalEvidence": null,
+          "title": "صنف آزمایشی"
+        }
+      ],
+      "templateCategories": [],
+      "templates": [
+        {
+          "id": "test-template",
+          "title": "قالب آزمایشی",
+          "available": true,
+          "approvalStatus": "test_only",
+          "kind": "shop",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-draft-test-catalog.json"
+          },
+          "reviewedAt": "2026-11-12",
+          "approvalEvidence": null,
+          "compatibleCategoryIds": [
+            "test-category"
+          ]
+        }
+      ],
+      "catalogVersion": "1.0.0",
+      "approvalStatus": "test_only",
+      "source": {
+        "type": "internal_fixture",
+        "reference": "content/launcho-draft-test-catalog.json"
+      },
+      "reviewedAt": "2026-11-12"
+    },
+    "website": {
+      "kind": "website",
+      "availability": "test_only",
+      "notice": "این گزینه‌ها فقط برای آزمون پیش‌نویس mock هستند؛ قالب یا صنف واقعی قابل ثبت نیستند.",
+      "steps": [],
+      "businessCategories": [
+        {
+          "id": "test-website-category",
+          "label": "صنف سایت آزمایشی",
+          "approvalStatus": "test_only",
+          "kind": "website",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-draft-test-catalog.json"
+          },
+          "reviewedAt": "2026-11-12",
+          "approvalEvidence": null,
+          "title": "صنف سایت آزمایشی"
+        }
+      ],
+      "templateCategories": [],
+      "templates": [
+        {
+          "id": "test-website-template",
+          "title": "قالب سایت آزمایشی",
+          "available": true,
+          "approvalStatus": "test_only",
+          "kind": "website",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-draft-test-catalog.json"
+          },
+          "reviewedAt": "2026-11-12",
+          "approvalEvidence": null,
+          "compatibleCategoryIds": [
+            "test-website-category"
+          ]
+        }
+      ],
+      "catalogVersion": "1.0.0",
+      "approvalStatus": "test_only",
+      "source": {
+        "type": "internal_fixture",
+        "reference": "content/launcho-draft-test-catalog.json"
+      },
+      "reviewedAt": "2026-11-12"
+    }
+  }
+}

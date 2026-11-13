@@ -8,6 +8,8 @@ import httpx
 
 from app.core.config import settings
 from app.services import launcho_api
+from app.services.launcho_contract import normalize_draft
+from app.services.catalog import selectable_catalog
 
 
 class GatewayUnavailable(Exception):
@@ -66,7 +68,7 @@ class LaunchoReadOnlyGateway:
         key = (endpoint, tuple((params or {}).items()))
         with self.lock:
             entry = self.cache.get(key)
-            if entry and monotonic() < entry[0]:
+            if ttl and entry and monotonic() < entry[0]:
                 return entry[1]
             try:
                 request_options = dict(headers={'Authorization': f'Bearer {self.token}'},
@@ -82,6 +84,8 @@ class LaunchoReadOnlyGateway:
             if not isinstance(payload, dict) or payload.get('ok') is not True:
                 raise GatewayUnavailable('Invalid Launcho response envelope.')
             data = unwrap(payload)
+            if self.mode == 'live' and payload.get('simulation') is True:
+                raise GatewayUnavailable('Simulated data cannot be used as live Launcho data.')
             if ttl:
                 self.cache[key] = (monotonic() + ttl, data)
             return data
@@ -92,7 +96,18 @@ class LaunchoReadOnlyGateway:
     def get_signup_options(self, kind):
         if kind not in {'shop', 'website'}:
             raise GatewayUnavailable('Invalid Launcho service kind.')
-        return self.read('/signup-options', 600, {'kind': kind})
+        # Until the official contract defines revision/revocation semantics, do not cache selectable IDs.
+        data = self.read('/signup-options', 0, {'kind': kind})
+        if self.mode == 'live' and (data.get('approvalStatus') == 'test_only'
+                or data.get('availability') == 'test_only'
+                or any(isinstance(entry, dict) and entry.get('approvalStatus') == 'test_only'
+                       for key in ('businessCategories', 'templates')
+                       for entry in (data.get(key) if isinstance(data.get(key), list) else []))):
+            raise GatewayUnavailable('Test catalog cannot be used as live registration options.')
+        try:
+            return selectable_catalog(data, kind, allow_test=self.mode == 'local_mock')
+        except (ValueError, TypeError):
+            raise GatewayUnavailable('Catalog provenance or structure is invalid.') from None
 
     def get_service_info(self):
         return self.read('/service-info', 60)
@@ -118,6 +133,14 @@ class LaunchoDraftGateway(LaunchoReadOnlyGateway):
     can_create = True
 
     def create_signup_draft(self, payload, idempotency_key):
+        import re
+        # Validate before transport; do not replace the core's persisted idempotency key.
+        if not isinstance(idempotency_key, str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,128}', idempotency_key):
+            raise GatewayRejected(422, 'invalid_idempotency_key')
+        try:
+            payload = normalize_draft(payload)
+        except (ValueError, TypeError):
+            raise GatewayRejected(422, 'invalid_request') from None
         try:
             response = httpx.post(
                 self.base_url + '/signup-drafts', json=payload,

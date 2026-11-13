@@ -1,0 +1,72 @@
+{
+  "reviewedAt": "2026-11-12",
+  "scope": "Repository inventory only; official registration IDs and current availability have not been received",
+  "legacyOptions": [
+    {
+      "id": "fashion",
+      "title": "پوشاک و مد",
+      "kind": "shop",
+      "historicalKinds": ["shop", "website"],
+      "available": false,
+      "approvalStatus": "inactive",
+      "source": "Historical app/services/launcho_api.py#get_signup_options",
+      "reviewedAt": "2026-11-12",
+      "reason": "Retired synthetic ID; never confirmed as an official registration category"
+    },
+    {
+      "id": "example-row",
+      "title": "قالب نمونه",
+      "kind": "shop",
+      "historicalKinds": ["shop", "website"],
+      "available": false,
+      "approvalStatus": "inactive",
+      "source": "Historical app/services/launcho_api.py#get_signup_options",
+      "reviewedAt": "2026-11-12",
+      "reason": "Retired synthetic template; previous available=true was not backed by an approved catalog"
+    }
+  ],
+  "publicReferences": [
+    {
+      "referenceId": "public-mada",
+      "registrationId": null,
+      "title": "مدا",
+      "kind": "shop",
+      "available": false,
+      "approvalStatus": "pending",
+      "source": "content/launcho-public.json (recorded public template narrative)",
+      "recordedPublicUrl": "https://launcho.ir/#templates",
+      "reviewedAt": "2026-11-12",
+      "lastRecordedSourceReview": "2026-11-11"
+    },
+    {
+      "referenceId": "public-digikala",
+      "registrationId": null,
+      "title": "دیجی‌کالا",
+      "kind": "shop",
+      "available": false,
+      "approvalStatus": "pending",
+      "source": "content/launcho-public.json (recorded public template narrative)",
+      "recordedPublicUrl": "https://launcho.ir/#templates",
+      "reviewedAt": "2026-11-12",
+      "lastRecordedSourceReview": "2026-11-11"
+    },
+    {
+      "referenceId": "public-almas",
+      "registrationId": null,
+      "title": "الماس",
+      "kind": "shop",
+      "available": false,
+      "approvalStatus": "pending",
+      "source": "README.md demo hook and frontend/assets/template-almas.webp; not registration evidence",
+      "recordedPublicUrl": null,
+      "reviewedAt": "2026-11-12",
+      "lastRecordedSourceReview": null
+    }
+  ],
+  "limitations": [
+    "referenceId is an internal audit key, never a registration template ID",
+    "The official homepage could not be retrieved by the web tool during this review; no fresh online approval is claimed",
+    "No complete official list of 23 selectable templates exists in the inspected content files",
+    "Website template IDs and real category/template compatibility remain pending official data"
+  ]
+}
