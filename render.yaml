@@ -2,10 +2,30 @@ services:
   - type: web
     name: launcho-agent
     runtime: python
+    plan: starter
+    numInstances: 1
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /
+    healthCheckPath: /health/ready
+    disk:
+      name: sessions
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
+      - key: LAUNCHO_ENV
+        value: production
+      - key: LAUNCHO_SESSION_DB
+        value: /var/data/sessions.sqlite3
+      - key: LAUNCHO_FRAME_ANCESTORS
+        sync: false
+      - key: LAUNCHO_CORS_ORIGINS
+        sync: false
+      - key: LAUNCHO_API_URL
+        sync: false
+      - key: LAUNCHO_API_KEY
+        sync: false
+      - key: LAUNCHO_ENABLE_DRAFTS
+        value: "0"
       - key: AI_API_KEY
         sync: false
       - key: AI_BASE_URL

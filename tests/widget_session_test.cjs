@@ -95,7 +95,12 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   const modules = new Map();
   async function load(name) {
     if (modules.has(name)) return modules.get(name);
-    const module = new vm.SourceTextModule(readFileSync(resolve(__dirname, '../frontend', name), 'utf8'), {context});
+    const module = new vm.SourceTextModule(readFileSync(resolve(__dirname, '../frontend', name), 'utf8'), {
+      context,
+      initializeImportMeta(meta) {
+        meta.url = new URL(name, 'https://widget.example/widget/').href;
+      },
+    });
     modules.set(name, module);
     await module.link(specifier => {
       if (specifier.split('?')[0] === './workflow.js') {

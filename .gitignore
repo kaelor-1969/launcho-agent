@@ -37,3 +37,8 @@ Thumbs.db
 *.sqlite3-shm
 
 artifacts/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.backup

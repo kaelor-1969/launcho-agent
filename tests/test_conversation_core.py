@@ -86,6 +86,20 @@ class CoreTests(unittest.TestCase):
         text=Path(self.core.store.path).read_bytes()
         self.assertNotIn(self.token.encode(),text)
 
+    def test_unknown_outcome_survives_core_restart_with_same_key(self):
+        review = self.review()
+        request = self.request(review)
+        self.gateway.fail_once = True
+        self.assert_core_error('draft_outcome_unknown', lambda: self.core.confirm(self.sid, self.token, request))
+        previous_key = self.gateway.calls[-1][1]
+        restarted = ConversationCore(SessionStore(self.core.store.path), self.gateway)
+        self.assertEqual(restarted.get_session(self.sid, self.token)['draftState'], 'unknown')
+        self.assert_core_error('draft_unresolved', lambda: restarted.edit(self.sid, self.token, review['revision'], {'businessName': 'تازه'}))
+        result = restarted.confirm(self.sid, self.token, request)
+        self.assertEqual(self.gateway.calls[-1][1], previous_key)
+        self.assertEqual(result['ref'], 'sd_mockreference')
+        self.assertEqual(len(self.gateway.results), 1)
+
     def test_live_draft_transport_preserves_key_and_status_is_session_owned(self):
         gateway = LaunchoDraftGateway('https://example.invalid/api/assistant/v1', 'test-token')
         self.core.gateway = gateway
