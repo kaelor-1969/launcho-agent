@@ -1,0 +1,207 @@
+[
+  {
+    "label": "مدا",
+    "url": "https://demo.launcho.ir/?template=moda",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "بوتیک",
+    "url": "https://demo.launcho.ir/?template=boutique",
+    "registration": "unverified",
+    "status": "NOT_RUN",
+    "reason": "hidden or no public preview link"
+  },
+  {
+    "label": "کلاسیک",
+    "url": "https://demo.launcho.ir/?template=classic",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "دیجی‌کالا",
+    "url": "https://demo.launcho.ir/?template=digikala",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "شاپرک",
+    "url": "https://demo.launcho.ir/?template=shaparak",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "بازار",
+    "url": "https://demo.launcho.ir/?template=bazar",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "پرند",
+    "url": "https://demo.launcho.ir/?template=parand",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "خوردو",
+    "url": null,
+    "registration": "unverified",
+    "status": "NOT_RUN",
+    "reason": "hidden or no public preview link"
+  },
+  {
+    "label": "تکنو",
+    "url": "https://demo.launcho.ir/?template=techno",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "رایان",
+    "url": "https://demo.launcho.ir/?template=rayan",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "زرین",
+    "url": "https://demo.launcho.ir/?template=zarin",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "دانش",
+    "url": null,
+    "registration": "unverified",
+    "status": "NOT_RUN",
+    "reason": "hidden or no public preview link"
+  },
+  {
+    "label": "کاشانه",
+    "url": "https://demo.launcho.ir/?template=kashane",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "نگین",
+    "url": "https://demo.launcho.ir/?template=negin",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "ثانیه",
+    "url": "https://demo.launcho.ir/?template=saniye",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "آستر",
+    "url": "https://demo.launcho.ir/?template=astar",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "یاس",
+    "url": "https://demo.launcho.ir/?template=yas",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "بینا",
+    "url": "https://demo.launcho.ir/?template=bina",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "الماس",
+    "url": "https://demo.launcho.ir/?template=almas",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "گلد",
+    "url": "https://demo.launcho.ir/?template=gold",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "سفره",
+    "url": "https://demo.launcho.ir/?template=sofre",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "همدم",
+    "url": "https://demo.launcho.ir/?template=hamdam",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "گلبرگ",
+    "url": "https://demo.launcho.ir/?template=golbarg",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "یدکی",
+    "url": "https://demo.launcho.ir/?template=yadak",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "لاکچری",
+    "url": "https://demo.launcho.ir/?template=lakchery",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  },
+  {
+    "label": "نگاه",
+    "url": "https://demo.launcho.ir/?template=negah",
+    "registration": "unverified",
+    "status": "PASS",
+    "http": 200,
+    "pageTitle": "فروشگاه من | فروشگاه آنلاین شما"
+  }
+]

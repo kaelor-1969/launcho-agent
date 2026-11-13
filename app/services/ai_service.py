@@ -39,7 +39,20 @@ def get_launcho_knowledge():
 
 
 
-_PRICE_QUERY = re.compile(r'قیمت|هزینه|تعرفه|تخفیف|قسط|اقساط|جشنواره|گران|گرونه|چند\s*تومن|چقدر\s*باید\s*پرداخت')
+_PRICE_QUERY = re.compile(r'قیمت|هزینه|تعرفه|تخفیف|قسط|اقساط|جشنواره|گران|گرون|بودجه|چند\s*تومن|چقدر\s*باید\s*پرداخت')
+
+
+def is_financial_objection(message):
+    """Conservative local intent rules; no amounts or eligibility are inferred."""
+    text = re.sub(r'[\s‌]+', ' ', message.translate(str.maketrans('يك', 'یک')))
+    if re.search(r'گران نیست|گرون نیست|هزینه.{0,12}(مناسب|مشکلی ندار|زیاد نیست)', text):
+        return False
+    return bool(re.search(
+        r'اقساط|قسط|پیش پرداخت|گران|گرون|'
+        r'(?:هزینه|قیمت|مبلغ).{0,20}(?:بالا|زیاد|سنگین)|'
+        r'بودجه.{0,20}(?:نمی رس|نمیرس|کم|محدود|ندار)|'
+        r'از پس.{0,20}(?:هزینه|پرداخت).{0,12}(?:برنمی|بر نمی)|'
+        r'(?:توان|امکان).{0,12}پرداخت.{0,10}ندار', text))
 _PRICE_CLAIM = re.compile(
     r'\d[\d ,٬٫.\s]*(?:هزار\s*|میلیون\s*|میلیارد\s*)?(?:تومان|تومن|ریال|دلار|درصد|[%٪])'
     r'|(?:هزار|میلیون|میلیارد)\s*(?:تومان|تومن|ریال|دلار)|رایگان|بدون\s*هزینه'
@@ -103,7 +116,7 @@ def is_price_question(message):
     if re.search(r'پنل|مشتری(?:ان|‌ها)?|روی محصولات', message):
         # Selling with promotions is a product feature, independent of buying Launcho.
         return bool(_PRICE_QUERY.search(re.sub(r'جشنواره|تخفیف', '', message)))
-    return bool(_PRICE_QUERY.search(message))
+    return bool(_PRICE_QUERY.search(message)) or is_financial_objection(message)
 
 
 def price_guidance(message, options, history):

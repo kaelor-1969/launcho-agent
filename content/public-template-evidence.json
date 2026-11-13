@@ -1,0 +1,186 @@
+{
+  "source": "https://launcho.ir/#templates",
+  "reviewedAt": "2026-11-12",
+  "samples": [
+    {
+      "id": "moda",
+      "title": "مدا",
+      "demoHref": "https://demo.launcho.ir/?template=moda",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "boutique",
+      "title": "بوتیک",
+      "demoHref": "https://demo.launcho.ir/?template=boutique",
+      "hidden": true,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "classic",
+      "title": "کلاسیک",
+      "demoHref": "https://demo.launcho.ir/?template=classic",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "digikala",
+      "title": "دیجی‌کالا",
+      "demoHref": "https://demo.launcho.ir/?template=digikala",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "shaparak",
+      "title": "شاپرک",
+      "demoHref": "https://demo.launcho.ir/?template=shaparak",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "bazar",
+      "title": "بازار",
+      "demoHref": "https://demo.launcho.ir/?template=bazar",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "parand",
+      "title": "پرند",
+      "demoHref": "https://demo.launcho.ir/?template=parand",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "khodro",
+      "title": "خوردو",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "techno",
+      "title": "تکنو",
+      "demoHref": "https://demo.launcho.ir/?template=techno",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "Rayan",
+      "title": "رایان",
+      "demoHref": "https://demo.launcho.ir/?template=rayan",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "zarin",
+      "title": "زرین",
+      "demoHref": "https://demo.launcho.ir/?template=zarin",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "danesh",
+      "title": "دانش",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "kashane",
+      "title": "کاشانه",
+      "demoHref": "https://demo.launcho.ir/?template=kashane",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "negin",
+      "title": "نگین",
+      "demoHref": "https://demo.launcho.ir/?template=negin",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "saniye",
+      "title": "ثانیه",
+      "demoHref": "https://demo.launcho.ir/?template=saniye",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "astar",
+      "title": "آستر",
+      "demoHref": "https://demo.launcho.ir/?template=astar",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "yas",
+      "title": "یاس",
+      "demoHref": "https://demo.launcho.ir/?template=yas",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "bina",
+      "title": "بینا",
+      "demoHref": "https://demo.launcho.ir/?template=bina",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "almas",
+      "title": "الماس",
+      "demoHref": "https://demo.launcho.ir/?template=almas",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "gold",
+      "title": "گلد",
+      "demoHref": "https://demo.launcho.ir/?template=gold",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "sofre",
+      "title": "سفره",
+      "demoHref": "https://demo.launcho.ir/?template=sofre",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "hamdam",
+      "title": "همدم",
+      "demoHref": "https://demo.launcho.ir/?template=hamdam",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "golbarg",
+      "title": "گلبرگ",
+      "demoHref": "https://demo.launcho.ir/?template=golbarg",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "yadak",
+      "title": "یدکی",
+      "demoHref": "https://demo.launcho.ir/?template=yadak",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "lakchery",
+      "title": "لاکچری",
+      "demoHref": "https://demo.launcho.ir/?template=lakchery",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    },
+    {
+      "id": "negah",
+      "title": "نگاه",
+      "demoHref": "https://demo.launcho.ir/?template=negah",
+      "hidden": false,
+      "registrationAvailability": "unverified"
+    }
+  ]
+}

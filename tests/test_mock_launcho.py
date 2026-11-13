@@ -22,6 +22,15 @@ from app.services.session_store import SessionStore
 
 
 class MockDemoTests(unittest.TestCase):
+    def test_financial_intent_normalizes_persian_variants(self):
+        for text in ['بودجه‌ام نمی‌رسه', 'بودجه ام نمیرسه', 'از پس هزینه برنمیام',
+                     'قیمت خیلی بالاست', 'می‌توانم قسطی بپردازم؟']:
+            with self.subTest(text=text):
+                self.assertTrue(ai_service.is_financial_objection(text))
+        for text in ['قیمت چقدر است؟', 'هزینه زیاد نیست', 'گرون نیست', 'بودجه را چطور تنظیم کنم؟']:
+            with self.subTest(text=text):
+                self.assertFalse(ai_service.is_financial_objection(text))
+
     def setUp(self):
         self.mock = TestClient(mock_app)
         self.client = TestClient(app)

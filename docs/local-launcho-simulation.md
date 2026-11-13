@@ -1,5 +1,25 @@
 # شبیه‌سازی محلی نصب ویجت لانچو
 
+اجرای ویجت اصلی بدون کلید و بدون نیاز به ورودی ترمینال:
+
+```powershell
+# Windows، از ریشهٔ مخزن، پس از نصب Python
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe tests/check_demo.py --serve
+```
+
+```bash
+# macOS، از ریشهٔ مخزن
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python tests/check_demo.py --serve
+```
+
+سپس `http://127.0.0.1:8000/widget/widget.html` را باز کنید. اسکریپت حالت محلی را انتخاب می‌کند، تنظیمات مدل و API واقعی را برای فرایندهای فرزند غیرفعال می‌کند و `.env` را تغییر نمی‌دهد. با Ctrl+C هر دو سرویس متوقف می‌شوند. دادهٔ اجرای این اسکریپت موقت است و پس از خروج حذف می‌شود؛ برای نگهداری پیش‌نویس بین اجراها از دو فرمان دستی پایین استفاده کنید. `--keep-open` فقط برای ترمینال تعاملی است؛ در اجرای بدون stdin خطای EOF می‌دهد. `--serve` به stdin وابسته نیست.
+
+در بررسی ۲۰۲۶/۱۱/۱۲، Python موجود در `D:\soft\python\code\launcho-\launcho-agent\venv\Scripts\python.exe` استفاده شد. فرمان‌های macOS از نظر ساختار قابل حمل‌اند، اما روی دستگاه مک اجرا نشده‌اند. نتیجه و محدودیت‌ها در [گزارش تحویل محلی](local-delivery-review.md) ثبت شده‌اند.
+
 برای بررسی قبل از تحویل، از ریشهٔ مخزن این دستور را اجرا کنید. اسکریپت دو سرویس را روی پورت‌های ۸۰۰۰ و ۸۰۰۱ بالا می‌آورد، فایل‌های ویجت، نمایش پیشنهاد آزمایشی و ارسال مجدد همان پیام را بررسی می‌کند و سرویس‌ها را می‌بندد.
 
 ```powershell
