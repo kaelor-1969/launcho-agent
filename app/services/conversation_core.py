@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from app.core.config import PROJECT_ROOT
 from app.core.privacy import has_visible_text, redact
 from app.models.schemas import Preferences, PreferenceUpdate
-from app.services.ai_service import CHECKOUT_OFFER_LABEL, generate_turn, is_price_question
+from app.services.ai_service import CHECKOUT_OFFER_LABEL, generate_turn, is_price_question, is_financial_objection
 from app.services.draft_gateway import build_gateway, unwrap, GatewayRejected, GatewayUnavailable
 from app.services.session_store import CoreError, SessionStore, digest
 
@@ -166,8 +166,7 @@ class ConversationCore:
                 except GatewayUnavailable:
                     pass
             match_offers = getattr(self.gateway, 'match_price_offers', None)
-            if (match_offers and not shown_offer and is_price_question(safe)
-                    and re.search(r'اقساط|قسط|پیش[\s‌]*پرداخت|گران|گرونه|هزینه.{0,16}بالا|هزینه.{0,16}زیاد', safe)):
+            if match_offers and not shown_offer and is_financial_objection(safe):
                 try:
                     offers = unwrap(match_offers(
                         prefs['kind'], prefs.get('planMonths'),

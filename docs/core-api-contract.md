@@ -15,7 +15,7 @@
 
 ## نکته اتصال مهم
 
-mock موجود launcho_api.py کلید تکرار و قرارداد انقضا ندارد. به همین دلیل آگاهانه برای ساخت پیش‌نویس فراخوانی نمی‌شود. factory در app/services/draft_gateway.py فعلاً can_create=False و mode=legacy_mock برمی‌گرداند. ساخت واقعی تا تحویل اتصال هم‌تیمی دوم با 503 متوقف است؛ موفقیت جعلی یا لینک ساختگی اعلام نمی‌شود.
+این سند قرارداد داخلی پروژه است، نه قرارداد رسمی لانچو. factory در app/services/draft_gateway.py با LAUNCHO_MOCK_URL اتصال local_mock با can_create=True می‌سازد. آداپتور واقعی نیز موجود است؛ فعال‌سازی نوشتن آن نیازمند LAUNCHO_ENABLE_DRAFTS=1 است. تطبیق آن با قرارداد رسمی و سرویس واقعی تأیید نشده است. بدون تنظیم اتصال، حالت legacy_mock فقط خواندنی است.
 
 آزمون‌های tests/test_conversation_core.py یک اتصال صریح test_mock با رفتار تکرار و انقضا دارند؛ مسیر کامل در همان آزمون اجرا شده است. آن fixture سرویس عملیاتی یا API واقعی نیست.
 
@@ -32,8 +32,8 @@ POST /api/sessions بدون اطلاعات شخصی، پاسخ 201:
   "revision": 0,
   "preferences": {"kind": "shop"},
   "history": [],
-  "adapterMode": "legacy_mock",
-  "canCreateDraft": false
+  "adapterMode": "local_mock",
+  "canCreateDraft": true
 }
 ```
 
@@ -96,7 +96,7 @@ POST /api/sessions/{sessionId}/review:
 
 در این مسیر اطلاعات یا مبلغ تازه از مرورگر پذیرفته نمی‌شود. payload از snapshot سرور خوانده می‌شود. عملیات با Idempotency-Key تولیدشده و ذخیره‌شده سرور انجام می‌شود؛ مدل این کلید را نمی‌بیند. دکمه در حال ارسال غیرفعال شود. اجرای این endpoint نشان‌دهنده قصد صریح کلاینت مجاز است؛ تشخیص سخت‌افزاری کلیک انسان انجام نمی‌شود.
 
-در موفقیت، ref، confirmUrl، expiresAt، status=draft، quote.isFinal=false و adapterMode برمی‌گردند. لینک فقط از همین پاسخ ساخته شود و با کلیک کاربر در target=_top باز شود. موفقیت نوشتنی از متن reply استخراج نشود.
+در موفقیت HTTP 200، ref، confirmUrl، expiresAt، status=draft، adapterMode و replayed برمی‌گردند. quote در حالت محلی وجود ندارد؛ estimate نیز null است. در حالت واقعی quote.isFinal=false است. confirmUrl محلی مسیر /api/local-drafts/{ref}/preview در مبدأ خود سرویس است. لینک فقط از همین پاسخ ساخته شود. موفقیت نوشتنی از متن reply استخراج نشود.
 
 اگر draft_outcome_unknown برگشت، نتیجه قطعی نیست. همان بدنه تأیید را نگه دارید و فقط با اقدام دستی همان درخواست را تکرار کنید. سرور همان کلید و payload قبلی را استفاده می‌کند. خلاصه یا عملیات تازه تا حل نتیجه نامعلوم ساخته نمی‌شود. برای دوام پس از refresh، UI باید علاوه بر قابلیت جلسه، بدنه pending تأیید را در فضای مجاز خود حفظ کند؛ توکن تأیید قابل بازخوانی از دیتابیس نیست. دوره نگهداری و روش ذخیره باید با سیاست داده لانچو هماهنگ شود.
 
@@ -108,7 +108,7 @@ POST /api/sessions/{sessionId}/review:
 
 ## قرارداد هم‌تیمی دوم
 
-یک adapter مطابق DraftGateway بسازد و factory build_gateway را به آن وصل کند:
+آداپتور موجود این قرارداد داخلی را پیاده می‌کند؛ مالک اتصال باید سازگاری رسمی آن را تأیید کند:
 
 ```python
 mode = "live"  # فقط برای اتصال واقعی

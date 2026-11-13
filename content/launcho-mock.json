@@ -58,7 +58,10 @@
     "giftUsage": {
       "renewsMonthly": true,
       "rollover": false,
-      "uses": ["هوش مصنوعی", "پیامک از خط اشتراکی"]
+      "uses": [
+        "هوش مصنوعی",
+        "پیامک از خط اشتراکی"
+      ]
     },
     "serviceDetails": {
       "shop": {
@@ -83,7 +86,10 @@
         }
       },
       "website": {
-        "setupIncludes": ["ثبت دامنهٔ ir", "راه‌اندازی سایت با قالب‌های آماده"],
+        "setupIncludes": [
+          "ثبت دامنهٔ ir",
+          "راه‌اندازی سایت با قالب‌های آماده"
+        ],
         "planIncludes": [
           "سایت بدون کاتالوگ، سبد خرید و درگاه؛ با قالب آماده و صفحه‌ساز بلوکی",
           "میزبانی، SSL و پشتیبان‌گیری"
@@ -101,59 +107,474 @@
     "shop": {
       "kind": "shop",
       "availability": "unavailable",
-      "notice": "عنوان صنف‌ها از فرم عمومی لانچو و شناسه‌ها محلی‌اند. این فهرست گزینه‌های قابل ثبت در سایت واقعی نیست.",
+      "notice": "این فهرست نمایندهٔ گزینه‌های سایت واقعی نیست. انتخاب‌ها فقط برای mock محلی‌اند. نمونهٔ عمومی، تأیید گزینهٔ ثبت واقعی نیست. پیشنهاد صنف صرفاً راهنمای توسعه است؛ کلاسیک مسیر عمومی همهٔ اصناف است.",
       "businessCategoriesSource": "https://launcho.ir/start",
-      "steps": ["businessName", "category", "domain", "template", "planMonths", "review"],
-      "businessCategories": [
-        {"id": "mock-fashion", "label": "پوشاک و مد"},
-        {"id": "mock-bags-shoes", "label": "کیف و کفش"},
-        {"id": "mock-jewelry", "label": "طلا، نقره و بدلیجات"},
-        {"id": "mock-accessories", "label": "اکسسوری و بدلیجات"},
-        {"id": "mock-beauty", "label": "آرایشی و بهداشتی"},
-        {"id": "mock-digital", "label": "کالای دیجیتال"},
-        {"id": "mock-home-appliances", "label": "لوازم خانگی"},
-        {"id": "mock-home-decor", "label": "دکوراسیون و لوازم منزل"},
-        {"id": "mock-groceries", "label": "مواد غذایی و خواربار"},
-        {"id": "mock-supermarket", "label": "سوپرمارکت آنلاین"},
-        {"id": "mock-herbal", "label": "عطاری و گیاهان دارویی"},
-        {"id": "mock-sports", "label": "ورزش و تناسب اندام"},
-        {"id": "mock-toys", "label": "اسباب‌بازی و سرگرمی"},
-        {"id": "mock-mother-baby", "label": "مادر و کودک"},
-        {"id": "mock-books-stationery-art", "label": "کتاب، لوازم‌التحریر و هنر"},
-        {"id": "mock-handicrafts", "label": "صنایع دستی"},
-        {"id": "mock-carpets", "label": "فرش و موکت"},
-        {"id": "mock-automotive", "label": "خودرو و لوازم یدکی"},
-        {"id": "mock-tools", "label": "ابزار و یراق‌آلات"},
-        {"id": "mock-construction", "label": "مصالح ساختمانی"},
-        {"id": "mock-pets", "label": "حیوانات خانگی"},
-        {"id": "mock-flowers-plants", "label": "گل و گیاه"},
-        {"id": "mock-medical", "label": "تجهیزات پزشکی و سلامت"},
-        {"id": "mock-industrial", "label": "صنعتی و تجهیزات کارگاهی"},
-        {"id": "mock-academic-services", "label": "خدمات پژوهشی و دانشگاهی"},
-        {"id": "mock-services-education", "label": "خدمات و آموزش"},
-        {"id": "mock-other", "label": "سایر"}
+      "steps": [
+        "businessName",
+        "category",
+        "domain",
+        "template",
+        "planMonths",
+        "review"
       ],
-      "templateCategories": [{"id": "mock-general", "label": "عمومی"}],
+      "businessCategories": [
+        {
+          "id": "mock-fashion",
+          "label": "پوشاک و مد"
+        },
+        {
+          "id": "mock-bags-shoes",
+          "label": "کیف و کفش"
+        },
+        {
+          "id": "mock-jewelry",
+          "label": "طلا، نقره و بدلیجات"
+        },
+        {
+          "id": "mock-accessories",
+          "label": "اکسسوری و بدلیجات"
+        },
+        {
+          "id": "mock-beauty",
+          "label": "آرایشی و بهداشتی"
+        },
+        {
+          "id": "mock-digital",
+          "label": "کالای دیجیتال"
+        },
+        {
+          "id": "mock-home-appliances",
+          "label": "لوازم خانگی"
+        },
+        {
+          "id": "mock-home-decor",
+          "label": "دکوراسیون و لوازم منزل"
+        },
+        {
+          "id": "mock-groceries",
+          "label": "مواد غذایی و خواربار"
+        },
+        {
+          "id": "mock-supermarket",
+          "label": "سوپرمارکت آنلاین"
+        },
+        {
+          "id": "mock-herbal",
+          "label": "عطاری و گیاهان دارویی"
+        },
+        {
+          "id": "mock-sports",
+          "label": "ورزش و تناسب اندام"
+        },
+        {
+          "id": "mock-toys",
+          "label": "اسباب‌بازی و سرگرمی"
+        },
+        {
+          "id": "mock-mother-baby",
+          "label": "مادر و کودک"
+        },
+        {
+          "id": "mock-books-stationery-art",
+          "label": "کتاب، لوازم‌التحریر و هنر"
+        },
+        {
+          "id": "mock-handicrafts",
+          "label": "صنایع دستی"
+        },
+        {
+          "id": "mock-carpets",
+          "label": "فرش و موکت"
+        },
+        {
+          "id": "mock-automotive",
+          "label": "خودرو و لوازم یدکی"
+        },
+        {
+          "id": "mock-tools",
+          "label": "ابزار و یراق‌آلات"
+        },
+        {
+          "id": "mock-construction",
+          "label": "مصالح ساختمانی"
+        },
+        {
+          "id": "mock-pets",
+          "label": "حیوانات خانگی"
+        },
+        {
+          "id": "mock-flowers-plants",
+          "label": "گل و گیاه"
+        },
+        {
+          "id": "mock-medical",
+          "label": "تجهیزات پزشکی و سلامت"
+        },
+        {
+          "id": "mock-industrial",
+          "label": "صنعتی و تجهیزات کارگاهی"
+        },
+        {
+          "id": "mock-academic-services",
+          "label": "خدمات پژوهشی و دانشگاهی"
+        },
+        {
+          "id": "mock-services-education",
+          "label": "خدمات و آموزش"
+        },
+        {
+          "id": "mock-other",
+          "label": "سایر"
+        }
+      ],
+      "templateCategories": [
+        {
+          "id": "mock-general",
+          "label": "عمومی"
+        }
+      ],
       "templates": [
-        {"id": "mock-classic", "label": "کلاسیک", "available": true, "previewUrl": "https://demo.launcho.ir/?template=classic"},
-        {"id": "mock-moda", "label": "مدا", "available": true, "recommendedFor": ["mock-fashion"], "previewUrl": "https://demo.launcho.ir/?template=moda"},
-        {"id": "mock-techno", "label": "تکنو", "available": true, "recommendedFor": ["mock-digital"], "previewUrl": "https://demo.launcho.ir/?template=techno"},
-        {"id": "mock-yas", "label": "یاس", "available": true, "recommendedFor": ["mock-beauty"], "previewUrl": "https://demo.launcho.ir/?template=yas"},
-        {"id": "mock-hamdam", "label": "همدم", "available": true, "recommendedFor": ["mock-pets"], "previewUrl": "https://demo.launcho.ir/?template=hamdam"}
+        {
+          "id": "mock-classic",
+          "label": "کلاسیک",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=classic",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-herbal",
+            "mock-sports",
+            "mock-toys",
+            "mock-mother-baby",
+            "mock-books-stationery-art",
+            "mock-construction",
+            "mock-flowers-plants",
+            "mock-academic-services",
+            "mock-services-education",
+            "mock-other"
+          ],
+          "generalFallback": true
+        },
+        {
+          "id": "mock-moda",
+          "label": "مدا",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=moda",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-fashion",
+            "mock-bags-shoes"
+          ]
+        },
+        {
+          "id": "mock-digikala",
+          "label": "دیجی‌کالا",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=digikala",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-digital",
+            "mock-supermarket",
+            "mock-groceries"
+          ]
+        },
+        {
+          "id": "mock-shaparak",
+          "label": "شاپرک",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=shaparak",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": []
+        },
+        {
+          "id": "mock-bazar",
+          "label": "بازار",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=bazar",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-fashion",
+            "mock-bags-shoes"
+          ]
+        },
+        {
+          "id": "mock-parand",
+          "label": "پرند",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=parand",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-fashion",
+            "mock-handicrafts",
+            "mock-carpets"
+          ]
+        },
+        {
+          "id": "mock-techno",
+          "label": "تکنو",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=techno",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-digital",
+            "mock-tools",
+            "mock-industrial"
+          ]
+        },
+        {
+          "id": "mock-Rayan",
+          "label": "رایان",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=rayan",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": []
+        },
+        {
+          "id": "mock-zarin",
+          "label": "زرین",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=zarin",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-jewelry",
+            "mock-accessories"
+          ]
+        },
+        {
+          "id": "mock-kashane",
+          "label": "کاشانه",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=kashane",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-home-appliances",
+            "mock-home-decor"
+          ]
+        },
+        {
+          "id": "mock-negin",
+          "label": "نگین",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=negin",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": []
+        },
+        {
+          "id": "mock-saniye",
+          "label": "ثانیه",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=saniye",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": []
+        },
+        {
+          "id": "mock-astar",
+          "label": "آستر",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=astar",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": []
+        },
+        {
+          "id": "mock-yas",
+          "label": "یاس",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=yas",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-beauty"
+          ]
+        },
+        {
+          "id": "mock-bina",
+          "label": "بینا",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=bina",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": []
+        },
+        {
+          "id": "mock-almas",
+          "label": "الماس",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=almas",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": []
+        },
+        {
+          "id": "mock-gold",
+          "label": "گلد",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=gold",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": []
+        },
+        {
+          "id": "mock-sofre",
+          "label": "سفره",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=sofre",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": []
+        },
+        {
+          "id": "mock-hamdam",
+          "label": "همدم",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=hamdam",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-pets"
+          ]
+        },
+        {
+          "id": "mock-golbarg",
+          "label": "گلبرگ",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=golbarg",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-jewelry"
+          ]
+        },
+        {
+          "id": "mock-yadak",
+          "label": "یدکی",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=yadak",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-automotive"
+          ]
+        },
+        {
+          "id": "mock-lakchery",
+          "label": "لاکچری",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=lakchery",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": []
+        },
+        {
+          "id": "mock-negah",
+          "label": "نگاه",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=negah",
+          "publicSample": true,
+          "registrationAvailability": "unverified",
+          "sourceUrl": "https://launcho.ir/#templates",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-accessories",
+            "mock-medical"
+          ]
+        }
       ]
     },
     "website": {
       "kind": "website",
       "availability": "unavailable",
       "notice": "گزینه‌های قابل ثبت تا دریافت دادهٔ مورد تأیید خالی‌اند؛ این فهرست نمایندهٔ گزینه‌های سایت واقعی نیست.",
-      "steps": ["businessName", "category", "domain", "template", "planMonths", "review"],
-      "businessCategories": [
-        {"id": "mock-website-company", "label": "شرکتی"},
-        {"id": "mock-website-services", "label": "خدماتی"},
-        {"id": "mock-website-personal", "label": "شخصی"}
+      "steps": [
+        "businessName",
+        "category",
+        "domain",
+        "template",
+        "planMonths",
+        "review"
       ],
-      "templateCategories": [{"id": "mock-website-general", "label": "عمومی"}],
-      "templates": [{"id": "mock-website-classic", "label": "کلاسیک سایت‌ساز (نمونهٔ محلی)", "available": true}]
+      "businessCategories": [
+        {
+          "id": "mock-website-company",
+          "label": "شرکتی"
+        },
+        {
+          "id": "mock-website-services",
+          "label": "خدماتی"
+        },
+        {
+          "id": "mock-website-personal",
+          "label": "شخصی"
+        }
+      ],
+      "templateCategories": [
+        {
+          "id": "mock-website-general",
+          "label": "عمومی"
+        }
+      ],
+      "templates": [
+        {
+          "id": "mock-website-classic",
+          "label": "کلاسیک سایت‌ساز (نمونهٔ محلی)",
+          "available": true
+        }
+      ]
     }
   },
   "serviceInfo": {
