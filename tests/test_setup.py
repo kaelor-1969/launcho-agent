@@ -20,6 +20,7 @@ class SetupTests(unittest.TestCase):
         response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=" answer "))])
         with patch.object(ai_service.client.chat.completions, "create", return_value=response) as call:
             self.assertEqual(ai_service.get_ai_response(" hello "), "answer")
+            self.assertEqual(call.call_args.kwargs["max_tokens"], ai_service.settings.AI_MAX_OUTPUT_TOKENS)
             self.assertNotIn("temperature", call.call_args.kwargs)
             self.assertEqual(call.call_args.kwargs["messages"][1]["content"], "hello")
 
