@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import socket
 import unittest
 from unittest.mock import patch
 
@@ -13,9 +14,37 @@ import httpx
 from app.core.runtime import RuntimePolicy
 from app.main import app, policy
 from app.services.session_store import SessionStore, CoreError
+from check_demo import launch_server, wait_for_server
 
 
 class StorageOperations(unittest.TestCase):
+    def test_startup_failure_preserves_diagnostic_log(self):
+        with tempfile.TemporaryDirectory() as temp:
+            process = launch_server('missing_launcho_test_module:app', 0, dict(os.environ), Path(temp))
+            try:
+                process.wait(timeout=15)
+                with httpx.Client(trust_env=False) as client:
+                    with self.assertRaisesRegex(RuntimeError, 'Log:'):
+                        wait_for_server(client, 'http://127.0.0.1:1', process)
+                self.assertIn('missing_launcho_test_module', process.log_path.read_text(encoding='utf8'))
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                    process.wait()
+
+    def test_occupied_port_fails_without_stopping_listener(self):
+        with tempfile.TemporaryDirectory() as temp, socket.socket() as listener:
+            listener.bind(('127.0.0.1', 0))
+            listener.listen()
+            port = listener.getsockname()[1]
+            other_port = 1 if port != 1 else 2
+            result = subprocess.run([sys.executable, 'tests/check_demo.py', '--backend-only',
+                                     '--agent-port', str(port), '--mock-port', str(other_port),
+                                     '--log-dir', temp], capture_output=True, text=True, timeout=20)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('unavailable', result.stderr)
+            self.assertEqual(listener.getsockname()[1], port)
+
     def test_online_backup_restore_and_cascading_retention(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp)

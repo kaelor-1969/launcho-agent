@@ -49,15 +49,33 @@ def main():
             base = '/api/sessions/' + owner['sessionId']
             headers = {'X-Session-Token': owner['sessionToken']}
             saved = client.patch(base + '/preferences', headers=headers,
-                                 json={'revision': 0, 'preferences': {'businessName': 'Persistence test'}})
+                                 json={'revision': 0, 'preferences': {
+                                     'businessName': 'Persistence test', 'category': 'mock-bags-shoes',
+                                     'template': 'mock-classic', 'planMonths': 3,
+                                     'domain': {'label': 'persistence', 'tld': 'ir'}}})
             saved.raise_for_status()
-            docker('restart', agent)
+            review_response = client.post(base + '/review', headers=headers,
+                                          json={'revision': saved.json()['revision']})
+            review_response.raise_for_status()
+            review = review_response.json()
+            confirmation = {key: review[key] for key in ('revision', 'reviewId', 'confirmationToken')}
+            confirmation['confirmed'] = True
+            created = client.post(base + '/confirm', headers=headers, json=confirmation)
+            created.raise_for_status()
+            docker('stop', agent)
+            docker('restart', mock)
+            docker('start', agent)
             wait_ready(client)
             recovered = client.get(base, headers=headers)
             recovered.raise_for_status()
             assert recovered.json()['preferences'] == saved.json()['preferences']
+            replay = client.post(base + '/confirm', headers=headers, json=confirmation)
+            replay.raise_for_status()
+            assert replay.json()['ref'] == created.json()['ref']
+            assert replay.json()['replayed'] is True
+            assert client.get(base + '/draft-status', headers=headers).json()['status'] == 'draft'
             assert docker('exec', agent, 'id', '-u') != '0'
-            print('PASS: container restart, persistent sessions, non-root user and readiness')
+            print('PASS: both containers restarted, session and draft persisted, same confirmation replayed, non-root user and readiness')
     finally:
         for container in (agent, mock):
             subprocess.run(['docker', 'rm', '-f', container], capture_output=True)
