@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager, suppress
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
@@ -105,6 +105,16 @@ def readiness():
         return {'status': 'ready', 'adapterMode': core.gateway.mode}
     except Exception:
         return JSONResponse(status_code=503, content={'status': 'not_ready'})
+
+@app.get('/static/widget.html', include_in_schema=False)
+def legacy_widget():
+    return RedirectResponse(url='/widget/widget.html', status_code=307)
+
+
+@app.get('/static/loader.js', include_in_schema=False)
+def legacy_loader():
+    return RedirectResponse(url='/widget/loader.js', status_code=307)
+
 
 # انتشار فایل‌هایی مانند ویجت و لودر
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

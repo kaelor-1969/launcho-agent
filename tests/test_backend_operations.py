@@ -91,6 +91,15 @@ class StorageOperations(unittest.TestCase):
 
 
 class OperationalEndpoints(unittest.IsolatedAsyncioTestCase):
+    async def test_legacy_embed_paths_redirect_before_static_mount(self):
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
+            for filename in ('widget.html', 'loader.js'):
+                response = await client.get('/static/' + filename)
+                self.assertEqual(response.status_code, 307)
+                self.assertEqual(response.headers['location'], '/widget/' + filename)
+                destination = await client.get(response.headers['location'])
+                self.assertEqual(destination.status_code, 200)
+
     async def test_headers_body_limit_rate_and_readiness_failure(self):
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
             result = await client.get('/health/live')
