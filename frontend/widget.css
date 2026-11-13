@@ -113,6 +113,7 @@ h1 { direction: rtl; font-size: 20px; line-height: 1.6; margin: 0; font-weight: 
 .welcome { flex-shrink: 0; margin: 0; }
 .avatar { display: grid; place-items: center; flex-shrink: 0; width: var(--avatar-size); height: var(--avatar-size); border-radius: 50%; }
 .avatar svg { width: 27px; height: 27px; }
+.avatar .assistant-avatar { display: block; width: 100%; height: 100%; object-fit: contain; }
 .role-user .avatar { width: 38px; height: 38px; background: var(--avatar-user-bg); color: var(--avatar-user-color); }
 .role-assistant .avatar { background: var(--avatar-bot-bg); color: var(--avatar-bot-color); border: 1.5px solid var(--avatar-bot-border); }
 :root[data-theme='dark'] .role-user .avatar svg { fill: currentColor; }
