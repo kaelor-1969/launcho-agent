@@ -65,6 +65,9 @@ def main():
             docker('stop', agent)
             docker('restart', mock)
             docker('start', agent)
+            # Docker can assign a fresh ephemeral host port when the namespace owner restarts.
+            port = docker('port', mock, '8000/tcp').rsplit(':', 1)[1]
+            client.base_url = 'http://127.0.0.1:' + port
             wait_ready(client)
             recovered = client.get(base, headers=headers)
             recovered.raise_for_status()
@@ -76,6 +79,11 @@ def main():
             assert client.get(base + '/draft-status', headers=headers).json()['status'] == 'draft'
             assert docker('exec', agent, 'id', '-u') != '0'
             print('PASS: both containers restarted, session and draft persisted, same confirmation replayed, non-root user and readiness')
+    except Exception:
+        for container in (agent, mock):
+            logs = subprocess.run(['docker', 'logs', '--tail', '40', container], capture_output=True, text=True)
+            print(f'{container} diagnostic logs:\n{logs.stdout}\n{logs.stderr}')
+        raise
     finally:
         for container in (agent, mock):
             subprocess.run(['docker', 'rm', '-f', container], capture_output=True)

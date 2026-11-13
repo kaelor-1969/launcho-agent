@@ -1,0 +1,38 @@
+services:
+  mock:
+    build: .
+    image: launcho-agent:staging
+    command: ["uvicorn", "app.mock_launcho:app", "--host", "0.0.0.0", "--port", "8001", "--no-access-log"]
+    environment:
+      LAUNCHO_MOCK_DRAFT_DB: /app/data/drafts.sqlite3
+    volumes:
+      - mock-drafts:/app/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/',timeout=4).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+  agent:
+    image: launcho-agent:staging
+    network_mode: "service:mock"
+    depends_on:
+      mock:
+        condition: service_healthy
+    environment:
+      LAUNCHO_ENV: development
+      LAUNCHO_MOCK_URL: http://127.0.0.1:8001
+      LAUNCHO_SESSION_DB: /app/data/sessions.sqlite3
+      LAUNCHO_API_URL: ""
+      LAUNCHO_API_KEY: ""
+      AI_API_KEY: ""
+      AI_MODEL_NAME: ""
+      AI_BASE_URL: https://example.invalid/v1
+      LAUNCHO_FRAME_ANCESTORS: http://127.0.0.1:8000
+      LAUNCHO_CORS_ORIGINS: http://127.0.0.1:8000
+    volumes:
+      - agent-sessions:/app/data
+volumes:
+  agent-sessions:
+  mock-drafts:
