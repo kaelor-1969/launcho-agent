@@ -16,16 +16,21 @@ from app.mock_launcho import create_mock_app, content, fixture
 from app.mock_draft_store import MockDraftStore
 from app.services.launcho_contract import DraftRequest
 from app.services.catalog import SignupCatalog
+from app.mock_launcho import OfferRequest
+from app.services.offer_contract import FinancialOffer, OfferState
 
 
 def main():
-    path = ROOT / 'docs/examples/launcho-mock-v2.json'
+    path = ROOT / 'docs/examples/launcho-mock-v3.json'
     examples = json.loads((ROOT / 'docs/examples/launcho-mock-v1.json').read_text())
     cases = examples['cases'][:10]
     for case in cases:
         if case['name'] == 'draft-not-implemented':
             case['name'] = 'draft-missing-key'
-    body = dict(kind='shop', planMonths=3, step=4, objections=['price'],
+    for case in cases:
+        if case['request'].get('path') == '/offers/match':
+            case['request']['json']['step'] = 'review_ready'
+    body = dict(kind='shop', planMonths=3, step='review_ready', objections=['price'],
                 needs=['low_upfront'], discountAlreadyShown=False)
     headers = {'Authorization': 'Bearer local-simulation'}
     invalid = [
@@ -57,13 +62,17 @@ def main():
                 value = {'detail': [{'type': err['type'], 'loc': err['loc']} for err in value['detail']]}
                 case['comparison'] = 'subset'
             case['response'] = {'status': response.status_code, 'json': value}
-    examples.update(contractVersion='local-mock-v2.0.0',
+    examples.update(contractVersion='local-mock-v3.0.0',
                     generatedFrom='FastAPI TestClient against app.mock_launcho; no external requests',
                     cases=cases)
     path.write_text(json.dumps(examples, ensure_ascii=False, indent=2) + '\n')
     schema = DraftRequest.model_json_schema()
     (path.parent / 'launcho-draft-request.schema.json').write_text(
         json.dumps(schema, ensure_ascii=False, indent=2) + '\n')
+    for name, model in [('launcho-offer-request-v1', OfferRequest),
+                        ('launcho-offer-v1', FinancialOffer), ('launcho-offer-state-v1', OfferState)]:
+        (path.parent / (name + '.schema.json')).write_text(
+            json.dumps(model.model_json_schema(), ensure_ascii=False, indent=2) + '\n')
     export_drafts(path.parent)
     (ROOT / 'content/launcho-catalog.schema.json').write_text(
         json.dumps(SignupCatalog.model_json_schema(), ensure_ascii=False, indent=2) + '\n')

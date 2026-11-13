@@ -43,7 +43,7 @@ class MockDemoTests(unittest.TestCase):
     def test_mock_contract_is_explicitly_simulated_and_authenticated(self):
         endpoints = [('/pricing', None), ('/service-info', None),
                      ('/signup-options?kind=shop', None),
-                     ('/offers/match', dict(kind='shop', step=4, objections=['price'],
+                     ('/offers/match', dict(kind='shop', step='review_ready', objections=['price'],
                                            needs=['low_upfront'], discountAlreadyShown=False))]
         for path, body in endpoints:
             with self.subTest(path=path):
@@ -104,14 +104,14 @@ class MockDemoTests(unittest.TestCase):
                 self.assertEqual(data['businessCategories'], [])
 
     def test_offer_period_only_accepts_supported_plans(self):
-        body = dict(kind='shop', step=4, objections=['price'],
+        body = dict(kind='shop', step='review_ready', objections=['price'],
                     needs=['low_upfront'], discountAlreadyShown=False)
         headers = {'Authorization': 'Bearer local-simulation'}
         for period in [None, 3, 6, 12]:
             with self.subTest(period=period):
                 result = self.mock.post('/offers/match', json={**body, 'planMonths': period}, headers=headers)
                 self.assertEqual(result.status_code, 200)
-                self.assertEqual(result.json()['data']['offers'][0]['id'], 'demo_campaign')
+                self.assertEqual(result.json()['data']['offers'][0]['offerId'], 'demo_campaign')
         for period in [0, 1, 5, 120, 121]:
             with self.subTest(period=period):
                 result = self.mock.post('/offers/match', json={**body, 'planMonths': period}, headers=headers)
@@ -137,8 +137,8 @@ class MockDemoTests(unittest.TestCase):
             body = {'sessionId': session['sessionId'], 'message': 'هزینه برام زیاده'}
             first = self.client.post('/api/chat', headers=headers, json=body)
             self.assertEqual(first.status_code, 200)
-            self.assertIn('پیشنهاد آزمایشی', first.json()['reply'])
-            self.assertIn('برای خرید اعتبار ندارد', first.json()['reply'])
+            self.assertNotIn('پیشنهاد آزمایشی', first.json()['reply'])
+            self.assertIn('https://launcho.ir/pricing', first.json()['reply'])
             second = self.client.post('/api/chat', headers=headers, json=body)
             self.assertEqual(second.status_code, 200)
             self.assertNotIn('پیشنهاد آزمایشی', second.json()['reply'])

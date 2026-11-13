@@ -10,6 +10,8 @@ from app.core.config import settings
 from app.services import launcho_api
 from app.services.launcho_contract import normalize_draft
 from app.services.catalog import selectable_catalog
+from app.services.financial_context import financial_context
+from app.services.offer_contract import OFFER_STAGES, OfferState, validated_offers
 
 
 class GatewayUnavailable(Exception):
@@ -122,11 +124,33 @@ class LocalMockGateway(LaunchoReadOnlyGateway):
     def __init__(self, base_url):
         super().__init__(base_url, 'local-simulation', local_mock=True)
 
-    def match_price_offers(self, kind):
-        return self.read('/offers/match', 0, payload={
-            'kind': kind, 'step': 4, 'objections': ['price'],
-            'needs': ['low_upfront'], 'discountAlreadyShown': False,
-        })
+    def match_price_offers(self, kind, plan_months=None, *, message=None, history=None, step=None, offer_state=None):
+        return self._match_financial_offers(kind, message=message, history=history, step=step,
+                                            plan_months=plan_months, offer_state=offer_state)
+
+    def _match_financial_offers(self, kind, *, message=None, history=None, step=None, plan_months=None, offer_state=None):
+        # Old core calls have no user context: fail closed rather than invent eligibility.
+        context = financial_context(message or '', history)
+        try:
+            state = OfferState.model_validate(offer_state) if offer_state is not None else None
+        except ValueError:
+            raise GatewayUnavailable('Invalid persisted offer state.') from None
+        if (state is None or state.anyFinancialOfferShown or state.shownOfferIds
+                or state.financialOffersDeclined or kind not in {'shop', 'website'} or not isinstance(step, str) or step not in OFFER_STAGES
+                or not context['objections'] or context['rejected'] or context['discountAlreadyShown']):
+            return {'offers': []}
+        if plan_months is not None and (type(plan_months) is not int or plan_months not in {3, 6, 12}):
+            return {'offers': []}
+        payload = {'kind': kind, 'step': step, **{key: context[key] for key in
+                   ('objections', 'needs', 'discountAlreadyShown')}}
+        if plan_months is not None:
+            payload['planMonths'] = plan_months
+        try:
+            data = self.read('/offers/match', 0, payload=payload)
+            return validated_offers(data, kind=kind, stage=step, plan_months=plan_months,
+                                    allow_simulation=self.mode == 'local_mock', state=state.model_dump())
+        except (ValueError, TypeError):
+            raise GatewayUnavailable('Invalid financial offer response.') from None
 
 
 class LaunchoDraftGateway(LaunchoReadOnlyGateway):
@@ -160,11 +184,9 @@ class LaunchoDraftGateway(LaunchoReadOnlyGateway):
     def get_draft_status(self, ref):
         return self.read(f'/signup-drafts/{ref}', 0)
 
-    def match_checkout_offers(self, kind, plan_months):
-        return self.read('/offers/match', 0, payload={
-            'kind': kind, 'planMonths': plan_months, 'step': 4,
-            'objections': ['price'], 'needs': ['low_upfront'], 'discountAlreadyShown': False,
-        })
+    def match_checkout_offers(self, kind, plan_months, *, message=None, history=None, step=None, offer_state=None):
+        return LocalMockGateway._match_financial_offers(
+            self, kind, message=message, history=history, step=step, plan_months=plan_months, offer_state=offer_state)
 
 
 def build_gateway() -> DraftGateway:

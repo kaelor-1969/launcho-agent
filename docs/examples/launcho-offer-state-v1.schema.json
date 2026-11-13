@@ -1,0 +1,31 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "shownOfferIds": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Shownofferids",
+      "type": "array"
+    },
+    "rejectedOfferIds": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Rejectedofferids",
+      "type": "array"
+    },
+    "anyFinancialOfferShown": {
+      "default": false,
+      "title": "Anyfinancialoffershown",
+      "type": "boolean"
+    },
+    "financialOffersDeclined": {
+      "default": false,
+      "title": "Financialoffersdeclined",
+      "type": "boolean"
+    }
+  },
+  "title": "OfferState",
+  "type": "object"
+}

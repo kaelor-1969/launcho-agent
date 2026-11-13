@@ -9,11 +9,12 @@ from typing import Literal
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from app.mock_draft_store import MockDraftError, MockDraftStore
 from app.services.launcho_contract import DraftRequest
 from app.services.catalog import selectable_catalog
+from app.services.offer_contract import OfferStage, FinancialOffer
 
 content = Path(__file__).resolve().parents[1] / 'content'
 fixture = json.loads((content / 'launcho-mock.json').read_text(encoding='utf-8'))
@@ -27,7 +28,7 @@ class OfferRequest(BaseModel):
     kind: ServiceKind
     # Optional in the demo; it validates a supported period, not campaign eligibility.
     planMonths: Literal[3, 6, 12] | None = None
-    step: int = Field(ge=0, le=4)
+    step: OfferStage
     objections: list[Literal['price', 'trust', 'complexity', 'time', 'template', 'domain', 'other']]
     needs: list[Literal['low_upfront', 'fast_launch', 'own_domain', 'support', 'other']]
     discountAlreadyShown: bool
@@ -60,9 +61,17 @@ def service_info(authorization: str = Header(default='')):
 
 
 def offers(request: OfferRequest, authorization: str = Header(default='')):
-    eligible = (request.kind == 'shop' and request.step == 4 and 'price' in request.objections
+    eligible = (request.kind == 'shop' and request.step == 'review_ready' and 'price' in request.objections
                 and 'low_upfront' in request.needs and not request.discountAlreadyShown)
-    return response({'offers': fixture['offers'] if eligible else []}, authorization)
+    offers = []
+    if eligible:
+        for item in fixture['offers']:
+            offer = FinancialOffer(offerId=item['id'], type=item['type'], kind='shop',
+                displayText=item['line'], expiresAt='2099-01-01T00:00:00Z',
+                source={'type': 'internal_fixture', 'reference': 'content/launcho-mock.json'},
+                simulation=True, eligibleStages=['review_ready'], planMonths=[3, 6, 12])
+            offers.append(offer.model_dump(mode='json'))
+    return response({'offers': offers}, authorization)
 
 
 def widget_host():

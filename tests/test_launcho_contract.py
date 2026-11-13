@@ -45,7 +45,7 @@ def assert_subset(test, expected, actual):
 
 class ContractExamples(unittest.TestCase):
     def test_documented_requests_match_http(self):
-        examples = json.loads((ROOT / 'docs/examples/launcho-mock-v2.json').read_text())
+        examples = json.loads((ROOT / 'docs/examples/launcho-mock-v3.json').read_text())
         with tempfile.TemporaryDirectory() as temp, TestClient(create_mock_app(
                 db_path=Path(temp) / 'mock.sqlite3', catalog_profile='unavailable')) as client:
             for case in examples['cases']:

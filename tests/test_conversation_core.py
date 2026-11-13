@@ -390,7 +390,7 @@ class PrivacyAndModelTests(unittest.TestCase):
         cases = (
             ('ثبت‌نام https://launcho.ir/start?otp=QA_TEST و https://example.invalid/start',
              'پیوند تأییدنشده'),
-            ('لطفاً ارسال بفرمایید\nکد تأیید حساب را.', 'https://launcho.ir/start'),
+            ('لطفاً ارسال بفرمایید\nکد تأیید حساب را.', ai_service._FORM_REPLY),
             ('ثبت‌نام شما با موفقیت انجام شد.', 'https://launcho.ir/start'),
         )
         for answer, expected in cases:
@@ -423,11 +423,11 @@ class PrivacyAndModelTests(unittest.TestCase):
     def test_mock_offer_endpoint_only_matches_supported_objections(self):
         from app.mock_launcho import OfferRequest, offers, widget_host
 
-        request = OfferRequest(kind='shop', step=4, objections=['price'],
+        request = OfferRequest(kind='shop', step='review_ready', objections=['price'],
                                needs=['low_upfront'], discountAlreadyShown=False)
         token = 'Bearer local-simulation'
         matched = offers(request, token)
-        self.assertEqual(matched['data']['offers'][0]['id'], 'demo_campaign')
+        self.assertEqual(matched['data']['offers'][0]['offerId'], 'demo_campaign')
         request.discountAlreadyShown = True
         self.assertEqual(offers(request, token)['data']['offers'], [])
         self.assertIn('/widget/loader.js', widget_host())
@@ -519,7 +519,7 @@ class PrivacyAndModelTests(unittest.TestCase):
     def test_guidance_replaces_unsupported_price_and_sensitive_request(self):
         for text, link in (
             ('اشتراک ۲۴۰٬۰۰۰ تومان است.', 'https://launcho.ir/pricing'),
-            ('کد تأیید خود را همین‌جا بفرستید.', 'https://launcho.ir/start'),
+            ('کد تأیید خود را همین‌جا بفرستید.', ai_service._FORM_REPLY),
         ):
             with self.subTest(text=text):
                 response = NS(choices=[NS(message=NS(content=text, tool_calls=[]))])
