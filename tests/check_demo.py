@@ -1,6 +1,7 @@
 """Run the widget host and agent against the local Launcho API."""
 
 import argparse
+from contextlib import nullcontext
 import os
 from pathlib import Path
 import socket
@@ -128,7 +129,11 @@ def run_demo(args):
             except OSError:
                 raise RuntimeError(f'Port {port} is unavailable. Choose --agent-port and --mock-port; existing services were not stopped.') from None
 
-    with TemporaryDirectory(prefix="launcho-demo-") as temp, httpx.Client(timeout=40, trust_env=False) as client:
+    if args.data_dir is not None:
+        args.data_dir = args.data_dir.resolve()
+        args.data_dir.mkdir(parents=True, exist_ok=True)
+    storage = nullcontext(str(args.data_dir)) if args.data_dir else TemporaryDirectory(prefix='launcho-demo-')
+    with storage as temp, httpx.Client(timeout=40, trust_env=False) as client:
         env["LAUNCHO_SESSION_DB"] = str(Path(temp) / "sessions.sqlite3")
         env["LAUNCHO_MOCK_DRAFT_DB"] = str(Path(temp) / "drafts.sqlite3")
         servers = []
@@ -147,7 +152,11 @@ def run_demo(args):
                 print(f"Live model reply ({len(reply)} characters). Review its content in the widget.")
             if args.serve:
                 print(f'Backend: {AGENT_URL} (Ctrl+C to stop)', flush=True)
-                threading.Event().wait()
+                while True:
+                    for process in servers:
+                        if process.poll() is not None:
+                            raise RuntimeError(f'A local service stopped. Log: {process.log_path}')
+                    threading.Event().wait(1)
             elif args.keep_open:
                 input(f"Open {HOST_URL} on your browser. Press Enter here to stop both servers. ")
         finally:
@@ -168,6 +177,7 @@ if __name__ == "__main__":
     parser.add_argument('--check-core', action='store_true', help='Check both core signup flows over HTTP while services are running.')
     parser.add_argument('--backend-only', action='store_true', help='Verify backend without loading widget assets.')
     parser.add_argument('--log-dir', type=Path, default=ROOT / 'artifacts' / 'local-run', help='Private startup log directory.')
+    parser.add_argument('--data-dir', type=Path, help='Keep isolated session and mock databases across restarts in this directory.')
     parser.add_argument("--env-file", type=Path, help="Use private model settings and check a real model response.")
     parser.add_argument("--keep-open", action="store_true", help="Keep the local demo running for browser checks.")
     parser.add_argument("--serve", action="store_true", help="Keep both services running without requiring stdin; Ctrl+C stops them.")
