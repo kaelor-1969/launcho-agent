@@ -87,6 +87,13 @@ const server = http.createServer(async (req,res) => {
     await command('Page.enable');await command('Runtime.enable');await command('Network.enable');
     await command('Page.navigate',{url:base});await open();await wait(`!doc.querySelector('.primary-starter').disabled`);
     assert.equal(calls.filter(c=>c.url==='/api/sessions').length,1);
+    const beforeLifecycle=calls.length;
+    await evaluate(`new Promise((resolve,reject) => {const s=document.createElement('script');s.src='/widget/loader.js';s.onload=resolve;s.onerror=reject;document.head.append(s);})`);
+    await evaluate(`LaunchoWidget.close();LaunchoWidget.open();LaunchoWidget.close();LaunchoWidget.open()`);
+    await sleep(100);
+    assert.equal(calls.length,beforeLifecycle,'duplicate loader and reopening do not create requests');
+    assert.equal(await evaluate(`document.querySelectorAll('#launcho-widget').length`),1);
+    assert.equal(await evaluate(`document.querySelector('#launcho-widget').shadowRoot.querySelectorAll('iframe').length`),1);
     await reload();await wait(`doc.querySelector('[name=businessName]').value==='نمونهٔ بازیابی' && !doc.querySelector('#signup-save').disabled`);
     assert.equal(calls.filter(c=>c.url==='/api/sessions').length,1,'refresh must restore instead of creating another session');
     assert.equal(await evaluate(`doc.querySelector('[name=ownDomain]').value`),'example.ir');
