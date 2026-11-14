@@ -127,3 +127,27 @@ the corrected timeout/parser/redirect/ownership code; they did not execute tests
 Development checks: initial success, a subsequent 15-second UI-shell timeout with
 healthy live/ready, then successful bounded repeats. The timeout is retained in
 evidence and is not dismissed as uptime success. No production incident claimed.
+
+Stage-6 commit: `7c8ba43`.
+
+## Stage 7 and final audit
+
+Runbook covers standalone installation, one-shot/continuous execution, private
+state/logs, thresholds/deadlines, optional masked screenshot, synthetic receiver,
+generic webhook schema, stale locks, send-loss semantics and independent-host
+supervision. Scoped requirements set Playwright >=1.48 for socket interception,
+without changing shared application requirements. Installed HTTPX 0.28.1 and
+Playwright 1.64.1 satisfy them; Chrome 157 was actually used.
+
+Final requirement audit is in verification.md. Final code passed seven real-browser
+fixture scenarios and all 15 real-process drill groups. Approved development host
+final run passed health/loader/frame/UI shell with one blocked session POST.
+Independent stage-7 reviewer found no blocker, emphasized preserving the transient
+timeout and reporting only synthetic delivery; these limits remain explicit.
+Reviewers used supplied excerpts because their tools were unavailable; all actual
+execution was by the main agent. No independent execution claim.
+Final repeated full suite: 194 tests in 53.466 seconds, native process exit 0.
+
+No changes to application/backend/frontend business logic, session/database/schema,
+content, backup tooling, deployment or CI. No keys rotated or Runflare changed.
+No push, PR, merge, deployment, production interruption or ongoing alerts/scheduler.

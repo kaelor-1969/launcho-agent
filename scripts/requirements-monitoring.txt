@@ -1,0 +1,3 @@
+# Standalone monitor only; no application/database imports.
+httpx==0.28.1
+playwright>=1.48,<2

@@ -17,7 +17,7 @@ reviewer, actual validation and a local commit. No push, PR, merge or deployment
 | 4 incidents | Failure/recovery thresholds, one transition event, durable restart state, bounded delivery | complete locally |
 | 5 channel | Environment-only generic webhook, dry-run and controlled receiver tests; approved real channel if supplied | complete synthetic; real channel unselected |
 | 6 drill | Owned local process outage/restart, transient and widget-only faults, sender failures and restart | complete, final-version repeat passed |
-| 7 handoff | Runnable manual/continuous commands, operations and dependency guidance; two final verification rounds | pending |
+| 7 handoff | Runnable manual/continuous commands, operations and dependency guidance; two final verification rounds | complete; no operational activation |
 
 Existing `scripts/monitor_backend.py` owns backups/disk checks and stays unchanged.
 The availability tool will reuse the live/ready contracts without importing the
