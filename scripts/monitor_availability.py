@@ -241,24 +241,116 @@ async def probe_widget(config):
         return result(False, 'browser_unavailable', **details)
 
 
+class State:
+    """Single-process monitor state. No application storage is touched."""
+    def __init__(self, config):
+        self.config = config
+        self.path = Path(config.state_file)
+        self.data = {'version': 1, 'identity': config.identity(), 'checks': {}}
+        if self.path.exists():
+            try:
+                candidate = json.loads(self.path.read_text(encoding='utf-8'))
+                if candidate.get('version') != 1 or candidate.get('identity') != config.identity():
+                    raise ValueError
+                checks = candidate['checks']
+                if not isinstance(checks, dict) or set(checks) - {'live', 'ready', 'widget'}:
+                    raise ValueError
+                for item in checks.values():
+                    if (set(item) != {'down', 'failures', 'successes'} or type(item['down']) is not bool or
+                            any(type(item[k]) is not int or item[k] < 0 for k in ('failures', 'successes'))):
+                        raise ValueError
+                self.data = candidate
+            except (ValueError, KeyError, TypeError, AttributeError):
+                raise ValueError('State invalid or belongs to another target; inspect privately, then choose a new state file.') from None
+
+    def save(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        temp = self.path.with_suffix(self.path.suffix + '.tmp')
+        temp.write_text(json.dumps(self.data), encoding='utf-8')
+        os.replace(temp, self.path)
+
+    def observe(self, name, outcome):
+        s = self.data['checks'].setdefault(name, {'down': False, 'failures': 0, 'successes': 0})
+        s['failures'] = 0 if outcome['ok'] else min(s['failures'] + 1, self.config.failure_threshold)
+        s['successes'] = min(s['successes'] + 1, self.config.recovery_threshold) if outcome['ok'] else 0
+        event = None
+        if not s['down'] and s['failures'] >= self.config.failure_threshold:
+            s['down'] = True
+            event = 'outage'
+        elif s['down'] and s['successes'] >= self.config.recovery_threshold:
+            s['down'] = False
+            event = 'recovery'
+        return event
+
+
+class Sender:
+    def __init__(self, config, dry_run=True):
+        if not dry_run:
+            raise ValueError('External delivery not configured; use dry-run.')
+    async def send(self, payload):
+        emit('alert_dry_run', payload=payload)
+        return True
+
+
+async def cycle(config, state, sender, widget_probe=probe_widget):
+    outcomes = {}
+    # Serial checks: no overlap or unbounded retries; each HTTP check has a total deadline.
+    for name in ('live', 'ready'):
+        outcomes[name] = await probe_health(config.service_url, name, config.timeout)
+    outcomes['widget'] = await widget_probe(config)
+    events = []
+    for name, outcome in outcomes.items():
+        transition = state.observe(name, outcome)
+        emit('check', check=name, label=config.label, **outcome)
+        if transition:
+            stamp = utc()
+            target = origin(config.host_url if name == 'widget' else config.service_url)
+            ident = hashlib.sha256(f'{config.identity()}:{name}:{transition}:{stamp}'.encode()).hexdigest()[:24]
+            events.append({'id': ident, 'time': stamp, 'type': transition,
+                           'check': name, 'target': target, 'label': config.label,
+                           'code': outcome['code'], 'test': False,
+                           'summary': 'UI shell only; session not verified' if name == 'widget' else 'Health endpoint contract',
+                           'checks': {k: {'ok': v['ok'], 'code': v['code']} for k, v in outcomes.items()}})
+    # Persist BEFORE delivery: at-most-once bounded send sequence per transition.
+    # Crash between persist/send may lose notification; no replay/reminder after restart.
+    state.save()
+    for payload in events:
+        await sender.send(payload)
+    return all(o['ok'] for o in outcomes.values())
+
+
 async def run(args):
     config = Config(**json.loads(Path(args.config).read_text(encoding='utf-8')))
-    while True:
-        outcomes = {}
-        for name in ('live', 'ready'):
-            outcomes[name] = await probe_health(config.service_url, name, config.timeout)
-            emit('check', check=name, label=config.label, **outcomes[name])
-        outcomes['widget'] = await probe_widget(config)
-        emit('check', check='widget', label=config.label, **outcomes['widget'])
-        if args.once:
-            return 0 if all(o['ok'] for o in outcomes.values()) else 1
-        await asyncio.sleep(config.interval)
+    sender = Sender(config, dry_run=not args.send)
+    # Exclusive lock: stale lock after hard kill requires operator inspection.
+    lock = Path(config.state_file + '.lock')
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    try:
+        os.write(fd, str(os.getpid()).encode())
+        state = State(config)
+        if args.test_alert:
+            payload = {'id': hashlib.sha256(utc().encode()).hexdigest()[:24], 'time': utc(),
+                       'type': 'test', 'check': 'channel', 'test': True,
+                       'label': config.label, 'summary': 'آزمایشی — Launcho monitoring channel test'}
+            return 0 if await sender.send(payload) else 1
+        while True:
+            healthy = await cycle(config, state, sender)
+            if args.once:
+                return 0 if healthy else 1
+            # Interval is a delay after completion, not a fixed wall-clock cadence.
+            await asyncio.sleep(config.interval)
+    finally:
+        os.close(fd)
+        lock.unlink()
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', required=True, help='Trusted local JSON config file')
     parser.add_argument('--once', action='store_true')
+    parser.add_argument('--send', action='store_true', help='Enable bounded webhook delivery; default is dry-run')
+    parser.add_argument('--test-alert', action='store_true', help='One labelled test message only')
     args = parser.parse_args()
     try:
         return asyncio.run(run(args))

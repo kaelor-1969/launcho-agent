@@ -48,3 +48,21 @@ uses the current repository's `/widget/` module layout; future relocated scripts
 require review. Deadline covers all interactions; cleanup runs in finally. Origin
 filtering is not a guarantee that an arbitrary host's GET handlers are side-effect
 free: only approved hosts with safe resource GETs may be monitored.
+
+Stage-3 commit: `81a1865`.
+
+## Stage 4
+
+Separate live/ready/widget incident states, default three failures to open/two
+successes to recover. Atomic JSON state tied to target identity; exclusive lock
+prevents concurrent monitor instances using the same state. Restart preserves
+streaks/incidents. No reminders, cooldown retransmits or replay. Persist-before-send
+can lose notifications in a crash gap; delivery is a bounded send sequence, not
+exactly-once transport. Corrupt/mismatched state fails closed without overwriting.
+Four incident tests passed, using controlled outcomes without long clock waits:
+transient/persistent/recovery with restart after each sample; corruption/target
+change; widget-only incident with failed delivery and no replay; lock exclusion.
+Independent evidence-only review confirmed lock acquisition is outside the owned
+lock cleanup try/finally. Added a fifth test for os.replace failure: no alert is
+sent when persistence fails. Persistence failure stops monitoring visibly instead
+of risking an alert storm; operator must repair the monitor state volume.
