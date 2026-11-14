@@ -10,7 +10,7 @@ const {spawn} = require('node:child_process');
 const {once} = require('node:events');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const root = path.resolve(__dirname, '../frontend');
-const output = path.resolve(__dirname, '../artifacts/widget-signup-stage1');
+const output = process.env.WIDGET_ARTIFACT_DIR ? path.resolve(process.env.WIDGET_ARTIFACT_DIR) : path.resolve(__dirname, '../artifacts/widget-signup-stage1');
 const fixture = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../content/launcho-mock.json'), 'utf8'));
 const sid = 'signup-browser-session', token = 'signup-browser-token';
 let revision = 0, preferences = {}, reviewId = 0;
@@ -83,7 +83,7 @@ const server = http.createServer(async (req, res) => {
     const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
     socket = new WebSocket(targets.find(t => t.type === 'page').webSocketDebuggerUrl); await once(socket, 'open');
     let id = 0;
-    const pending = new Map(), errors = [], results = [];
+    const pending = new Map(), errors = [], results = [], accessibility = [];
     socket.addEventListener('message', event => {
       const data = JSON.parse(event.data);
       if (data.id) { const callback = pending.get(data.id); pending.delete(data.id); callback?.(data); }
@@ -156,6 +156,34 @@ const server = http.createServer(async (req, res) => {
         await wait(`document.querySelector('#launcho-widget').shadowRoot.querySelector('iframe')?.style.visibility === 'visible'`);
         await evaluate(`window.frame = document.querySelector('#launcho-widget').shadowRoot.querySelector('iframe'); window.doc = frame.contentDocument`);
         await wait(`doc.querySelector('#local-signup').hidden === false && doc.querySelector('#signup-save').disabled === false`);
+        if (kind === 'shop') {
+          if (width < 600) {
+            await evaluate(`doc.querySelector('[name=businessName]').value='حفظ انتخاب'; doc.querySelector('#change-service').focus()`);
+            await key('Enter'); await wait(`doc.querySelector('#service-sheet').open`);
+            assert.equal(await evaluate('doc.activeElement.dataset.service'), 'assistant');
+            await key('Tab'); assert.equal(await evaluate('doc.activeElement.dataset.service'), 'callcenter');
+            await key('Enter'); await wait(`!doc.querySelector('#service-sheet').open`);
+            assert.equal(await evaluate(`doc.querySelector('#assistant-content').hidden && !doc.querySelector('#unavailable-service').hidden`), true);
+            assert.equal(await evaluate('doc.activeElement.id'), 'change-service');
+            await key('Enter'); await wait(`doc.querySelector('#service-sheet').open`);
+            await key('Escape'); await wait(`!doc.querySelector('#service-sheet').open`);
+            assert.equal(await evaluate(`!document.querySelector('#launcho-widget').shadowRoot.querySelector('.panel').hidden`), true, 'Escape dismisses sheet before widget');
+            await key('Enter'); await wait(`doc.querySelector('#service-sheet').open`);
+            await evaluate(`doc.querySelector('#mobile-services [data-service=assistant]').focus()`);
+            await key('Enter'); await wait(`!doc.querySelector('#assistant-content').hidden`);
+            assert.equal(await evaluate(`doc.querySelector('[name=businessName]').value`), 'حفظ انتخاب');
+          }
+          const tree = await command('Page.getFrameTree');
+          const frameId = tree.frameTree.childFrames.find(item => item.frame.url.includes('/widget/widget.html')).frame.id;
+          const ax = await command('Accessibility.getFullAXTree', {frameId});
+          const controls = ax.nodes.filter(node => !node.ignored && ['button','link','textbox','combobox'].includes(node.role?.value));
+          assert.ok(controls.length >= 10);
+          assert.deepEqual(controls.filter(node => !node.name?.value?.trim()).map(node => node.role.value), [], 'visible controls need accessible names');
+          accessibility.push({width, namedControls:controls.length});
+          await command('Emulation.setEmulatedMedia', {features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+          assert.equal(await evaluate(`doc.defaultView.matchMedia('(prefers-reduced-motion: reduce)').matches && getComputedStyle(doc.querySelector('.typing-dots i')).animationName === 'none'`), true);
+          await command('Emulation.setEmulatedMedia', {features:[]});
+        }
         if (kind === 'website') { await change('kind', kind); await wait(`!doc.querySelector('#signup-save').disabled`); }
         const options = fixture.signupOptions[kind];
         // Exercise every catalog-backed choice without navigating to the public site.
@@ -305,9 +333,10 @@ const server = http.createServer(async (req, res) => {
     await screenshot('320-dark-review');
     assert.equal(await evaluate(`doc.documentElement.scrollWidth <= frame.clientWidth`), true);
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify({browser: (await command('Browser.getVersion')).product,
+    const browserVersion = await command('Browser.getVersion');
+    fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify({browser: browserVersion.product, userAgent:browserVersion.userAgent, accessibility,
       mainWidget: true, controlledResponses: true, externalNetworkBlocked: true, results, optionsRecovery: true, reviewRecovery: true,
-      darkThemeScreenshot: true, untested: ['real backend integration', 'real draft creation', 'physical mobile keyboard', 'Safari', 'Firefox'],
+      darkThemeScreenshot: true, mobileServiceKeyboard:true, reducedMotion:true, untested: ['real backend integration', 'real draft creation', 'physical mobile keyboard', 'screen reader speech', 'Safari', 'Firefox'],
       backendLimitation: {evidence: 'app/api/routes.py:52-62 (read only)', verification: 'source inspection; backend not executed',
         reproduce: ['Start the existing backend with an adapter mode other than local_mock.', 'GET /api/local-signup-options?kind=shop or kind=website returns 404 by the mode guard.', 'The main widget therefore has no catalog-backed form in that mode.']}, errors}, null, 2));
     console.log('PASS: unavailable/malformed options and review error recovery; no external network or browser exceptions');

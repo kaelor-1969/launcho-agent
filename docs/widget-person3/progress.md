@@ -37,3 +37,9 @@ Stage 5 commit: 02a88cc.
 
 ## Stage 6
 Added explicit busy status, duplicate GET guard and disabled continuation link after expiry. Current card keeps expired destination disabled; a replacement needs fresh server review. VM hostile URL checks PASS. Chrome session suite final exit0: seven statuses plus unknown, status503/manual retry/one in-flight GET, no confirm side effects, authenticated channel rejects wrong sender/origin/channel/scope, pending refresh still warns, resolved/definite-rejection refresh does not warn. Lazy iframe explicitly installed with data-auto-open=false, no-modals sandbox/title/referrer preserved, handshake hides feedback, blocked iframe times out after15s, reopening retains one iframe and zero API calls. One intermediate Page.navigate timeout has no identified cause; subsequent and final runs passed. A GET fixture record TypeError was fixed. Source-only independent reviewer found no blocker; flags have no session/draft identifier because they are boolean state of the single authenticated iframe.
+
+Stage 6 commit: 29b1ad2.
+
+## Stage 7
+No supported-browser matrix found; existing docs name Chrome and exclusions. Chrome157.0.8103.51 and Edge157.0.4341.46 full signup suites exited0: all6 service/viewport scenarios plus recovery. Added native mobile service-modal selection/Escape/focus/value retention, AX visible-control naming (20desktop/16mobile each), reduced motion. No production changes required. browser-coverage.md states Chromium-only/AX-smoke limits, no Firefox/Safari/device/screenreader certification.
+Independent stage7 reviewer inspected test source, no own runs; no blocker. Gaps in reverse Tab/focus wrap/Space and dynamic AX states recorded in browser-coverage.md.
