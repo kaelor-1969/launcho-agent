@@ -20,7 +20,7 @@ from app.services import launcho_api
 from app.services.catalog import SignupCatalog, selectable_catalog
 from app.services.draft_gateway import ExistingReadOnlyGateway, GatewayUnavailable, LaunchoReadOnlyGateway
 
-CATALOG = json.loads((content / 'launcho-draft-test-catalog.json').read_text())['signupOptions']
+CATALOG = json.loads((content / 'launcho-draft-test-catalog.json').read_text(encoding='utf-8'))['signupOptions']
 BODY = {'kind': 'shop', 'businessName': 'Catalog test', 'category': 'test-category',
         'planMonths': 3, 'template': 'test-template', 'domain': {'label': 'example', 'tld': 'ir'}}
 HEADERS = {'Authorization': 'Bearer local-simulation', 'Idempotency-Key': 'catalog_request_key_01'}
@@ -45,7 +45,7 @@ class CatalogTests(unittest.TestCase):
                 for item in model.businessCategories + model.templates:
                     self.assertTrue(item.source.reference)
                     self.assertEqual(item.approvalStatus, 'test_only')
-        schema = json.loads((content / 'launcho-catalog.schema.json').read_text())
+        schema = json.loads((content / 'launcho-catalog.schema.json').read_text(encoding='utf-8'))
         self.assertEqual(schema, SignupCatalog.model_json_schema())
 
     def test_legacy_path_has_no_selectable_samples_and_cannot_fabricate_draft(self):
@@ -153,7 +153,7 @@ class CatalogTests(unittest.TestCase):
                 self.assertEqual(failed.status_code, 503)
 
     def test_public_reference_names_are_not_registration_options(self):
-        audit = json.loads((content / 'launcho-catalog-audit.json').read_text())
+        audit = json.loads((content / 'launcho-catalog-audit.json').read_text(encoding='utf-8'))
         for entry in audit['publicReferences']:
             self.assertIsNone(entry['registrationId'])
             self.assertFalse(entry['available'])

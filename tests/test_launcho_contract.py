@@ -45,7 +45,7 @@ def assert_subset(test, expected, actual):
 
 class ContractExamples(unittest.TestCase):
     def test_documented_requests_match_http(self):
-        examples = json.loads((ROOT / 'docs/examples/launcho-mock-v3.json').read_text())
+        examples = json.loads((ROOT / 'docs/examples/launcho-mock-v3.json').read_text(encoding='utf-8'))
         with tempfile.TemporaryDirectory() as temp, TestClient(create_mock_app(
                 db_path=Path(temp) / 'mock.sqlite3', catalog_profile='unavailable')) as client:
             for case in examples['cases']:
@@ -62,11 +62,11 @@ class ContractExamples(unittest.TestCase):
                         self.assertEqual(response.json(), case['response']['json'])
 
     def test_schema_is_published_from_the_adapter_model(self):
-        schema = json.loads((ROOT / 'docs/examples/launcho-draft-request.schema.json').read_text())
+        schema = json.loads((ROOT / 'docs/examples/launcho-draft-request.schema.json').read_text(encoding='utf-8'))
         self.assertEqual(schema, DraftRequest.model_json_schema())
 
     def test_proposed_draft_example_matches_main_core_and_fixture_total(self):
-        target = json.loads((ROOT / 'docs/examples/launcho-draft-target-v1.json').read_text())
+        target = json.loads((ROOT / 'docs/examples/launcho-draft-target-v1.json').read_text(encoding='utf-8'))
         case = target['cases'][0]
         payload = normalize_draft(case['request']['json'])
         result = case['response']['json']
@@ -138,7 +138,7 @@ class CoreAdapterContract(unittest.TestCase):
             data = fixture['pricing']
         elif url.endswith('/signup-options'):
             # Synthetic approved upstream response for transport tests only; no real catalog approval.
-            data = json.loads((ROOT / 'content/launcho-draft-test-catalog.json').read_text())['signupOptions']['shop']
+            data = json.loads((ROOT / 'content/launcho-draft-test-catalog.json').read_text(encoding='utf-8'))['signupOptions']['shop']
             data.update(approvalStatus='approved', availability='available')
             data['source'] = {'type': 'official_api', 'reference': 'https://example.invalid/test-catalog'}
             for entry in data['businessCategories'] + data['templates']:

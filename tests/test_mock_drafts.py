@@ -19,7 +19,7 @@ from app.models.schemas import Preferences
 from app.mock_draft_store import MockDraftStore
 from app.mock_launcho import create_mock_app, content, fixture
 
-CATALOG = json.loads((content / 'launcho-draft-test-catalog.json').read_text())['signupOptions']
+CATALOG = json.loads((content / 'launcho-draft-test-catalog.json').read_text(encoding='utf-8'))['signupOptions']
 PAYLOAD = {'kind': 'shop', 'businessName': 'Mock business', 'category': 'test-category',
            'planMonths': 3, 'template': 'test-template', 'domain': {'label': 'example', 'tld': 'ir'}}
 HEADERS = {'Authorization': 'Bearer local-simulation', 'Idempotency-Key': 'mock_test_request_0001'}
@@ -89,7 +89,7 @@ class MockDraftTests(unittest.TestCase):
         self.assertEqual(preview.headers['cache-control'], 'no-store')
 
     def test_published_draft_examples_match_the_api(self):
-        examples = json.loads((content.parent / 'docs/examples/launcho-mock-drafts-v2.json').read_text())
+        examples = json.loads((content.parent / 'docs/examples/launcho-mock-drafts-v2.json').read_text(encoding='utf-8'))
         with patch('app.mock_draft_store.secrets.token_urlsafe', return_value='example01'):
             for case in examples['cases']:
                 with self.subTest(case=case['name']):
@@ -195,7 +195,7 @@ from fastapi.testclient import TestClient
 from app.models.schemas import Preferences
 from app.mock_draft_store import MockDraftStore
 from app.mock_launcho import create_mock_app,content,fixture
-catalog=json.loads((content/'launcho-draft-test-catalog.json').read_text())['signupOptions']
+catalog=json.loads((content/'launcho-draft-test-catalog.json').read_text(encoding='utf-8'))['signupOptions']
 store=MockDraftStore(sys.argv[1],catalog,fixture['pricing'],clock=lambda:1800000001)
 with TestClient(create_mock_app(store=store)) as client:
     r=client.post('/signup-drafts',json=json.loads(sys.argv[2]),headers=json.loads(sys.argv[3]))
