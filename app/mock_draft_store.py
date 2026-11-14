@@ -10,6 +10,7 @@ import sqlite3
 import time
 from urllib.parse import urlsplit
 
+from app.models.schemas import Preferences
 from app.services.launcho_contract import normalize_draft
 from app.services.catalog import selectable_catalog
 
@@ -113,6 +114,8 @@ class MockDraftStore:
             raise MockDraftError(422, 'invalid_request', 'اطلاعات پیش‌نویس معتبر نیست.') from None
         canonical = json.dumps(normalized, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
         digest = hashlib.sha256(key.encode('ascii')).hexdigest()
+        legacy_fingerprint = hashlib.sha256(
+            Preferences.model_validate(payload).model_dump_json().encode('utf-8')).digest()
         with self.transaction() as db:
             now = self.clock()
             db.execute('DELETE FROM mock_drafts WHERE retain_until<=?', (now,))
@@ -123,6 +126,14 @@ class MockDraftStore:
                 if now >= previous['expires']:
                     raise MockDraftError(410, 'draft_expired', 'پیش‌نویس آزمایشی منقضی شده است.')
                 return json.loads(previous['result'])
+            legacy = self.legacy_draft(db, 'request_key', key, now)
+            if legacy is not None:
+                row, result = legacy
+                if row['fingerprint'] != legacy_fingerprint:
+                    raise MockDraftError(409, 'idempotency_conflict', 'این کلید قبلاً برای اطلاعات دیگری استفاده شده است.')
+                if result['status'] == 'expired':
+                    raise MockDraftError(410, 'draft_expired', 'پیش‌نویس آزمایشی منقضی شده است.')
+                return result
             quote = self.quote(normalized)
             ref = 'sd_mock_' + secrets.token_urlsafe(24)
             result = {'ref': ref, 'status': 'draft', 'createdAt': stamp(now),
@@ -133,6 +144,19 @@ class MockDraftStore:
                         now, now + self.ttl, now + self.retention))
             return result
 
+    @staticmethod
+    def legacy_draft(db, column, value, now):
+        if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='drafts'").fetchone():
+            return None
+        row = db.execute(f'SELECT * FROM drafts WHERE {column}=?', (value,)).fetchone()
+        if row is None:
+            return None
+        expires = datetime.fromisoformat(row['expires_at']).timestamp()
+        if now > expires + 86400:
+            return None
+        return row, {'ref': row['ref'], 'status': 'expired' if now >= expires else 'draft',
+                     'expiresAt': row['expires_at'], 'confirmUrl': f"/signup-drafts/{row['ref']}/preview"}
+
     def get(self, ref):
         self.validate_ref(ref)
         with self.transaction() as db:
@@ -140,6 +164,9 @@ class MockDraftStore:
             db.execute('DELETE FROM mock_drafts WHERE retain_until<=?', (now,))
             row = db.execute('SELECT result,expires FROM mock_drafts WHERE ref=?', (ref,)).fetchone()
             result = json.loads(row['result']) if row else None
+            if row is None:
+                legacy = self.legacy_draft(db, 'ref', ref, now)
+                result = legacy[1] if legacy is not None else None
             if row and now >= row['expires']:
                 result['status'] = 'expired'
         if result is None:

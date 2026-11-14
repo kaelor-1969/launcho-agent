@@ -5,7 +5,7 @@ from pathlib import Path
 import secrets
 import sqlite3
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 from app.core.privacy import redact
 
 
@@ -36,6 +36,9 @@ class SessionStore:
                     payload TEXT NOT NULL, idem TEXT NOT NULL UNIQUE, status TEXT NOT NULL,
                     started REAL NOT NULL DEFAULT 0, result TEXT
                 );
+                CREATE TABLE IF NOT EXISTS shown_local_offers (
+                    session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE
+                );
                 CREATE INDEX IF NOT EXISTS review_owner ON reviews(session_id);
             ''')
 
@@ -44,6 +47,7 @@ class SessionStore:
         db = sqlite3.connect(self.path, timeout=10, isolation_level=None)
         db.row_factory = sqlite3.Row
         db.execute('PRAGMA foreign_keys=ON')
+        db.execute('PRAGMA secure_delete=ON')
         try:
             db.execute('BEGIN IMMEDIATE')
             yield db
@@ -83,6 +87,25 @@ class SessionStore:
             db.execute('INSERT INTO sessions(id,token_hash,expires,prefs) VALUES(?,?,?,?)',
                        (sid, digest(token), expires, json.dumps({'kind':'shop'})))
         return sid, token
+
+    def cleanup(self):
+        """Remove expired owners and all dependent records in one transaction."""
+        with self.transaction() as db:
+            count = db.execute('DELETE FROM sessions WHERE expires <= ?', (time.time(),)).rowcount
+            db.execute("DELETE FROM reviews WHERE status IN ('awaiting','rejected') AND expires <= ? "
+                       "AND id NOT IN (SELECT review_id FROM sessions WHERE review_id IS NOT NULL)", (time.time(),))
+        return count
+
+    def backup(self, destination):
+        """SQLite online backup, including committed WAL content."""
+        destination = Path(destination).resolve()
+        if destination == Path(self.path).resolve() or destination.exists():
+            raise ValueError('Backup destination must be a new file distinct from the source.')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with closing(sqlite3.connect(self.path)) as source, closing(sqlite3.connect(destination)) as target:
+            source.backup(target)
+            if target.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
+                raise RuntimeError('Backup integrity check failed.')
 
     def get(self, sid, token):
         with self.transaction() as db:

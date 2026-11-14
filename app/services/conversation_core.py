@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from app.core.config import PROJECT_ROOT
 from app.core.privacy import has_visible_text, redact
 from app.models.schemas import Preferences, PreferenceUpdate
-from app.services.ai_service import CHECKOUT_OFFER_LABEL, generate_turn, is_price_question
+from app.services.ai_service import CHECKOUT_OFFER_LABEL, generate_turn, is_price_question, is_financial_objection
 from app.services.draft_gateway import build_gateway, unwrap, GatewayRejected, GatewayUnavailable
 from app.services.session_store import CoreError, SessionStore, digest
 
@@ -62,6 +62,15 @@ class ConversationCore:
         try:
             options = unwrap(self.gateway.get_signup_options(kind))
             pricing = unwrap(self.gateway.get_pricing())
+            for source, key, field, expected in (
+                (options, 'businessCategories', 'id', str), (options, 'templates', 'id', str),
+                (pricing, 'plans', 'months', int), (pricing, 'domains', 'tld', str),
+            ):
+                items = source.get(key, [] if key == 'domains' else None)
+                if not isinstance(items, list) or any(
+                    not isinstance(item, dict) or type(item.get(field)) is not expected for item in items
+                ):
+                    raise GatewayUnavailable('Invalid options or pricing response.')
             return options, pricing
         except Exception:
             raise CoreError(503,'options_unavailable','گزینه‌های معتبر در دسترس نیستند؛ از فرم رسمی استفاده کنید.') from None
@@ -136,6 +145,7 @@ class ConversationCore:
                         prefs = json.loads(row['prefs'])
                         return self.chat_result(sid, row['revision'], prefs, answer['content'])
             self.ensure_editable(db,row)
+            shown_offer = db.execute('SELECT 1 FROM shown_local_offers WHERE session_id=?', (sid,)).fetchone()
             lease = time.time()+150
             db.execute('UPDATE sessions SET chat_until=? WHERE id=?',(lease,sid))
         try:
@@ -145,7 +155,8 @@ class ConversationCore:
                 try:
                     options, pricing = self.data(prefs['kind'])
                     if self.gateway.mode == 'local_mock':
-                        options, pricing = {}, {}
+                        pricing = {}
+                        options = {key: options[key] for key in ('businessCategories', 'templates')}
                 except CoreError:
                     pass
             service_info = getattr(self.gateway, 'get_service_info', None)
@@ -155,9 +166,13 @@ class ConversationCore:
                 except GatewayUnavailable:
                     pass
             match_offers = getattr(self.gateway, 'match_price_offers', None)
-            if match_offers and is_price_question(safe):
+            if match_offers and not shown_offer and is_financial_objection(safe):
                 try:
-                    offers = unwrap(match_offers(prefs['kind'])).get('offers')
+                    offers = unwrap(match_offers(
+                        prefs['kind'], prefs.get('planMonths'),
+                        message=safe, history=history, offer_state={},
+                        step='review_ready' if self.complete(prefs) else 'collecting_preferences',
+                    )).get('offers')
                     if isinstance(offers, list):
                         options = {**options, 'demoOffers': offers}
                 except GatewayUnavailable:
@@ -188,6 +203,8 @@ class ConversationCore:
                 current = self.store.authenticate(db,sid,token)
                 if current['revision'] != row['revision'] or current['chat_until'] != lease:
                     raise CoreError(409,'stale_revision','اطلاعات تغییر کرده؛ دوباره وضعیت را دریافت کنید.')
+                if options.get('demoOffers') and 'پیشنهاد آزمایشی' in reply:
+                    db.execute('INSERT OR IGNORE INTO shown_local_offers VALUES (?)', (sid,))
                 changed = prefs != json.loads(current['prefs'])
                 db.execute('UPDATE sessions SET prefs=?,history=?,revision=revision+?,review_id=?,chat_until=0 WHERE id=?',
                            (json.dumps(prefs,ensure_ascii=False),json.dumps(history,ensure_ascii=False),int(changed),
@@ -209,7 +226,9 @@ class ConversationCore:
                 or any(turn['role'] == 'assistant' and CHECKOUT_OFFER_LABEL in turn['content'] for turn in history)):
             return None
         try:
-            offers = unwrap(match(prefs['kind'], prefs['planMonths'])).get('offers')
+            offers = unwrap(match(
+                prefs['kind'], prefs['planMonths'], message=message, history=history,
+                step='review_ready', offer_state={})).get('offers')
         except GatewayUnavailable:
             return None
         if not isinstance(offers, list):
@@ -217,7 +236,7 @@ class ConversationCore:
         for offer in offers:
             if not isinstance(offer, dict) or offer.get('type') not in {'payment_option', 'discount'}:
                 continue
-            line = offer.get('line')
+            line = offer.get('displayText')
             if not isinstance(line, str) or not line.strip() or len(line) > 160 or re.search(r'https?://|www\.', line, re.I):
                 continue
             expires = offer.get('expiresAt')
@@ -282,12 +301,18 @@ class ConversationCore:
             return None
 
     @staticmethod
-    def validate_result(raw):
+    def validate_result(raw, local=False):
         data = unwrap(raw)
         ref, url = data.get('ref',''), data.get('confirmUrl','')
         import re
         if not re.fullmatch(r'sd_[A-Za-z0-9_-]{4,128}',ref):
             raise ValueError('Invalid reference')
+        if local:
+            if (url != f'/signup-drafts/{ref}/preview' or data.get('status') != 'draft'
+                    or parse_expiry(data.get('expiresAt')) <= time.time()):
+                raise ValueError('Invalid local draft')
+            return {'ref': ref, 'confirmUrl': f'/api/local-drafts/{ref}/preview',
+                    'expiresAt': data['expiresAt'], 'status': 'draft'}
         parsed = urlsplit(url)
         if (parsed.scheme!='https' or parsed.netloc!='launcho.ir' or parsed.path!='/start'
             or parsed.fragment or parse_qsl(parsed.query)!=[('signup',ref)]):
@@ -331,7 +356,8 @@ class ConversationCore:
             payload, idem = json.loads(review['payload']), review['idem']
         try:
             # No automatic retry. A manual retry uses this exact key and stored payload.
-            result = self.validate_result(self.gateway.create_signup_draft(payload,idem))
+            result = self.validate_result(self.gateway.create_signup_draft(payload,idem),
+                                          local=self.gateway.mode == 'local_mock')
         except GatewayRejected as error:
             with self.store.transaction() as db:
                 db.execute("UPDATE reviews SET status='rejected' WHERE id=?",(review['id'],))
@@ -357,6 +383,8 @@ class ConversationCore:
         query = {}
         if prefs['kind']=='website': query['kind']='website'
         for source,target in [('businessName','name'),('category','cat'),('planMonths','plan'),('template','template')]:
+            if source in {'category', 'template'} and self.gateway.mode == 'local_mock':
+                continue
             if source in prefs: query[target]=prefs[source]
         return {'url':'https://launcho.ir/start'+('?' + urlencode(query) if query else ''),
                 'isDraft':False,'notice':'این لینک عمومی است؛ پیش‌نویسی در لانچو ساخته نشده است.'}
@@ -383,8 +411,10 @@ class ConversationCore:
 
 @lru_cache(maxsize=1)
 def get_core():
-    path = os.getenv('LAUNCHO_SESSION_DB', str(PROJECT_ROOT/'data'/'sessions.sqlite3'))
+    gateway = build_gateway()
+    filename = 'local-sessions.sqlite3' if gateway.mode == 'local_mock' else 'sessions.sqlite3'
+    path = os.getenv('LAUNCHO_SESSION_DB', str(PROJECT_ROOT / 'data' / filename))
     ttl = int(os.getenv('LAUNCHO_SESSION_TTL_SECONDS','86400'))
     if not 60<=ttl<=86400:
         raise RuntimeError('LAUNCHO_SESSION_TTL_SECONDS must be between 60 and 86400.')
-    return ConversationCore(SessionStore(path,ttl),build_gateway())
+    return ConversationCore(SessionStore(path,ttl),gateway)

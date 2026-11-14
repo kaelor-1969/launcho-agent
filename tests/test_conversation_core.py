@@ -86,6 +86,20 @@ class CoreTests(unittest.TestCase):
         text=Path(self.core.store.path).read_bytes()
         self.assertNotIn(self.token.encode(),text)
 
+    def test_unknown_outcome_survives_core_restart_with_same_key(self):
+        review = self.review()
+        request = self.request(review)
+        self.gateway.fail_once = True
+        self.assert_core_error('draft_outcome_unknown', lambda: self.core.confirm(self.sid, self.token, request))
+        previous_key = self.gateway.calls[-1][1]
+        restarted = ConversationCore(SessionStore(self.core.store.path), self.gateway)
+        self.assertEqual(restarted.get_session(self.sid, self.token)['draftState'], 'unknown')
+        self.assert_core_error('draft_unresolved', lambda: restarted.edit(self.sid, self.token, review['revision'], {'businessName': 'تازه'}))
+        result = restarted.confirm(self.sid, self.token, request)
+        self.assertEqual(self.gateway.calls[-1][1], previous_key)
+        self.assertEqual(result['ref'], 'sd_mockreference')
+        self.assertEqual(len(self.gateway.results), 1)
+
     def test_live_draft_transport_preserves_key_and_status_is_session_owned(self):
         gateway = LaunchoDraftGateway('https://example.invalid/api/assistant/v1', 'test-token')
         self.core.gateway = gateway
@@ -111,14 +125,15 @@ class CoreTests(unittest.TestCase):
             self.assertEqual(self.core.draft_status(self.sid, self.token), {'status':'paid'})
         read.assert_called_once_with('sd_mockreference')
         with patch.object(gateway, 'match_checkout_offers', return_value={'offers':[
-            {'type':'discount','line':'پیشنهاد منقضی','expiresAt':'2000-01-01T00:00:00Z'},
-            {'type':'payment_option','line':'پرداخت قسطی در فرم'},
+            {'type':'discount','displayText':'پیشنهاد منقضی','expiresAt':'2000-01-01T00:00:00Z'},
+            {'type':'payment_option','displayText':'پرداخت قسطی در فرم'},
         ]}) as match:
             self.assertIsNone(self.core.checkout_offer('هزینه بالاست', [], {'kind':'shop'}))
             match.assert_not_called()
             self.assertEqual(self.core.checkout_offer('هزینه بالاست', [], {'kind':'shop', **CHOICES}),
                              'پرداخت قسطی در فرم')
-        match.assert_called_once_with('shop', 3)
+        match.assert_called_once_with('shop', 3, message='هزینه بالاست', history=[],
+                                      step='review_ready', offer_state={})
 
     def test_chat_retry_replays_saved_answer(self):
         calls = []
@@ -433,7 +448,7 @@ class PrivacyAndModelTests(unittest.TestCase):
         self.assertIn('/widget/loader.js', widget_host())
 
     def test_demo_campaign_is_labeled_and_not_repeated(self):
-        options = {'demoOffers': [{'id': 'demo_campaign', 'line': 'جشنوارهٔ نمونه'}]}
+        options = {'demoOffers': [{'offerId': 'demo_campaign', 'displayText': 'جشنوارهٔ نمونه'}]}
         message = 'هزینه برام زیاده'
         with patch.object(ai_service.client.chat.completions, 'create') as call:
             reply, _ = ai_service.generate_turn(message, options=options)
@@ -489,7 +504,11 @@ class PrivacyAndModelTests(unittest.TestCase):
 
     def test_business_types_get_one_direct_next_step(self):
         with patch.object(ai_service.client.chat.completions, 'create') as model:
-            for business in ('کیف‌فروشی', 'تعمیر موبایل', 'آموزش زبان', 'ابزار صنعتی', 'قهوه تخصصی'):
+            for business in (
+                'کیف‌فروشی', 'تعمیر موبایل', 'آموزش زبان', 'ابزار صنعتی', 'قهوه تخصصی',
+                'کیف و کفش از لانچو خوشم اومده ثبت نام رو برام انجام بده',
+                'آموزش زبان، مراحل ثبت نام رو برام انجام بده',
+            ):
                 with self.subTest(business=business):
                     history = [{'role': 'assistant', 'content': ai_service._STORE_START_REPLY}]
                     reply, _ = ai_service.generate_turn(business, history)
@@ -501,10 +520,11 @@ class PrivacyAndModelTests(unittest.TestCase):
         with patch.object(ai_service.client.chat.completions, 'create') as model:
             for message, expected in (
                 ('من از لانچو خوشم اومده مراحل ثبت نام رو برام انجام بده', 'چه محصولی'),
+                ('مراحل ثبت نام رو برام انجام بده', 'چه محصولی'),
                 ('کیف‌فروشی', 'اسم برندتان'),
                 ('تو برام انجام بده', 'پیشنهاد دامنه را من آماده می‌کنم'),
                 ('هزینه چقدر است؟', 'https://launcho.ir/pricing'),
-                ('Kif Sara', 'kifsara.ir'),
+                ('روزا', 'roza.ir'),
                 ('بله', 'https://launcho.ir/#templates'),
                 ('آماده‌ام', 'https://launcho.ir/start'),
             ):
@@ -514,6 +534,14 @@ class PrivacyAndModelTests(unittest.TestCase):
                 if message != 'آماده‌ام':
                     self.assertNotIn('https://launcho.ir/start', reply)
                 history.extend([{'role':'user','content':message}, {'role':'assistant','content':reply}])
+        model.assert_not_called()
+
+    def test_explicit_interest_offers_signup_directly(self):
+        with patch.object(ai_service.client.chat.completions, 'create') as model:
+            reply, update = ai_service.generate_turn('من از لانچو خوشم اومده')
+        self.assertIn('نوع کسب‌وکارتان', reply)
+        self.assertTrue(reply.endswith('https://launcho.ir/start'))
+        self.assertEqual(update, {})
         model.assert_not_called()
 
     def test_guidance_replaces_unsupported_price_and_sensitive_request(self):

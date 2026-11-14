@@ -5,6 +5,7 @@ from pathlib import Path
 import sqlite3
 from threading import Lock
 from typing import Literal
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -75,6 +76,11 @@ def offers(request: OfferRequest, authorization: str = Header(default='')):
 
 
 def widget_host():
+    origin = urlsplit(os.getenv('LAUNCHO_WIDGET_ORIGIN', 'http://127.0.0.1:8000'))
+    if (origin.scheme != 'http' or origin.hostname not in {'127.0.0.1', 'localhost', '::1'}
+            or origin.username or origin.password or origin.path or origin.query or origin.fragment):
+        raise HTTPException(500, detail='Invalid local widget origin')
+    loader = f'http://{origin.hostname if origin.hostname != "::1" else "[::1]"}:{origin.port or 80}/widget/loader.js'
     return """<!doctype html>
 <html lang="fa" dir="rtl">
 <meta charset="utf-8">
@@ -92,8 +98,8 @@ p { max-width: 56ch }
 <p>دستیار را از پایین صفحه باز کنید. برای شروع بپرسید «برای فروش کیف و کفش از کجا شروع کنم؟» و بعد «هزینه برام زیاده، چه گزینه‌ای دارم؟».</p>
 <p>این صفحه برای تست نصب ویجت است. تعرفه و جشنوارهٔ آزمایشی برای خرید معتبر نیستند.</p>
 </main>
-<script defer src="http://127.0.0.1:8000/widget/loader.js" data-theme="light"></script>
-</html>"""
+<script defer src="__WIDGET_LOADER__" data-theme="light"></script>
+</html>""".replace("__WIDGET_LOADER__", loader)
 
 
 def create_mock_app(*, store=None, db_path=None, catalog_profile=None, ttl=None,
@@ -101,18 +107,20 @@ def create_mock_app(*, store=None, db_path=None, catalog_profile=None, ttl=None,
     """Each test uses its own store/path; normal imports perform no database writes."""
     application = FastAPI(title='Launcho local simulation')
     profile = catalog_profile or os.getenv('LAUNCHO_MOCK_DRAFT_CATALOG', 'unavailable')
-    if profile not in {'unavailable', 'test'}:
-        raise ValueError('LAUNCHO_MOCK_DRAFT_CATALOG must be unavailable or test.')
+    if profile not in {'unavailable', 'test', 'widget'}:
+        raise ValueError('LAUNCHO_MOCK_DRAFT_CATALOG must be unavailable, test, or widget.')
     catalog = fixture['signupOptions']
     if profile == 'test':
         catalog = json.loads((content / 'launcho-draft-test-catalog.json').read_text(encoding='utf-8'))['signupOptions']
+    if profile == 'widget':
+        catalog = json.loads((content / 'launcho-widget-catalog.json').read_text(encoding='utf-8'))['signupOptions']
     if store is not None:
         catalog = store.catalog
     draft_ttl = int(os.getenv('LAUNCHO_MOCK_DRAFT_TTL_SECONDS', '86400')) if ttl is None else ttl
     key_retention = int(os.getenv('LAUNCHO_MOCK_KEY_RETENTION_SECONDS', '604800')) if retention is None else retention
     if type(draft_ttl) is not int or type(key_retention) is not int or draft_ttl <= 0 or key_retention < draft_ttl:
         raise ValueError('Mock retention must be >= positive draft TTL.')
-    path = db_path or os.getenv('LAUNCHO_MOCK_DB') or content.parent / 'data' / 'mock-drafts.sqlite3'
+    path = db_path or os.getenv('LAUNCHO_MOCK_DB') or os.getenv('LAUNCHO_MOCK_DRAFT_DB') or content.parent / 'data' / 'mock-drafts.sqlite3'
     origin = preview_origin or os.getenv('LAUNCHO_MOCK_PREVIEW_ORIGIN', 'http://127.0.0.1:8001')
     MockDraftStore.validate_origin(origin)
     application.state.draft_store = store
@@ -189,6 +197,7 @@ def create_mock_app(*, store=None, db_path=None, catalog_profile=None, ttl=None,
         authenticated(authorization)
         return JSONResponse(response(get_store().get(ref), authorization), headers={'Cache-Control': 'no-store'})
 
+    @application.get('/signup-drafts/{ref}/preview', response_class=HTMLResponse)
     @application.get('/mock-drafts/{ref}', response_class=HTMLResponse)
     def preview_draft(ref: str):
         # Public mock-only capability link. Never render the stored payload or business name.
@@ -208,7 +217,7 @@ def create_mock_app(*, store=None, db_path=None, catalog_profile=None, ttl=None,
     def options(kind: ServiceKind, authorization: str = Header(default='')):
         authenticated(authorization)
         try:
-            data = selectable_catalog(catalog[kind], kind, allow_test=profile == 'test' or store is not None)
+            data = selectable_catalog(catalog[kind], kind, allow_test=profile in {'test', 'widget'} or store is not None)
         except (ValueError, KeyError, TypeError):
             raise MockDraftError(503, 'catalog_unavailable', 'کاتالوگ معتبر فعلاً در دسترس نیست.') from None
         return response(data, authorization)
@@ -220,4 +229,4 @@ def create_mock_app(*, store=None, db_path=None, catalog_profile=None, ttl=None,
     return application
 
 
-app = create_mock_app()
+app = create_mock_app(catalog_profile=os.getenv('LAUNCHO_MOCK_DRAFT_CATALOG', 'widget'))

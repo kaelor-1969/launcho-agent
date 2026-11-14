@@ -175,6 +175,60 @@
             }
           ],
           "title": "Compatiblecategoryids"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "previewUrl": {
+          "anyOf": [
+            {
+              "pattern": "^https://demo[.]launcho[.]ir/",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previewurl"
+        },
+        "recommendedFor": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommendedfor"
+        },
+        "generalFallback": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Generalfallback"
         }
       },
       "required": [

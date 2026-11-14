@@ -1,0 +1,43 @@
+name: Backend
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      AI_API_KEY: test-placeholder
+      AI_MODEL_NAME: test-model
+      AI_BASE_URL: https://example.invalid/v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m unittest discover -s tests -v
+      - run: python tests/check_demo.py --backend-only --check-core
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --experimental-vm-modules --test tests/widget_session_test.cjs
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t launcho-agent:ci .
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install httpx
+      - run: python tests/check_container.py
+      - run: docker compose -p launcho-ci -f compose.staging.yaml config --quiet
+      - name: Start staging with persistent volumes
+        run: |
+          docker tag launcho-agent:ci launcho-agent:staging
+          docker compose -p launcho-ci -f compose.staging.yaml up -d --wait --wait-timeout 90 --no-build
+      - run: python tests/check_backend_http.py
+      - name: Stop staging
+        if: always()
+        run: docker compose -p launcho-ci -f compose.staging.yaml down --volumes

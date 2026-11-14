@@ -1,0 +1,176 @@
+[
+  {
+    "test": "concurrent confirmation and replay",
+    "input": {
+      "kind": "shop",
+      "businessName": "روزا",
+      "category": "mock-bags-shoes",
+      "template": "mock-classic",
+      "planMonths": 3,
+      "domain": {
+        "label": "roza",
+        "tld": "ir"
+      }
+    },
+    "actual": {
+      "statuses": [
+        200,
+        409
+      ],
+      "retry": 200,
+      "same_ref": true
+    },
+    "status": "PASS"
+  },
+  {
+    "test": "lost acknowledgement then retry",
+    "input": "discard response, repeat exact confirmation",
+    "actual": {
+      "status": 200,
+      "same_ref": true
+    },
+    "status": "PASS"
+  },
+  {
+    "test": "website real HTTP flow",
+    "input": {
+      "kind": "website",
+      "businessName": "روزا",
+      "category": "mock-website-company",
+      "template": "mock-website-classic",
+      "planMonths": 3,
+      "domain": {
+        "label": "roza",
+        "tld": "ir"
+      }
+    },
+    "actual": {
+      "confirm": 200,
+      "preview": 200,
+      "state": {
+        "status": "draft"
+      }
+    },
+    "status": "PASS"
+  },
+  {
+    "test": "financial language",
+    "input": "قیمت چقدره؟",
+    "actual": "هزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "financial language",
+    "input": "تعرفه اشتراک چیست؟",
+    "actual": "هزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "financial language",
+    "input": "هزینه برام زیاده",
+    "actual": "پیشنهاد آزمایشی — این جشنواره صرفاً آزمایشی است و برای خرید اعتبار ندارد؛ هیچ تخفیفی اعمال نمی‌شود.\nهزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "no repeat after six turns",
+    "input": "هزینه برام زیاده",
+    "actual": "هزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "financial language",
+    "input": "خیلی گرونه",
+    "actual": "پیشنهاد آزمایشی — این جشنواره صرفاً آزمایشی است و برای خرید اعتبار ندارد؛ هیچ تخفیفی اعمال نمی‌شود.\nهزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "no repeat after six turns",
+    "input": "خیلی گرونه",
+    "actual": "هزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "financial language",
+    "input": "بودجه‌ام نمی‌رسه",
+    "actual": "پیشنهاد آزمایشی — این جشنواره صرفاً آزمایشی است و برای خرید اعتبار ندارد؛ هیچ تخفیفی اعمال نمی‌شود.\nهزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "no repeat after six turns",
+    "input": "بودجه‌ام نمی‌رسه",
+    "actual": "هزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "financial language",
+    "input": "از پس هزینه برنمیام",
+    "actual": "پیشنهاد آزمایشی — این جشنواره صرفاً آزمایشی است و برای خرید اعتبار ندارد؛ هیچ تخفیفی اعمال نمی‌شود.\nهزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "no repeat after six turns",
+    "input": "از پس هزینه برنمیام",
+    "actual": "هزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "financial language",
+    "input": "امکان پرداخت اقساطی هست؟",
+    "actual": "پیشنهاد آزمایشی — این جشنواره صرفاً آزمایشی است و برای خرید اعتبار ندارد؛ هیچ تخفیفی اعمال نمی‌شود.\nهزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "no repeat after six turns",
+    "input": "امکان پرداخت اقساطی هست؟",
+    "actual": "هزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "financial language",
+    "input": "میشه قسطی پرداخت کنم؟",
+    "actual": "پیشنهاد آزمایشی — این جشنواره صرفاً آزمایشی است و برای خرید اعتبار ندارد؛ هیچ تخفیفی اعمال نمی‌شود.\nهزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "no repeat after six turns",
+    "input": "میشه قسطی پرداخت کنم؟",
+    "actual": "هزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "financial language",
+    "input": "گرون نیست، فقط تعرفه را می‌خواهم",
+    "actual": "هزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "financial language",
+    "input": "هزینه زیاد نیست، چه امکاناتی دارد؟",
+    "actual": "هزینهٔ راه‌اندازی و اشتراک جداست. برای کنترل هزینه، امکانات ضروری یا شرایط اقساط راه‌اندازی را بررسی کنید. دوره‌های بلندتر اشتراک در تعرفهٔ رسمی تخفیف دارند. https://launcho.ir/pricing",
+    "status": "PASS"
+  },
+  {
+    "test": "mock idempotency and conflict",
+    "input": "same key; same and changed period",
+    "actual": {
+      "first": 201,
+      "repeat": 201,
+      "conflict": {
+        "detail": {
+          "code": "idempotency_conflict"
+        }
+      }
+    },
+    "status": "PASS"
+  },
+  {
+    "test": "expired draft",
+    "input": "expire disposable draft in SQLite",
+    "actual": {
+      "state": "expired",
+      "preview": 410,
+      "retry": 410
+    },
+    "status": "PASS"
+  }
+]

@@ -85,6 +85,8 @@ class LaunchoReadOnlyGateway:
                 raise GatewayUnavailable('Launcho read request failed.') from None
             if not isinstance(payload, dict) or payload.get('ok') is not True:
                 raise GatewayUnavailable('Invalid Launcho response envelope.')
+            if self.mode == 'local_mock' and payload.get('simulation') is not True:
+                raise GatewayUnavailable('Expected a simulated response.')
             data = unwrap(payload)
             if self.mode == 'live' and payload.get('simulation') is True:
                 raise GatewayUnavailable('Simulated data cannot be used as live Launcho data.')
@@ -93,7 +95,7 @@ class LaunchoReadOnlyGateway:
             return data
 
     def get_pricing(self):
-        return self.read('/pricing', 600)
+        return self.read('/pricing', 0 if self.mode == 'local_mock' else 600)
 
     def get_signup_options(self, kind):
         if kind not in {'shop', 'website'}:
@@ -123,6 +125,38 @@ class LocalMockGateway(LaunchoReadOnlyGateway):
 
     def __init__(self, base_url):
         super().__init__(base_url, 'local-simulation', local_mock=True)
+
+    can_create = True
+
+    def create_signup_draft(self, payload, idempotency_key):
+        try:
+            result = httpx.post(self.base_url + '/signup-drafts', json=payload,
+                                headers={'Authorization': f'Bearer {self.token}', 'Idempotency-Key': idempotency_key},
+                                timeout=10, follow_redirects=False)
+            result.raise_for_status()
+            envelope = result.json()
+            if not isinstance(envelope, dict) or envelope.get('simulation') is not True:
+                raise GatewayUnavailable('Expected a simulated draft.')
+            draft = unwrap(envelope)
+            ref = draft.get('ref')
+            url = draft.get('confirmUrl')
+            if isinstance(ref, str) and isinstance(url, str):
+                preview = urlsplit(url)
+                if (preview.scheme == 'http' and preview.hostname in {'127.0.0.1', '::1'}
+                        and not (preview.username or preview.password or preview.query or preview.fragment)
+                        and preview.path == f'/mock-drafts/{ref}'):
+                    draft = {**draft, 'confirmUrl': f'/signup-drafts/{ref}/preview'}
+            return draft
+        except httpx.HTTPStatusError as error:
+            status = error.response.status_code
+            if status in {400, 401, 403, 404, 409, 410, 422, 429}:
+                raise GatewayRejected(status, 'draft_rejected') from None
+            raise GatewayUnavailable('Unknown local draft outcome.') from None
+        except (httpx.HTTPError, ValueError):
+            raise GatewayUnavailable('Unknown local draft outcome.') from None
+
+    def get_draft_status(self, ref):
+        return self.read(f'/signup-drafts/{ref}', 0)
 
     def match_price_offers(self, kind, plan_months=None, *, message=None, history=None, step=None, offer_state=None):
         return self._match_financial_offers(kind, message=message, history=history, step=step,

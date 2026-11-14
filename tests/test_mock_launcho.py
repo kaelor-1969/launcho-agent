@@ -22,6 +22,15 @@ from app.services.session_store import SessionStore
 
 
 class MockDemoTests(unittest.TestCase):
+    def test_financial_intent_normalizes_persian_variants(self):
+        for text in ['بودجه‌ام نمی‌رسه', 'بودجه ام نمیرسه', 'از پس هزینه برنمیام',
+                     'قیمت خیلی بالاست', 'می‌توانم قسطی بپردازم؟']:
+            with self.subTest(text=text):
+                self.assertTrue(ai_service.is_financial_objection(text))
+        for text in ['قیمت چقدر است؟', 'هزینه زیاد نیست', 'گرون نیست', 'بودجه را چطور تنظیم کنم؟']:
+            with self.subTest(text=text):
+                self.assertFalse(ai_service.is_financial_objection(text))
+
     def setUp(self):
         self.mock = TestClient(mock_app)
         self.client = TestClient(app)
@@ -98,10 +107,52 @@ class MockDemoTests(unittest.TestCase):
                                        headers={'Authorization': 'Bearer local-simulation'})
                 self.assertEqual(result.status_code, 200)
                 data = result.json()['data']
-                self.assertEqual(data['availability'], 'unavailable')
+                self.assertEqual(data['availability'], 'test_only')
                 self.assertIn('سایت واقعی نیست', data['notice'])
-                self.assertEqual(data['templates'], [])
-                self.assertEqual(data['businessCategories'], [])
+                if kind == 'shop':
+                    self.assertIn('mock-classic', {item['id'] for item in data['templates']})
+                else:
+                    self.assertIn('mock-website-classic', {item['id'] for item in data['templates']})
+                self.assertTrue(result.json()['simulation'])
+                if kind == 'website':
+                    self.assertTrue(all(item['id'].startswith('mock-website-') for item in data['businessCategories']))
+
+    def test_shop_categories_can_be_saved_without_forwarding_local_ids(self):
+        def read(url, **kwargs):
+            kwargs.pop('timeout', None)
+            kwargs.pop('follow_redirects', None)
+            return self.mock.get(url.removeprefix(self.gateway.base_url), **kwargs)
+
+        with patch('app.api.routes.get_core', return_value=self.core), \
+             patch('app.services.draft_gateway.httpx.get', side_effect=read):
+            categories = self.gateway.get_signup_options('shop')['businessCategories']
+            self.assertEqual(len(categories), 27)
+            self.assertEqual(len({item['id'] for item in categories}), 27)
+            self.assertEqual(len({item['label'] for item in categories}), 27)
+            self.assertEqual({item['id']: item['label'] for item in categories if item['id'] in {
+                'mock-fashion', 'mock-bags-shoes',
+            }}, {'mock-fashion': 'پوشاک و مد', 'mock-bags-shoes': 'کیف و کفش'})
+
+            session = self.client.post('/api/sessions').json()
+            path = '/api/sessions/' + session['sessionId']
+            headers = {'X-Session-Token': session['sessionToken']}
+            revision = session['revision']
+            for item in categories:
+                result = self.client.patch(path + '/preferences', headers=headers, json={
+                    'revision': revision, 'preferences': {'category': item['id']},
+                })
+                self.assertEqual(result.status_code, 200, result.text)
+                self.assertEqual(result.json()['preferences']['category'], item['id'])
+                revision = result.json()['revision']
+
+            invalid = self.client.patch(path + '/preferences', headers=headers, json={
+                'revision': revision, 'preferences': {'category': 'unknown'},
+            })
+            self.assertEqual(invalid.status_code, 422)
+            self.assertEqual(invalid.json()['detail']['code'], 'invalid_category')
+            fallback = self.client.get(path + '/fallback-link', headers=headers)
+            self.assertEqual(fallback.status_code, 200, fallback.text)
+            self.assertNotIn('cat=', fallback.json()['url'])
 
     def test_offer_period_only_accepts_supported_plans(self):
         body = dict(kind='shop', step='review_ready', objections=['price'],
@@ -170,7 +221,7 @@ class MockDemoTests(unittest.TestCase):
         for line in ['اشتراک ۲۴۰۰۰۰۰ تومان', 'قسط 3750000 تومان', 'دامنه رایگان']:
             with self.subTest(line=line):
                 reply = ai_service.price_guidance('هزینه چقدر است؟',
-                    {'demoOffers': [{'id': 'demo_campaign', 'line': line}]}, [])
+                    {'demoOffers': [{'offerId': 'demo_campaign', 'displayText': line}]}, [])
                 self.assertNotIn(line, reply)
                 self.assertNotIn('پیشنهاد آزمایشی', reply)
 

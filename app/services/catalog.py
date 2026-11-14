@@ -47,6 +47,10 @@ class BusinessCategory(CatalogOption):
 
 class Template(CatalogOption):
     compatibleCategoryIds: list[str] | None
+    label: str | None = Field(default=None, min_length=1, max_length=120)
+    previewUrl: str | None = Field(default=None, pattern=r'^https://demo[.]launcho[.]ir/')
+    recommendedFor: list[str] | None = None
+    generalFallback: bool | None = None
 
 
 class SignupCatalog(CatalogModel):
@@ -91,6 +95,10 @@ def selectable_catalog(raw, kind, *, allow_test=False):
     if catalog.kind != kind:
         raise ValueError('Catalog service kind mismatch.')
     data = catalog.model_dump(mode='json')
+    for template in data['templates']:
+        for key in ('label', 'previewUrl', 'recommendedFor', 'generalFallback'):
+            if template[key] is None:
+                del template[key]
     allowed = {'approved', 'test_only'} if allow_test else {'approved'}
     if catalog.availability == 'unavailable' or catalog.approvalStatus not in allowed:
         data['businessCategories'], data['templates'] = [], []

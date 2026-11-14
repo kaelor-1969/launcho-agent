@@ -1,6 +1,8 @@
 """Persistent mock API: actual SQLite transactions and HTTP, isolated from normal data."""
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
+from datetime import datetime, timezone
+from hashlib import sha256
 import copy
 import json
 from pathlib import Path
@@ -13,6 +15,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from app.models.schemas import Preferences
 from app.mock_draft_store import MockDraftStore
 from app.mock_launcho import create_mock_app, content, fixture
 
@@ -42,8 +45,27 @@ class MockDraftTests(unittest.TestCase):
                                 headers=HEADERS if headers is None else headers)
 
     def count(self):
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db:
             return db.execute('SELECT COUNT(*) FROM mock_drafts').fetchone()[0]
+
+    def test_existing_main_database_preserves_draft_and_replay(self):
+        ref = 'sd_legacy_reference'
+        expires = datetime.fromtimestamp(self.now + 10, timezone.utc).isoformat()
+        fingerprint = sha256(Preferences.model_validate(PAYLOAD).model_dump_json().encode('utf8')).digest()
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute('CREATE TABLE drafts (request_key TEXT PRIMARY KEY, fingerprint BLOB, ref TEXT, expires_at TEXT)')
+            db.execute('INSERT INTO drafts VALUES (?, ?, ?, ?)',
+                       (HEADERS['Idempotency-Key'], fingerprint, ref, expires))
+        result = self.create()
+        self.assertEqual(result.status_code, 200, result.text)
+        draft = result.json()['data']
+        self.assertEqual(draft['ref'], ref)
+        self.assertEqual(self.client.get(draft['confirmUrl']).status_code, 200)
+        self.assertEqual(self.create({**PAYLOAD, 'planMonths': 6}).status_code, 409)
+        self.now += 10
+        self.assertEqual(self.client.get(draft['confirmUrl']).status_code, 410)
+        self.assertEqual(self.create().status_code, 410)
+        self.assertEqual(self.count(), 0)
 
     def test_create_read_quote_and_controlled_preview(self):
         result = self.create()
@@ -170,6 +192,7 @@ class MockDraftTests(unittest.TestCase):
         first = self.create().json()['data']
         script = '''import json,sys
 from fastapi.testclient import TestClient
+from app.models.schemas import Preferences
 from app.mock_draft_store import MockDraftStore
 from app.mock_launcho import create_mock_app,content,fixture
 catalog=json.loads((content/'launcho-draft-test-catalog.json').read_text())['signupOptions']
