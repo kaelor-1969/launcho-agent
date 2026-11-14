@@ -1,0 +1,7 @@
+# External dependencies
+
+1. Production choices/questions: current GET /api/local-signup-options?kind=shop is local_mock only. Dina must supply and approve the production endpoint and authoritative labels/IDs. Frontend must not fabricate prices or silently import test catalog data.
+2. Unknown confirmation across forced refresh: GET /api/sessions/{id} returns {draftState:"unknown"} or "creating" but not confirmationToken. The existing safe retry requires POST confirm with {revision,reviewId,confirmationToken,confirmed:true}. Without persisting that token, frontend can only GET and lock edits. Dina must deliver owner-authenticated operation reconciliation or an approved retention policy. A response such as {draftState:"completed",draft:{ref,confirmUrl,expiresAt,status:"draft"}} is already readable. No new endpoint is assumed.
+3. Production adapter/idempotency guarantees and durable backend storage remain backend-owned. Browser locks do not guarantee exactly-once server execution.
+4. Exact visual reference: current loader is source of truth for workspace 67vw/85dvh and legacy 380x450, with viewport clamps; older README has conflicting historical sizes. No independently approved current Launcho dimensions supplied.
+5. Opt-in tab recovery stores only the necessary session owner capability in widget-origin sessionStorage, scoped to embedding origin. Production retention/security approval and physical-device third-party storage behavior remain external. No localStorage, host credential access, or confirmation-token storage is planned.
