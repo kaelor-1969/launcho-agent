@@ -1,0 +1,236 @@
+{
+  "browser": "Chrome/157.0.8103.51",
+  "note": "Read-only public pages, visible text and loaded image smoke checks; not signup availability or visual equivalence.",
+  "results": [
+    {
+      "id": "mock-classic",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=classic",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 1062,
+      "images": 2,
+      "template": "classic"
+    },
+    {
+      "id": "mock-moda",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=moda",
+      "ready": "loading",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3872,
+      "images": 39,
+      "template": "moda"
+    },
+    {
+      "id": "mock-digikala",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=digikala",
+      "ready": "loading",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3663,
+      "images": 35,
+      "template": "digikala"
+    },
+    {
+      "id": "mock-shaparak",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=shaparak",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3081,
+      "images": 26,
+      "template": "shaparak"
+    },
+    {
+      "id": "mock-bazar",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=bazar",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 1962,
+      "images": 5,
+      "template": "bazar"
+    },
+    {
+      "id": "mock-parand",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=parand",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2881,
+      "images": 48,
+      "template": "parand"
+    },
+    {
+      "id": "mock-techno",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=techno",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 5566,
+      "images": 28,
+      "template": "techno"
+    },
+    {
+      "id": "mock-Rayan",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=rayan",
+      "ready": "complete",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 4946,
+      "images": 22,
+      "template": "rayan"
+    },
+    {
+      "id": "mock-zarin",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=zarin",
+      "ready": "loading",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3935,
+      "images": 3,
+      "template": "zarin"
+    },
+    {
+      "id": "mock-kashane",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=kashane",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3090,
+      "images": 38,
+      "template": "kashane"
+    },
+    {
+      "id": "mock-negin",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=negin",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 5062,
+      "images": 12,
+      "template": "negin"
+    },
+    {
+      "id": "mock-saniye",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=saniye",
+      "ready": "complete",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 1971,
+      "images": 22,
+      "template": "saniye"
+    },
+    {
+      "id": "mock-astar",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=astar",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 8487,
+      "images": 9,
+      "template": "astar"
+    },
+    {
+      "id": "mock-yas",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=yas",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3602,
+      "images": 24,
+      "template": "yas"
+    },
+    {
+      "id": "mock-bina",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=bina",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3490,
+      "images": 2,
+      "template": "bina"
+    },
+    {
+      "id": "mock-almas",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=almas",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2101,
+      "images": 19,
+      "template": "almas"
+    },
+    {
+      "id": "mock-gold",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=gold",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 1618,
+      "images": 13,
+      "template": "gold"
+    },
+    {
+      "id": "mock-sofre",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=sofre",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3280,
+      "images": 4,
+      "template": "sofre"
+    },
+    {
+      "id": "mock-hamdam",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=hamdam",
+      "ready": "complete",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2920,
+      "images": 5,
+      "template": "hamdam"
+    },
+    {
+      "id": "mock-golbarg",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=golbarg",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2549,
+      "images": 3,
+      "template": "golbarg"
+    },
+    {
+      "id": "mock-yadak",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=yadak",
+      "ready": "complete",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2903,
+      "images": 32,
+      "template": "yadak"
+    },
+    {
+      "id": "mock-lakchery",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=lakchery",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2680,
+      "images": 25,
+      "template": "lakchery"
+    },
+    {
+      "id": "mock-negah",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=negah",
+      "ready": "complete",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 4464,
+      "images": 9,
+      "template": "negah"
+    }
+  ]
+}

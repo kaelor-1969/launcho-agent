@@ -1,11 +1,11 @@
 # Handoff
 
-Goal: eight widget/UX stages in order; frontend and JS/browser tests only. No Python, backend, content, push, PR, merge or deployment.
-Repository: `C:\Users\smous\OneDrive\Desktop\LAUNCHO\launchy\launcho-agent\launcho-agent`.
-Branch: `work/widget-person3-quality`; starting HEAD `6ff86df9ab5c4f4f23556147f4f330cf7cfd07a3`.
-At initial checkpoint only docs/widget-person3 files are uncommitted; always reconcile `git status --short` and `git log` before continuing.
-
-Stage 1 validates existing forms; stages 2â€“8 pending. Session VM test passed; browser test running.
-Next: finish browser run, fresh stage-1 review, record actual result and commit scoped docs. Then follow plan.md.
-Dependencies: production options endpoint, adapter verification, durable unknown-result recovery policy (dependencies.md).
-Main agent has filesystem/terminal/Git; reviewers must receive relevant code/diff/results and may only claim checks actually executed. No cumulative token counter or root-chat migration tool.
+Goal: eight widget UX stages; modify frontend/ and JS/browser tests only. Docs only here; no Python/backend/content changes or push/PR/deploy.
+Repository: C:/Users/smous/OneDrive/Desktop/LAUNCHO/launchy/launcho-agent/launcho-agent.
+Branch: work/widget-person3-quality. Baseline 6ff86df9ab5c4f4f23556147f4f330cf7cfd07a3; stage 1 a72b5ea; read git log for current HEAD.
+Stages 1 and 2 locally checked. Production options/adapter and missing catalog previews remain external dependencies (dependencies.md).
+Latest tests: session VM PASS; signup Chrome six form scenarios+all 23 previews/all recommendations PASS; HTTP 23/23; public Chrome render smoke23/23 PASS.
+Reviewers approved source/excerpts only; no independent execution.
+Uncommitted next-stage work: widget_sessions_browser.cjs double-click and atomic synthetic-click assertion. Next: commit stage2 scoped files, then stage3 test/review results.
+Commands: node tests/widget_signup_browser.cjs; node tests/widget_sessions_browser.cjs; node --experimental-vm-modules tests/widget_session_test.cjs.
+Main has filesystem/terminal/Git; reviewers receive concrete code/results and disclose own checks. No reliable cumulative token counter or root-session migration tool.

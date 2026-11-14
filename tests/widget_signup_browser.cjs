@@ -158,6 +158,24 @@ const server = http.createServer(async (req, res) => {
         await wait(`doc.querySelector('#local-signup').hidden === false && doc.querySelector('#signup-save').disabled === false`);
         if (kind === 'website') { await change('kind', kind); await wait(`!doc.querySelector('#signup-save').disabled`); }
         const options = fixture.signupOptions[kind];
+        // Exercise every catalog-backed choice without navigating to the public site.
+        if (width === 1280) {
+          const available = options.templates.filter(item => item.available);
+          assert.equal(await evaluate(`doc.querySelector('[name=template]').options.length`), available.length);
+          for (const template of available) {
+            await change('template', template.id);
+            assert.equal(await evaluate(`doc.querySelector('#local-template-preview').hidden`), !template.previewUrl);
+            if (template.previewUrl) assert.equal(await evaluate(`doc.querySelector('#local-template-preview').href`), template.previewUrl);
+          }
+          for (const category of options.businessCategories) {
+            await change('category', category.id);
+            const actual = await evaluate(`Array.from(doc.querySelector('[name=template]').options).filter(option => option.textContent.includes('(پیشنهادی)')).map(option => option.value)`);
+            assert.deepEqual(actual, available.filter(item => item.recommendedFor?.includes(category.id)).map(item => item.id));
+          }
+          await change('category', options.businessCategories[0].id);
+          await change('template', available[0].id);
+          console.log(`PASS: ${kind} catalog ${available.length} choices, every preview binding and category recommendation`);
+        }
         await change('businessName', kind === 'shop' ? 'ماه‌چهره' : 'استودیو ماه');
         await change('label', 'mahchehre');
         await change('planMonths', '6');

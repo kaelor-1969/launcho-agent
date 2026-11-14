@@ -1,0 +1,255 @@
+{
+  "checkedAt": "2026-11-14T00:17:46.560Z",
+  "shopCount": 23,
+  "publicVisibleCount": 25,
+  "publicHiddenCount": 1,
+  "missingPublicPreviews": [
+    {
+      "id": "khodro",
+      "title": "خوردو"
+    },
+    {
+      "id": "danesh",
+      "title": "دانش"
+    }
+  ],
+  "websiteTemplates": [
+    {
+      "id": "mock-website-classic",
+      "hasPreview": false
+    }
+  ],
+  "note": "HTTP only; template rendering and official signup availability are unverified.",
+  "results": [
+    {
+      "id": "mock-almas",
+      "label": "الماس",
+      "url": "https://demo.launcho.ir/?template=almas",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=almas",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-astar",
+      "label": "آستر",
+      "url": "https://demo.launcho.ir/?template=astar",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=astar",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-bazar",
+      "label": "بازار",
+      "url": "https://demo.launcho.ir/?template=bazar",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=bazar",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-bina",
+      "label": "بینا",
+      "url": "https://demo.launcho.ir/?template=bina",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=bina",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-classic",
+      "label": "کلاسیک",
+      "url": "https://demo.launcho.ir/?template=classic",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=classic",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-digikala",
+      "label": "دیجی‌کالا",
+      "url": "https://demo.launcho.ir/?template=digikala",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=digikala",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-golbarg",
+      "label": "گلبرگ",
+      "url": "https://demo.launcho.ir/?template=golbarg",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=golbarg",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-gold",
+      "label": "گلد",
+      "url": "https://demo.launcho.ir/?template=gold",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=gold",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-hamdam",
+      "label": "همدم",
+      "url": "https://demo.launcho.ir/?template=hamdam",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=hamdam",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-kashane",
+      "label": "کاشانه",
+      "url": "https://demo.launcho.ir/?template=kashane",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=kashane",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-lakchery",
+      "label": "لاکچری",
+      "url": "https://demo.launcho.ir/?template=lakchery",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=lakchery",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-moda",
+      "label": "مدا",
+      "url": "https://demo.launcho.ir/?template=moda",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=moda",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-negah",
+      "label": "نگاه",
+      "url": "https://demo.launcho.ir/?template=negah",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=negah",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-negin",
+      "label": "نگین",
+      "url": "https://demo.launcho.ir/?template=negin",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=negin",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-parand",
+      "label": "پرند",
+      "url": "https://demo.launcho.ir/?template=parand",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=parand",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-Rayan",
+      "label": "رایان",
+      "url": "https://demo.launcho.ir/?template=rayan",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=rayan",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-saniye",
+      "label": "ثانیه",
+      "url": "https://demo.launcho.ir/?template=saniye",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=saniye",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-shaparak",
+      "label": "شاپرک",
+      "url": "https://demo.launcho.ir/?template=shaparak",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=shaparak",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-sofre",
+      "label": "سفره",
+      "url": "https://demo.launcho.ir/?template=sofre",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=sofre",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-techno",
+      "label": "تکنو",
+      "url": "https://demo.launcho.ir/?template=techno",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=techno",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-yadak",
+      "label": "یدکی",
+      "url": "https://demo.launcho.ir/?template=yadak",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=yadak",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-yas",
+      "label": "یاس",
+      "url": "https://demo.launcho.ir/?template=yas",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=yas",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    },
+    {
+      "id": "mock-zarin",
+      "label": "زرین",
+      "url": "https://demo.launcho.ir/?template=zarin",
+      "http": 200,
+      "finalUrl": "https://demo.launcho.ir/?template=zarin",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "result": "reachable",
+      "registration": "unverified"
+    }
+  ]
+}
