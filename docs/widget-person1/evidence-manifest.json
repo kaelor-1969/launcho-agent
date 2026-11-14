@@ -1,0 +1,151 @@
+{
+  "date": "2026-11-14",
+  "timezone": "Asia/Tehran",
+  "base": "b0861164feae11ba7caaf1ce93bba61b45e94eb6",
+  "implementationCommit": "df833402075c605bd9f1df82fcb6a93ea7f7662d",
+  "source": [
+    {
+      "path": "frontend/api.js",
+      "mode": "UTF-8 LF",
+      "sha256": "3080538fb74e3224c044cb4aa1485dbff34eab825e34d0b4e86cd2a71a7e1061"
+    },
+    {
+      "path": "frontend/host-example.html",
+      "mode": "UTF-8 LF",
+      "sha256": "1ff1d5dfaf3b2439ea44b23a97431031d0456209b4014e7f0b67959d3f8867ab"
+    },
+    {
+      "path": "frontend/loader.js",
+      "mode": "UTF-8 LF",
+      "sha256": "f0cf5233a8d3e0aa513b46e7d545dfd638c43021eadf7098d02a4ba67aa1f83f"
+    },
+    {
+      "path": "frontend/widget-legacy.html",
+      "mode": "UTF-8 LF",
+      "sha256": "f6c27c5be5a828768905209b472c2e661a349a888822dbe6bd6da4c309120c43"
+    },
+    {
+      "path": "frontend/widget.css",
+      "mode": "UTF-8 LF",
+      "sha256": "efe7050e23f1e48ff818d8753ad319cfadab73180d89bde1c1516524c195b665"
+    },
+    {
+      "path": "frontend/widget.html",
+      "mode": "UTF-8 LF",
+      "sha256": "02610aaa9febe0b3db538047e70119eabeba9796511c4f66908afa42ab3aeb71"
+    },
+    {
+      "path": "frontend/widget.js",
+      "mode": "UTF-8 LF",
+      "sha256": "bb1ee4aa02c0e8bac98cf951370f657c2a0e982d36f4771d233b31079032d6cf"
+    },
+    {
+      "path": "tests/widget_live_workspace_browser.cjs",
+      "mode": "UTF-8 LF",
+      "sha256": "b99055b497c1b239bd54e4113089438dd7ff131351e4c84985640e6c88cbba4d"
+    },
+    {
+      "path": "tests/widget_local_integration.cjs",
+      "mode": "UTF-8 LF",
+      "sha256": "bef9b0da7503fa38b8f0234abb9f49086e400df81f4fe010c6089e202edf9f9a"
+    },
+    {
+      "path": "tests/widget_quality_check.cjs",
+      "mode": "UTF-8 LF",
+      "sha256": "619e739452d5ab2cf2af695db7dac5258bfe3b1c0d81af4ae65b9656b8e03314"
+    },
+    {
+      "path": "tests/widget_recovery_browser.cjs",
+      "mode": "UTF-8 LF",
+      "sha256": "6e0afa29bd5650842cda46f0329aadfb349ee352b800627d138bfad134e717ff"
+    },
+    {
+      "path": "tests/widget_recovery_test.cjs",
+      "mode": "UTF-8 LF",
+      "sha256": "35b45c8e6a14ae63b4808ede547ea34cbdcfb6bd86e56be1235cf08a104beeb5"
+    },
+    {
+      "path": "tests/widget_sessions_browser.cjs",
+      "mode": "UTF-8 LF",
+      "sha256": "2cafa19207a5c797b138001885496eb65827c5246c2e7e1e7e30d9282ae7b4cd"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "docs/widget-person1/evidence/chrome-recovery.json",
+      "mode": "UTF-8 LF",
+      "sha256": "bf55cb6ce797482b1386101e9c896dcd071256f321910dff5ffa331789b89f99"
+    },
+    {
+      "path": "docs/widget-person1/evidence/chrome-sessions.json",
+      "mode": "UTF-8 LF",
+      "sha256": "416643705475d27eb9820875e46899e5a3960b035afab7213e03619058c98e3c"
+    },
+    {
+      "path": "docs/widget-person1/evidence/chrome-signup.json",
+      "mode": "UTF-8 LF",
+      "sha256": "5919774d6793185c1f2a447744130c300799c49c36dcac89e8da871ab41f5ea1"
+    },
+    {
+      "path": "docs/widget-person1/evidence/confirmation-storage-blocked.png",
+      "mode": "binary",
+      "sha256": "1e8c17356bbb6c09f9a47b0e7bda963be9b67dae9e803e159c9f09d63f45aff2"
+    },
+    {
+      "path": "docs/widget-person1/evidence/edge-recovery.json",
+      "mode": "UTF-8 LF",
+      "sha256": "6bfa4862135c2f2e14bf2e4c2974855334d4028aa5fee3e0ae40a36929986696"
+    },
+    {
+      "path": "docs/widget-person1/evidence/edge-sessions.json",
+      "mode": "UTF-8 LF",
+      "sha256": "1856a05b6f5a44978e1142b0a195df61e3cd7e3c83f9c3e72ea9d653c085b1c2"
+    },
+    {
+      "path": "docs/widget-person1/evidence/edge-signup.json",
+      "mode": "UTF-8 LF",
+      "sha256": "930e681b82bff8c2178a754e8298ad17e5a3de746335b7f596e8e08fd5c46522"
+    },
+    {
+      "path": "docs/widget-person1/evidence/landscape-restored.png",
+      "mode": "binary",
+      "sha256": "388cf4640c7c3ef03773112cfeeb4adebb21dec25c2eece0755708462ac21f5c"
+    },
+    {
+      "path": "docs/widget-person1/evidence/local-integration.json",
+      "mode": "UTF-8 LF",
+      "sha256": "17767dbb1f74445b45b0a5fd9b31dcccfcef7ae6c976b670fe4678b3249b6f6a"
+    },
+    {
+      "path": "docs/widget-person1/evidence/portrait-restored.png",
+      "mode": "binary",
+      "sha256": "68648d180005ee49451ee35c8911a11301deea4dd058da648de031242e8683de"
+    },
+    {
+      "path": "docs/widget-person1/evidence/recovered-expired.png",
+      "mode": "binary",
+      "sha256": "788989977c6a5366aae55bce63db69440d8615a0d6a3da39875498f3832e7587"
+    },
+    {
+      "path": "docs/widget-person1/evidence/recovered-rejected.png",
+      "mode": "binary",
+      "sha256": "923afca6c804130f7b39e7b1cae2927d6c11e21fb150b4f7c057799e12ee65d5"
+    },
+    {
+      "path": "docs/widget-person1/evidence/recovery-offline.png",
+      "mode": "binary",
+      "sha256": "c296d7bf5d888ffe448ce3f4306f80d9d35693bdb104bf98842b4fca7267d4f0"
+    },
+    {
+      "path": "docs/widget-person1/evidence/recovery-unknown.png",
+      "mode": "binary",
+      "sha256": "78731131f88d912d2f0374c8da1064333beceb3f8dac7761f02e90f88faf0ff5"
+    }
+  ],
+  "validation": {
+    "chromeQuality": "exit0",
+    "edgeQuality": "exit0",
+    "localIntegration": "exit0, isolated FastAPI/mock, zero chat/confirm",
+    "production": false
+  }
+}

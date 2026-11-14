@@ -53,6 +53,8 @@
   ],
   "completedReadBeforeLink": true,
   "expiredDisabled": true,
+  "rejectedNotice": true,
+  "markerWriteFailurePreventsPost": true,
   "malformedStatusBlocked": true,
   "offlineRecovery": true,
   "reconnectNoMutation": true,

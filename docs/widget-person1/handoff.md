@@ -15,3 +15,13 @@ After stage6: stage5 96a2ba1. Connected sample/installation docs ready and loade
 After stage7: stage6 d5d8b84. Chrome+Edge full runner PASS; actual isolated FastAPI/mock cross-origin host recovery PASS. Reports/images committed under evidence/. Stage8 next: final source review, cache version alignment, final affected tests/regression, evidence hashes and final dependency matrix. No backend changes or external writes.
 
 During stage8: parent HEAD9c76171; only task source/tests/docs dirty. Final source reviewer found marker persistence race; corrected and reviewed. Final Chrome+Edge full runners after correction exit0; actual local integration final run awaiting report. Next: record final local result, commit source fix, refresh evidence+hash manifest, final clean/scope check and local docs commit. Production/unknown-token/device dependencies remain; no push.
+
+## Final authoritative handoff
+
+Branch work/widget-person1-recovery. Validated implementation HEAD df833402075c605bd9f1df82fcb6a93ea7f7662d; the subsequent final docs/evidence commit is resolved with `git rev-parse HEAD`. Base b0861164feae11ba7caaf1ce93bba61b45e94eb6. At this update only task docs/evidence are uncommitted; final scoped commit will leave a clean tree. No code changes after final validation.
+
+Stages1,3,6,7,8 complete in documented local/frontend scope. Stage2 has working opt-in session recovery, but forced-refresh unknown-confirmation reconciliation remains dependent. Stage4 production choices/questions dependent. Stage5 emulated layouts fixed/tested; approved visual reference and physical devices dependent. Exact details final-report.md/dependencies.md. Do not claim production readiness or all eight stages externally complete.
+
+Last actual runs on final source: Chrome full quality exit0; Edge full quality exit0; actual isolated FastAPI/mock cross-origin review/recovery exit0 at1280/390 with original-session GET and zero chat/confirm; VM/syntax/diff checks PASS. Selected screenshots and14 reports/images with13-source hashes are in evidence/ and evidence-manifest.json. Reviewers received packets only and ran no tools. Existing unrelated local services left running; only test-created services stopped; temporary synthetic profiles/DBs remain for OS cleanup.
+
+Next owner action: Dina supplies production options/approved questions and owner-authenticated unknown-operation reconciliation (or approved confirmation-token retention policy). Product owner supplies visual reference/device acceptance. Resume instruction: read docs/widget-person1/handoff.md and dependencies.md, verify branch/HEAD/status, then implement only newly delivered frontend contract changes; do not redo passing work. Current user authorizes local commits only: no push/PR/merge/deployment.
