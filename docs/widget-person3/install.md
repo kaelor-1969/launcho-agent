@@ -61,7 +61,7 @@ node tests/widget_public_previews_browser.cjs
 
 این دو دستور فقط خواندنی‌اند و گزارش تاریخ‌دار کاتالوگ را در همین پوشه به‌روز می‌کنند. پاسخ HTTP و رندر نمونه، موجودبودن قالب برای ثبت‌نام را ثابت نمی‌کنند. نتیجهٔ قبلی ۲۳/۲۳ بود؛ برای تحویل دوباره بدون نیاز، درخواست عمومی را تکرار نکنید.
 
-گزارش مرورگرهای بررسی‌شده در [browser-coverage.md](browser-coverage.md)، شواهد در [evidence.md](evidence.md) و متن آمادهٔ PR در [pr-ready.md](pr-ready.md) است. این تحویل شامل push، ساخت PR، merge یا deployment نیست.
+گزارش مرورگرهای بررسی‌شده در [browser-coverage.md](browser-coverage.md)، شواهد در [evidence.md](evidence.md) و متن آمادهٔ PR در [pr-ready.md](pr-ready.md) است. پس از دو دور بازبینی موفق، فقط push شاخهٔ اختصاصی با مجوز کاربر انجام می‌شود؛ ساخت PR، merge و deployment مجاز نیست.
 
 ## نکات بازبینی پیش از push
 
