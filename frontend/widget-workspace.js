@@ -5,8 +5,8 @@ export function setupConnectedWorkspace(notify) {
   const $ = id => document.getElementById(id);
   const services = [
     { id:'assistant', name:'دستیار لانچو', kind:'هوش مصنوعی', short:'از ایده تا فروشگاه', description:'راهنمای شروع و ساخت فروشگاه' },
-    { id:'callcenter', name:'ایجنت کال‌سنتر', kind:'به‌زودی', short:'درخواست تماس تلفنی', description:'سرویس تماس تلفنی فعلاً در دسترس نیست. درخواستی ثبت نمی‌شود.' },
-    { id:'human', name:'پشتیبانی انسانی', kind:'فعلاً در دسترس نیست', short:'همراهی یک کارشناس', description:'چت پشتیبانی انسانی فعلاً در دسترس نیست. پیامی برای پشتیبانی ارسال نمی‌شود.' },
+    { id:'callcenter', name:'ایجنت کال‌سنتر', kind:'به‌زودی', short:'درخواست تماس تلفنی', description:'سرویس کال‌سنتر به‌زودی در دسترس قرار می‌گیرد.' },
+    { id:'human', name:'پشتیبانی انسانی', kind:'به‌زودی', short:'همراهی یک کارشناس', description:'پشتیبانی انسانی به‌زودی در دسترس قرار می‌گیرد.' },
   ];
   // Each service owns its view and scroll state. Only the assistant has a
   // connected transport; unavailable services never share its session/history.
@@ -22,7 +22,7 @@ export function setupConnectedWorkspace(notify) {
     $('unavailable-description').textContent = active.description;
     $('chat-title').textContent = active.name;
     $('service-kind').textContent = active.kind;
-    $('service-description').textContent = assistant ? active.description : 'فعلاً در دسترس نیست';
+    $('service-description').textContent = assistant ? active.description : 'به‌زودی';
     $('service-avatar').hidden = !assistant;
     document.querySelectorAll('[data-service]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.service === active.id)));
     if (assistant) $('scroll-area').scrollTop = states.get(active.id).scroll;
