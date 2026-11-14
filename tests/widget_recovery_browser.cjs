@@ -44,9 +44,9 @@ const server = http.createServer(async (req,res) => {
     }
     return json({},404);
   }
-  if (req.url === '/') {
+  if (req.url === '/' || req.url === '/?legacy') {
     res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});
-    return res.end('<!doctype html><html lang="fa" dir="rtl"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Controlled recovery host</title><body><script defer src="/widget/loader.js" data-session-recovery="tab" data-auto-open="false"></script></body></html>');
+    return res.end('<!doctype html><html lang="fa" dir="rtl"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Controlled recovery host</title><body><script defer src="/widget/loader.js" data-session-recovery="tab" data-auto-open="false"'+(req.url.includes('legacy')?' data-interface="legacy"':'')+'></script></body></html>');
   }
   const file = path.resolve(root,decodeURIComponent(req.url.split('?')[0]).replace(/^\/widget\//,''));
   if (!file.startsWith(root+path.sep) || !fs.existsSync(file)) {res.writeHead(404);return res.end();}
@@ -149,12 +149,36 @@ const server = http.createServer(async (req,res) => {
     assert.equal(calls.length,beforeOffline,'online event never retries automatically');
     failStatus=false;await evaluate(`doc.querySelector('#retry').click()`);
     await wait(`doc.querySelector('#review-summary a')?.getAttribute('aria-disabled')==='true'`);
+    draftState=undefined;
+    const viewports=[];
+    for (const [width,height] of [[1280,900],[390,844],[844,390],[320,480]]) {
+      await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<960});
+      await reload();await wait(`doc.querySelector('[name=businessName]').value==='نمونهٔ بازیابی' && !doc.querySelector('#signup-save').disabled`);
+      await evaluate(`doc.querySelector('#message').focus()`);
+      const geometry=await evaluate(`(() => {const f=frame.getBoundingClientRect(), t=doc.querySelector('#message').getBoundingClientRect();return {
+        frameVisible:f.left>=-1 && f.top>=-1 && f.right<=innerWidth+1 && f.bottom<=innerHeight+1,
+        overflow:doc.documentElement.scrollWidth>doc.documentElement.clientWidth+1,
+        inputVisible:t.top>=0 && t.bottom<=frame.clientHeight+1,
+        scrollHeight:doc.querySelector('#scroll-area').clientHeight,
+        rtl:doc.documentElement.dir==='rtl', label:!!doc.querySelector('label[for=message]')};})()`);
+      assert.ok(geometry.frameVisible,JSON.stringify({width,height,geometry}));
+      assert.equal(geometry.overflow,false,JSON.stringify({width,height,geometry}));
+      assert.ok(geometry.inputVisible,JSON.stringify({width,height,geometry}));
+      assert.ok(geometry.scrollHeight>40,JSON.stringify({width,height,geometry}));
+      assert.ok(geometry.rtl && geometry.label);
+      viewports.push({width,height,...geometry});await shot(`viewport-${width}-${height}`);
+    }
+    await command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+    await command('Page.navigate',{url:base+'/?legacy'});await open();
+    await wait(`doc.querySelector('[name=businessName]').value==='نمونهٔ بازیابی' && !doc.querySelector('#signup-save').disabled`);
+    assert.deepEqual(await evaluate(`(() => {const r=document.querySelector('#launcho-widget').shadowRoot.querySelector('.panel').getBoundingClientRect();return [r.width,r.height];})()`),[380,450],'legacy baseline dimensions retained');
+    await shot('legacy-380-450');
     assert.equal(calls.filter(c=>c.url.endsWith('/confirm')).length,0,'no recovery path may confirm');
     assert.deepEqual(errors,[]);
     const browser=await command('Browser.getVersion');
     fs.writeFileSync(path.join(output,'report.json'),JSON.stringify({browser:browser.product,controlledResponses:true,
       restoredPreferences:true,hostRefresh:true,iframeRefresh:true,unknownLocked:true,expiredPendingNoReplacement:true,
-      keyboardQuestionExactlyOnce:true,lateOptionsIgnored:true,choicesReadOnly:true,
+      keyboardQuestionExactlyOnce:true,lateOptionsIgnored:true,choicesReadOnly:true,viewports,
       completedReadBeforeLink:true,expiredDisabled:true,malformedStatusBlocked:true,offlineRecovery:true,reconnectNoMutation:true,confirmRequests:0,errors},null,2)+'\n');
     console.log('PASS: native browser opt-in host/iframe refresh, preferences/history, unknown locks, expiry and GET-only recovery');
   } finally {socket?.close();chrome.kill();server.closeAllConnections();server.close();}

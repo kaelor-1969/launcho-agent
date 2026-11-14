@@ -40,3 +40,9 @@ Root new recovery browser PASS; full existing signup suite PASS for shop/website
 Fresh stage4_review source-packet reviewer (no test tools) found no blocker; identified disabled-click guard coverage and late failure gaps. Accepted both: added overlapping form submission while question pending and an obsolete options failure after newer successful shop choices. Root reran the affected browser suite successfully.
 
 Correction: the first run after adding the second obsolete-response case failed because CDP evaluated a top-level const twice. The shell command continued to commit 5c8ca07 despite failure; that commit is not a passing validation point. Fixed test scope with an IIFE in a separate follow-up commit (no amend/history rewrite). Only the subsequent successful rerun validates both reviewer additions.
+
+## Stage 5 — dimensions and mobile
+
+Stage4 follow-up bfe9927 passed the affected browser suite. Current source is the only available reference; no exact comparison to an independently approved Launcho design is claimed. Retained desktop workspace67vw/85dvh and legacy380x450. The new landscape844x390 assertion found scroll area only32px; broadened the existing workspace fullscreen mobile rule to widths<=960 and heights<=480. Retest scroll heights:526 desktop1280x900,577 portrait390x844,104 landscape844x390,213 small320x480. Every case checks frame containment, no horizontal overflow, visible focused composer, RTL and input label. Added legacy380x450 regression. Offline notice uses compact12px text.
+
+Fresh stage5_review source-packet reviewer: no blocker; no tools/test execution. Physical keyboard/visualViewport device recovery and rotation remain unverified; legacy regression added per review. Root recovery browser PASS and visually inspected portrait and landscape screenshots. Existing signup suite from stage4 covers named controls, keyboard and both themes; no full contrast/WCAG claim.

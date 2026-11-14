@@ -194,6 +194,7 @@ textarea::placeholder { color: var(--muted); font-size: 17px; font-weight: 550; 
 .signup-domain { display: grid; grid-template-columns: minmax(0, 1fr) minmax(76px, .35fr); gap: var(--s2); }
 .signup-domain label { min-width: 0; }
 .signup-hint { color: var(--muted); font-size: 12px; }
+#network-status { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 #session-review dl { padding: var(--s3); border: 1px solid var(--border); border-radius: var(--s3); }
 #session-review dt, #session-review dd { padding-block: var(--s1); }
 #edit-signup { color: var(--focus); border-color: var(--focus); background: transparent; }

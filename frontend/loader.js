@@ -204,7 +204,7 @@
         :host([data-interface=workspace]){--frame-width:1px;--radius:22px}
         :host([data-interface=workspace]) .panel{width:var(--panel-width,67vw);height:var(--panel-height,85dvh)}
         :host([data-interface=workspace]) .panel[data-expanded=true]{width:calc(100vw - var(--offset) - var(--offset));height:calc(var(--viewport-height) - var(--offset) - var(--offset) - var(--size) - var(--gap))}
-        @media(max-width:600px){
+        @media(max-width:600px),(max-width:960px) and (max-height:480px){
           :host([data-interface=workspace]) .panel,:host([data-interface=workspace]) .panel[data-expanded=true]{top:0;bottom:auto;right:0;left:0;width:100vw;max-width:none;height:var(--viewport-height);max-height:none;border-radius:0;padding:0}
           :host([data-interface=workspace]) iframe{border-radius:0}
           :host([data-interface=workspace]) .launcher[data-open=true],:host([data-interface=workspace]) .resize{display:none}
