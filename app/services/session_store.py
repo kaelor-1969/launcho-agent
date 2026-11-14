@@ -7,6 +7,8 @@ import sqlite3
 import time
 from contextlib import contextmanager, closing
 from app.core.privacy import redact
+from app.services.offer_contract import OfferState
+from app.services.financial_context import financial_context
 
 
 class CoreError(Exception):
@@ -40,7 +42,17 @@ class SessionStore:
                     session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE
                 );
                 CREATE INDEX IF NOT EXISTS review_owner ON reviews(session_id);
+                CREATE TABLE IF NOT EXISTS chat_responses (
+                    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+                    request_id TEXT NOT NULL, message_hash TEXT NOT NULL, response TEXT NOT NULL,
+                    PRIMARY KEY(session_id, request_id)
+                );
             ''')
+            columns = {column['name'] for column in db.execute('PRAGMA table_info(sessions)')}
+            if 'offer_state' not in columns:
+                db.execute("ALTER TABLE sessions ADD COLUMN offer_state TEXT NOT NULL DEFAULT '{}'")
+            db.execute("UPDATE sessions SET offer_state=json_set(offer_state, '$.anyFinancialOfferShown', json('true')) "
+                       "WHERE id IN (SELECT session_id FROM shown_local_offers)")
 
     @contextmanager
     def transaction(self):
@@ -77,6 +89,14 @@ class SessionStore:
         if changed:
             session['history'] = json.dumps(history, ensure_ascii=False)
             db.execute('UPDATE sessions SET history=? WHERE id=?', (session['history'], session_id))
+        state = OfferState.model_validate_json(session['offer_state'])
+        context = financial_context('', history)
+        # Preserve legacy display/rejection evidence before the bounded history rolls off.
+        if context['discountAlreadyShown'] or context['rejected']:
+            state.anyFinancialOfferShown |= context['discountAlreadyShown']
+            state.financialOffersDeclined |= context['rejected']
+            session['offer_state'] = state.model_dump_json()
+            db.execute('UPDATE sessions SET offer_state=? WHERE id=?', (session['offer_state'], session_id))
         return session
 
     def create(self):
