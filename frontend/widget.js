@@ -1,4 +1,5 @@
-import { createSessionApi, relativeUrl } from './api.js?v=6';
+import { createSessionApi, relativeUrl } from './api.js?v=8';
+import { setupConnectedWorkspace } from './widget-workspace.js';
 import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js?v=3';
 
 const $ = (id) => document.getElementById(id);
@@ -17,6 +18,12 @@ let sessionReady = false;
 let sessionStarting = false;
 let review = null;
 let confirmationPending = false;
+// Pending credentials remain memory-only. Warn before losing the only exact retry.
+window.addEventListener('beforeunload', event => {
+  if (!confirmationPending) return;
+  event.preventDefault();
+  event.returnValue = '';
+});
 let configured = window.parent === window;
 let pending = false;
 let failed = null;
@@ -24,6 +31,14 @@ let composing = false;
 let followBottom = true;
 let structured = false;
 let demoMode = false;
+let signupAvailable = false;
+let signupLoading = false;
+let signupSaving = false;
+let editSignup;
+let prepareSignupReview;
+let resetSignupSession;
+let updateDomainFields;
+const persianNumber = value => new Intl.NumberFormat('fa-IR', {useGrouping: false}).format(value);
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
 let theme = 'light';
 
@@ -39,6 +54,7 @@ function applyTheme(value) {
 }
 systemTheme.addEventListener('change', () => applyTheme(theme));
 function focusCurrent() {
+  if (document.body.dataset.service && document.body.dataset.service !== 'assistant') return;
   if (workflowActive()) document.querySelector('#workflow h2')?.focus({preventScroll:true});
   else input.focus({preventScroll:true});
 }
@@ -53,10 +69,11 @@ window.addEventListener('message', async (event) => {
       apiUrl = url;
     } catch { return; }
     configured = true;
-    structured = data.demo === true;
-    demoMode = data.demo === true;
+    demoMode = document.body.dataset.interface !== 'workspace' && data.demo === true;
+    structured = demoMode;
     if (demoMode) await configureWorkflow(data, notify);
     applyTheme(data.theme);
+    if ($('expand-workspace') && typeof data.expanded === 'boolean') $('expand-workspace').setAttribute('aria-pressed', String(data.expanded));
     notify('configured');
     if (data.open && !demoMode) initializeSession();
     updateInput();
@@ -72,6 +89,7 @@ window.addEventListener('message', async (event) => {
 });
 $('close').addEventListener('click', () => notify('close'));
 document.addEventListener('keydown', (event) => {
+  if ($('service-sheet')?.open) return;
   if (event.key === 'Escape') { event.preventDefault(); notify('close'); }
 });
 
@@ -81,11 +99,19 @@ function hasVisibleText(message) {
 
 function updateInput() {
   const length = Array.from(input.value.trim()).length;
-  const blocked = pending || sessionStarting || confirmationPending || (!demoMode && !sessionReady);
+  const blocked = pending || signupSaving || sessionStarting || confirmationPending || (!demoMode && !sessionReady);
   $('send').disabled = blocked || !configured || !hasVisibleText(input.value) || length > 5000;
   $('retry').disabled = pending || sessionStarting;
   $('review-button').disabled = blocked || !configured || Boolean(failed);
-  $('confirm').disabled = pending || !review?.canConfirm;
+  // An unknown result locks edits, but permits an explicit retry of this review.
+  $('confirm').disabled = pending || signupSaving || !review?.canConfirm;
+  $('edit-signup').disabled = blocked;
+  if (signupAvailable) {
+    $('local-signup').querySelectorAll('input,select,button').forEach(control => {
+      control.disabled = blocked || Boolean(failed) || signupLoading || (control.id === 'signup-save' && !localOptions);
+    });
+    updateDomainFields?.();
+  }
   document.querySelectorAll('[data-question]').forEach((button) => { button.disabled = blocked || !configured || Boolean(failed); });
   input.style.height = 'auto';
   input.style.height = `${Math.min(120, input.scrollHeight)}px`;
@@ -108,8 +134,20 @@ async function initializeSession() {
 }
 let localOptions;
 async function initializeLocalSignup() {
-
+  signupAvailable = true;
   const form = $('local-signup');
+  updateDomainFields = () => {
+    const own = form.elements.ownDomain.value.trim();
+    form.elements.ownDomain.setCustomValidity(own && !/^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,24}$/.test(own)
+      ? 'دامنهٔ موجود را بدون مسیر و پروتکل وارد کن؛ مانند example.ir.' : '');
+    for (const name of ['label', 'tld']) {
+      form.elements[name].required = !own;
+      form.elements[name].disabled = form.elements[name].disabled || Boolean(own);
+    }
+  };
+  let optionsRequest = 0;
+  let optionsKind;
+  let retainedChoices = {};
   const fill = (name, values) => {
     const select = form.elements[name];
     const previous = select.value;
@@ -125,64 +163,151 @@ async function initializeLocalSignup() {
     if (!template?.previewUrl) return;
     try {
       const url = new URL(template.previewUrl);
-      if (url.origin === 'https://demo.launcho.ir' && !url.username && !url.password) {
+      if (url.protocol === 'https:' && url.origin === 'https://demo.launcho.ir' && !url.username && !url.password) {
         link.href = url.href;
         link.hidden = false;
       }
     } catch { /* The template remains selectable without a preview. */ }
   };
   const updateTemplates = () => {
-    if (!localOptions) return;
+    if (!localOptions || optionsKind !== form.elements.kind.value) return;
     const category = form.elements.category.value;
-    fill('template', localOptions.templates.filter(item => item.available).map(item => [
+    fill('template', localOptions.templates.filter(item => item.available === true).map(item => [
       item.id, item.label + (item.recommendedFor?.includes(category) ? ' (پیشنهادی)' : ''),
     ]));
     updatePreview();
   };
   const loadOptions = async () => {
     const kind = form.elements.kind.value;
-    const button = form.querySelector('button');
-    button.disabled = true;
+    const request = ++optionsRequest;
+    if (optionsKind) retainedChoices = Object.fromEntries(['category', 'template', 'planMonths', 'tld'].map(name => [name, form.elements[name].value]));
+    optionsKind = null;
+    localOptions = null;
+    signupLoading = true;
+    $('signup-retry').hidden = true;
+    $('local-signup-status').textContent = 'در حال دریافت گزینه‌ها…';
+    for (const name of ['category', 'template', 'planMonths', 'tld']) fill(name, []);
+    updatePreview();
+    updateInput();
     try {
       const options = await sessionApi.localOptions(kind);
-      if (form.elements.kind.value !== kind) return;
+      if (request !== optionsRequest || form.elements.kind.value !== kind) return false;
       localOptions = options;
+      optionsKind = kind;
       fill('category', options.businessCategories.map(item => [item.id, item.label]));
-      fill('planMonths', options.periods.map(value => [String(value), String(value)]));
+      fill('planMonths', options.periods.map(value => [String(value), `${persianNumber(value)} ماهه`]));
       fill('tld', options.suffixes.map(value => [value, value]));
+      for (const name of ['category', 'planMonths', 'tld']) {
+        if (Array.from(form.elements[name].options).some(option => option.value === retainedChoices[name])) form.elements[name].value = retainedChoices[name];
+      }
       updateTemplates();
+      if (options.templates.some(item => item.available === true && item.id === retainedChoices.template)) form.elements.template.value = retainedChoices.template;
+      updatePreview();
       $('local-signup-status').textContent = '';
-      button.disabled = false;
+      return true;
     } catch (error) {
-      if (form.elements.kind.value === kind) $('local-signup-status').textContent = error.message;
+      if (request === optionsRequest) {
+        $('local-signup-status').textContent = error.message;
+        $('signup-retry').hidden = false;
+      }
+      return false;
+    } finally {
+      if (request === optionsRequest) { signupLoading = false; updateInput(); }
     }
   };
+  const invalidate = () => {
+    if (confirmationPending) return;
+    review = null;
+    $('session-review').hidden = true;
+    $('review-button').hidden = true;
+    updateInput();
+  };
+  form.addEventListener('input', invalidate);
+  form.addEventListener('change', invalidate);
   form.elements.category.onchange = updateTemplates;
   form.elements.template.onchange = updatePreview;
   form.elements.kind.onchange = loadOptions;
-  await loadOptions();
+  $('signup-retry').onclick = loadOptions;
+  prepareSignupReview = async summary => {
+    form.elements.kind.value = summary.kind === 'website' ? 'website' : 'shop';
+    if (optionsKind !== form.elements.kind.value && !await loadOptions()) throw new Error('گزینه‌های مرور دریافت نشد. دوباره تلاش کن.');
+  };
   form.hidden = false;
+  editSignup = async summary => {
+    invalidate();
+    showError('');
+    $('signup-title').textContent = 'ویرایش انتخاب‌ها';
+    $('signup-save').textContent = 'ذخیره و مرور دوباره';
+    form.hidden = false;
+    form.elements.businessName.value = summary.businessName || '';
+    form.elements.kind.value = summary.kind === 'website' ? 'website' : 'shop';
+    if (optionsKind !== form.elements.kind.value) await loadOptions();
+    if (optionsKind === form.elements.kind.value) {
+      form.elements.category.value = summary.category || '';
+      updateTemplates();
+      form.elements.template.value = summary.template || '';
+      form.elements.planMonths.value = String(summary.planMonths ?? '');
+      form.elements.tld.value = summary.domain?.tld || '';
+      form.elements.label.value = summary.domain?.label || '';
+      form.elements.ownDomain.value = summary.domain?.ownDomain || '';
+      updatePreview();
+    }
+    updateInput();
+    revealCard('signup-title');
+  };
+  resetSignupSession = async preferences => {
+    form.reset();
+    retainedChoices = {};
+    optionsKind = null;
+    const current = preferences && typeof preferences === 'object' ? preferences : {};
+    form.elements.kind.value = current.kind === 'website' ? 'website' : 'shop';
+    await loadOptions();
+    await editSignup({...current, kind: form.elements.kind.value,
+      category: current.category ?? form.elements.category.value,
+      template: current.template ?? form.elements.template.value,
+      planMonths: current.planMonths ?? Number(form.elements.planMonths.value),
+      domain: current.domain ?? {label: '', tld: form.elements.tld.value}});
+  };
   form.onsubmit = async event => {
     event.preventDefault();
-    const button = form.querySelector('button');
-    button.disabled = true;
+    if (pending || signupSaving || signupLoading || confirmationPending || !sessionReady || failed ||
+        optionsKind !== form.elements.kind.value || !form.reportValidity()) return;
+    form.elements.businessName.value = form.elements.businessName.value.trim();
+    if (!hasVisibleText(form.elements.businessName.value)) {
+      $('local-signup-status').textContent = 'نام کسب‌وکار را وارد کن.';
+      form.elements.businessName.focus();
+      return;
+    }
     const status = $('local-signup-status');
     status.textContent = '';
+    // Capture values before locking controls: disabled controls are absent from FormData.
     const fields = Object.fromEntries(new FormData(form));
+    invalidate();
+    signupSaving = true;
+    updateInput();
     try {
       await sessionApi.savePreferences({
         kind: fields.kind, businessName: fields.businessName, category: fields.category,
         template: fields.template, planMonths: Number(fields.planMonths),
-        domain: {label: fields.label, tld: fields.tld},
+        domain: fields.ownDomain?.trim() ? {ownDomain: fields.ownDomain.trim()} : {label: fields.label, tld: fields.tld},
       });
-      $('review-button').hidden = false;
-      $('review-button').click();
+      signupSaving = false;
+      await requestReview();
     } catch (error) {
       status.textContent = error.message;
     } finally {
-      button.disabled = false;
+      signupSaving = false;
+      updateInput();
     }
   };
+  await loadOptions();
+}
+
+function revealCard(headingId) {
+  const heading = $(headingId);
+  // Scroll inside the widget without shifting its host frame or composer.
+  scrollArea.scrollTop += heading.getBoundingClientRect().top - scrollArea.getBoundingClientRect().top - 16;
+  heading.focus({preventScroll: true});
 }
 
 function showError(message, retry = false) {
@@ -225,9 +350,11 @@ function appendReplyText(parent, text) {
 
 function appendMessage(role, message) {
   const row = document.createElement('div');
-  row.className = `message-row role-${role}`;
+  const workspace = document.body.dataset.interface === 'workspace';
+  row.className = `message-row role-${role}${workspace ? ` ${role}` : ''}`;
   const avatar = document.createElement('span');
   avatar.className = 'avatar';
+  if (workspace) avatar.classList.add(role === 'user' ? 'user-avatar' : 'assistant');
   avatar.setAttribute('aria-hidden', 'true');
   let icon;
   if (role === 'user') {
@@ -264,11 +391,16 @@ function appendMessage(role, message) {
   speaker.className = 'sr-only';
   speaker.textContent = role === 'user' ? 'شما: ' : 'دستیار لانچو: ';
   bubble.prepend(speaker);
-  row.append(avatar, bubble);
+  if (workspace) {
+    const content = document.createElement('div');
+    content.className = 'message-content';
+    content.append(bubble);
+    row.append(avatar, content);
+  } else row.append(avatar, bubble);
   $('messages').append(row);
 }
 async function submit(message, retry = false) {
-  if (pending || sessionStarting || confirmationPending || (!demoMode && !sessionReady) || !configured || workflowActive()) return;
+  if (pending || signupSaving || sessionStarting || confirmationPending || (!demoMode && !sessionReady) || !configured || workflowActive()) return;
   message = message.trim();
   if (!hasVisibleText(message)) return;
   if (Array.from(message).length > 5000) {
@@ -303,6 +435,10 @@ async function submit(message, retry = false) {
     // Give the explicit demo a visible pending state, without calling an API.
     if (demoMode) await new Promise(resolve => setTimeout(resolve, 700));
     const result = demoMode ? {reply: 'برای بررسی مراحل در این نمونه، «ساخت فروشگاه» را انتخاب کن.'} : await sessionApi.sendMessage(apiUrl, message, requestId);
+    if (result.sessionRestarted) {
+      if (resetSignupSession) await resetSignupSession(result.preferences);
+      appendMessage('assistant', 'جلسهٔ قبلی در دسترس نبود؛ جلسهٔ تازه شروع شد. انتخاب‌ها را مطابق جلسهٔ تازه دوباره بررسی کن.');
+    }
     appendMessage('assistant', result.reply);
     $('review-button').hidden = result.nextAction !== 'review';
   } catch (error) {
@@ -362,24 +498,38 @@ function showDraft(draft) {
   statusButton.type = 'button';
   statusButton.textContent = 'بررسی وضعیت ثبت‌نام';
   statusButton.addEventListener('click', async () => {
+    if (statusButton.disabled) return;
     statusButton.disabled = true;
+    statusButton.setAttribute('aria-busy', 'true');
+    $('review-notice').textContent = 'در حال بررسی وضعیت ثبت‌نام…';
     try {
       const result = await sessionApi.draftStatus();
+      if ($('session-review').hidden || $('review-summary').children[0] !== link) return;
       $('review-notice').textContent = draftStatusText.get(result.status) || 'وضعیت ثبت‌نام دریافت نشد.';
+      if (result.status === 'expired') {
+        link.removeAttribute('href');
+        link.setAttribute('aria-disabled', 'true');
+        link.textContent = 'پیش‌نویس منقضی شده است';
+      }
     } catch {
+      if ($('session-review').hidden || $('review-summary').children[0] !== link) return;
       $('review-notice').textContent = 'پیگیری وضعیت فعلاً در دسترس نیست. کمی بعد دوباره بررسی کنید.';
     } finally {
       statusButton.disabled = false;
+      statusButton.setAttribute('aria-busy', 'false');
     }
   });
   $('review-summary').replaceChildren(link, statusButton);
+  $('local-signup').hidden = true;
+  $('edit-signup').hidden = true;
+  $('edit-notice').hidden = true;
   $('confirm').hidden = true;
   $('review-notice').textContent = local ? 'این پیش‌نویس فقط برای توسعهٔ محلی است.' : 'شماره موبایل و اطلاعات پرداخت را فقط در فرم رسمی لانچو وارد کن.';
   $('session-review').hidden = false;
 }
 
-$('review-button').addEventListener('click', async () => {
-  if (pending || confirmationPending || failed || !sessionReady) return;
+async function requestReview() {
+  if (pending || signupSaving || signupLoading || confirmationPending || failed || !sessionReady) return;
   // A new server review invalidates the previous confirmation, even if its
   // response is lost. Never leave the previous review available for approval.
   review = null;
@@ -392,52 +542,82 @@ $('review-button').addEventListener('click', async () => {
     if (review.draft) showDraft(review.draft);
     else {
       const summary = review.summary;
+      if (prepareSignupReview) await prepareSignupReview(summary);
       const rows = document.createElement('dl');
       const domain = summary.domain;
       for (const [label, value] of [
-        ['نوع', summary.kind === 'website' ? 'وب‌سایت' : 'فروشگاه'],
+        ['نوع سرویس', summary.kind === 'website' ? 'سایت‌ساز' : 'فروشگاه'],
         ['نام کسب‌وکار', summary.businessName], ['دسته‌بندی', localOptions?.businessCategories.find(item => item.id === summary.category)?.label ?? summary.category],
-        ['دوره اشتراک (ماه)', summary.planMonths], ['قالب', localOptions?.templates.find(item => item.id === summary.template)?.label ?? summary.template],
+        ['قالب', localOptions?.templates.find(item => item.id === summary.template)?.label ?? summary.template],
+        ['دورهٔ اشتراک', summary.planMonths == null ? '' : `${persianNumber(summary.planMonths)} ماهه`],
         ['دامنه', domain?.ownDomain || (domain ? `${domain.label}.${domain.tld}` : '')],
       ]) {
         const dt = document.createElement('dt'), dd = document.createElement('dd');
         dt.textContent = label;
         dd.textContent = String(value ?? '');
+        if (label === 'دامنه') dd.dir = 'ltr';
         rows.append(dt, dd);
       }
       $('review-summary').replaceChildren(rows);
+      $('local-signup').hidden = true;
+      $('edit-signup').hidden = !signupAvailable;
+      $('edit-notice').hidden = !signupAvailable;
       $('review-notice').textContent = review.canConfirm
-        ? 'با تأیید شما پیش‌نویس ساخته می‌شود. موبایل و پرداخت فقط در فرم رسمی لانچو تکمیل می‌شوند.'
+        ? (signupAvailable ? 'ساخت پیش‌نویس آزمایشی فقط با تأیید شما انجام می‌شود؛ فروشگاه واقعی ایجاد نمی‌شود.' : 'با تأیید شما پیش‌نویس ساخته می‌شود. موبایل و پرداخت فقط در فرم رسمی لانچو تکمیل می‌شوند.')
         : 'اتصال ساخت پیش‌نویس فعلاً آماده نیست؛ از فرم رسمی لانچو استفاده کن.';
       $('confirm').hidden = false;
+      $('confirm').textContent = 'تأیید و ساخت پیش‌نویس';
       $('session-review').hidden = false;
     }
-    scrollToBottom(true);
-  } catch (error) { showError(error.message); }
+    $('review-button').hidden = true;
+    revealCard('review-title');
+  } catch (error) { review = null; $('session-review').hidden = true; $('review-button').hidden = false; showError(error.message); }
   finally { pending = false; updateInput(); }
+}
+$('review-button').addEventListener('click', requestReview);
+$('edit-signup').addEventListener('click', () => {
+  if (pending || signupSaving || confirmationPending || failed || !review?.summary || !editSignup) return;
+  editSignup(review.summary);
 });
 
 // This is the only production path that can authorize draft creation.
-$('confirm').addEventListener('click', async () => {
+$('confirm').addEventListener('click', async (event) => {
+  if (!event.isTrusted) return;
   if (pending || failed || !review?.canConfirm) return;
   pending = true;
   confirmationPending = true;
+  notify('confirmation-pending');
   showError('');
   updateInput();
   try {
     showDraft(await sessionApi.confirm(review));
     confirmationPending = false;
+    notify('confirmation-resolved');
     review = null;
     $('review-button').hidden = true;
   } catch (error) {
     // Preserve this exact review after a timeout. Only another click retries it.
-    if (['stale_confirmation', 'review_expired', 'draft_expired', 'review_rejected', 'draft_rejected', 'draft_adapter_unavailable'].includes(error.code)) {
+    if (['stale_confirmation', 'review_expired', 'draft_expired', 'review_rejected', 'draft_rejected'].includes(error.code)) {
       confirmationPending = false;
+      notify('confirmation-resolved');
       review = null;
       $('session-review').hidden = true;
-      showError('تأیید انجام نشد. اطلاعات را بررسی و خلاصه را دوباره مرور کن.');
-    } else showError('نتیجه تأیید دریافت نشد. برای بررسی همان درخواست، دوباره دکمه تأیید را بزن.');
-  } finally { pending = false; updateInput(); }
+      $('review-button').hidden = false;
+      showError(error.code === 'review_expired' || error.code === 'stale_confirmation'
+        ? 'خلاصهٔ قبلی معتبر نیست. اطلاعات را دوباره مرور کن.'
+        : error.code === 'draft_expired' ? 'پیش‌نویس منقضی شده است. اطلاعات را دوباره مرور کن.'
+        : 'تأیید انجام نشد. اطلاعات را بررسی و خلاصه را دوباره مرور کن.');
+    } else {
+      $('confirm').textContent = 'بررسی نتیجهٔ همان درخواست';
+      showError(['session_expired', 'session_not_found'].includes(error.code)
+        ? 'جلسهٔ تأیید در دسترس نیست. نتیجهٔ درخواست قبلی مشخص نیست؛ پیش از ساخت دوباره، از پشتیبانی لانچو پیگیری کن.'
+        : 'نتیجهٔ تأیید مشخص نیست. این صفحه را تازه نکن؛ برای بررسی همان درخواست، دوباره دکمهٔ بررسی نتیجه را بزن.');
+    }
+  } finally {
+    pending = false;
+    updateInput();
+    if (confirmationPending && review && document.activeElement === document.body) $('confirm').focus({preventScroll: true});
+  }
 });
 document.querySelectorAll('[data-question]').forEach((button) => {
   button.addEventListener('click', () => {
@@ -448,6 +628,7 @@ document.querySelectorAll('[data-question]').forEach((button) => {
 // Follow content resizing only while the reader is near the end of the chat.
 new ResizeObserver(() => scrollToBottom()).observe($('messages'));
 $('welcome').addEventListener('transitionend', () => scrollToBottom());
+setupConnectedWorkspace(notify);
 updateInput();
 if (configured) initializeSession();
 notify('ready');

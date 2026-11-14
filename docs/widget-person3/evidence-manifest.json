@@ -1,0 +1,174 @@
+{
+  "capturedOn": "2026-11-14",
+  "publicationBase": "96cc945883b80487afe1cefadc7731cd29ef4435",
+  "note": "Final two-round review evidence; controlled API fixtures except read-only public screenshots and local-service-domain-review from actual FastAPI/local mock (not production). No tokens or request bodies included.",
+  "files": [
+    {
+      "file": "desktop-shop-review.png",
+      "source": "artifacts/widget-person3/prepush-chrome/signup/1280-shop-review-bottom.png",
+      "sha256": "eead2e9d66f50f220b44b9f6ab287cfb2adc63058aab8011da114a4044cb5ab6"
+    },
+    {
+      "file": "mobile-website-form.png",
+      "source": "artifacts/widget-person3/prepush-chrome/signup/390-website-form-bottom.png",
+      "sha256": "1ddc8182f4b85b4eef1c952b20c4b70a62bfeba7da9e40350ba57a7446692878"
+    },
+    {
+      "file": "mobile-service-sheet.png",
+      "source": "artifacts/widget-person3/prepush-chrome/signup/320-service-sheet.png",
+      "sha256": "1c4f14777571991bde5b392b5e49471d51c0bc214aac7812cda813dd220b24f8"
+    },
+    {
+      "file": "mobile-dark-review.png",
+      "source": "artifacts/widget-person3/prepush-chrome/signup/320-dark-review.png",
+      "sha256": "62d9e34eade60a9421853544caf753e2d37bb7dbbef490f90565649fe9cfe7b2"
+    },
+    {
+      "file": "unknown-confirmation.png",
+      "source": "artifacts/widget-person3/prepush-chrome/sessions/390-unknown-confirmation.png",
+      "sha256": "786109cd9494fe0b3fcad9a09820d22c2bcf05f35e00ba21a9211398258cf41f"
+    },
+    {
+      "file": "continuation.png",
+      "source": "artifacts/widget-person3/prepush-chrome/sessions/390-continuation.png",
+      "sha256": "83d779740ee3f8170bc6bbb0bc48134916482376577c014c5e62d7c7f106643c"
+    },
+    {
+      "file": "expired-status.png",
+      "source": "artifacts/widget-person3/prepush-chrome/sessions/390-expired-status.png",
+      "sha256": "1abe3af5992d0859c89534f323a5ea1823bb87b7527e602ed8a3fb57c9fc9144"
+    },
+    {
+      "file": "loader-timeout.png",
+      "source": "artifacts/widget-person3/prepush-chrome/sessions/loader-timeout.png",
+      "sha256": "7dd9cb70e653bbeed3f7bb17ca9900d57f87b3afe757c74a8c13089943c810a0"
+    },
+    {
+      "file": "public-classic.png",
+      "source": "artifacts/widget-person3/public-previews/mock-classic.png",
+      "sha256": "d20a8c3281a87f88f2194ba5eb8766a4c682224704ad3e3750f6ea70854cc4a7"
+    },
+    {
+      "file": "public-moda.png",
+      "source": "artifacts/widget-person3/public-previews/mock-moda.png",
+      "sha256": "84ad4d395d2a66e782304868f70b4aa829d0d977b7019a9df78476044c7ac964"
+    },
+    {
+      "file": "chrome-signup.json",
+      "source": "artifacts/widget-person3/prepush-chrome/signup/report.json",
+      "sha256": "5919774d6793185c1f2a447744130c300799c49c36dcac89e8da871ab41f5ea1"
+    },
+    {
+      "file": "chrome-sessions.json",
+      "source": "artifacts/widget-person3/prepush-chrome/sessions/report.json",
+      "sha256": "416643705475d27eb9820875e46899e5a3960b035afab7213e03619058c98e3c"
+    },
+    {
+      "file": "edge-signup.json",
+      "source": "artifacts/widget-person3/prepush-edge/signup/report.json",
+      "sha256": "930e681b82bff8c2178a754e8298ad17e5a3de746335b7f596e8e08fd5c46522"
+    },
+    {
+      "file": "edge-sessions.json",
+      "source": "artifacts/widget-person3/prepush-edge/sessions/report.json",
+      "sha256": "1856a05b6f5a44978e1142b0a195df61e3cd7e3c83f9c3e72ea9d653c085b1c2"
+    },
+    {
+      "file": "session-restarted-form.png",
+      "source": "artifacts/widget-person3/prepush-chrome/signup/session-restarted-form.png",
+      "sha256": "e3b94e976eb55978f2201b54c7b83f73b0899270db23812077734d33abb14b08"
+    },
+    {
+      "file": "local-service-domain-review.png",
+      "source": "artifacts/widget-person3/prepush-local-service/390-website-review.png",
+      "sha256": "18a2554ff912790a8f2ebfc32984f0af010af2b9e23d174b98e5d7537d177bf6"
+    }
+  ],
+  "implementationHashConvention": "SHA-256 of UTF-8 source with CRLF normalized to LF; excludes this documentation to avoid self-reference.",
+  "implementationFiles": [
+    {
+      "file": "frontend/api.js",
+      "sha256": "9aaea4d75cd8af63eff354c24885f22e1e9062dc92c46bd6fd856066d2feb9e3"
+    },
+    {
+      "file": "frontend/demo.html",
+      "sha256": "7be545d226f281c53766e886e9d1c8d42c9b24e1c1ab51c29863fb542bfbc716"
+    },
+    {
+      "file": "frontend/draft-preview.html",
+      "sha256": "7821a9829f3c3d458be44b65860ac6214e2179e31b05abbbff6ad00bc9a9b705"
+    },
+    {
+      "file": "frontend/loader.js",
+      "sha256": "1ec3be477a367c226f39c75c27d0f49e3348dc12b4c6a6700d872fb017c98c10"
+    },
+    {
+      "file": "frontend/widget-legacy.html",
+      "sha256": "7a2d8fbf0fb3ca65bffa03c1096f312db5314a27e02489f9bcd42a1a422ec12a"
+    },
+    {
+      "file": "frontend/widget-workspace-base.css",
+      "sha256": "383bfa72e73a8360c8060a951a9a024744e9a724c2c06f957ff1be54848dbff6"
+    },
+    {
+      "file": "frontend/widget-workspace.css",
+      "sha256": "b6b562774f47eeacc244621e35d55dd764f4a0131836a32c2edac4cf23ba62c9"
+    },
+    {
+      "file": "frontend/widget-workspace.js",
+      "sha256": "04d62bc917ae401767170da8e596ae6d26a1fde87241ae059b00dd89274675a2"
+    },
+    {
+      "file": "frontend/widget.css",
+      "sha256": "60d3ba8c679c51d97c77c9f92a0c28932cab07190ed3f8cf7d392d69dda3efdc"
+    },
+    {
+      "file": "frontend/widget.html",
+      "sha256": "349afb5b27ec493ebf8d533dcaafb7654179d71d56bd1ea4d324203b3d94c45e"
+    },
+    {
+      "file": "frontend/widget.js",
+      "sha256": "1edb35ffc01a7748d792818f9177d8afdfb35e4aed73e246ddcd759441ed7499"
+    },
+    {
+      "file": "frontend/workflow-api.js",
+      "sha256": "48ba2ba660671952dd9db365385604572ac5d9ae3b8ef8524f27adfd4c20b435"
+    },
+    {
+      "file": "frontend/workflow-demo.js",
+      "sha256": "7e3ac25a54bd417f7a259f45d7e54b8b81e9344b8d994ffe8c42135dcc3b735f"
+    },
+    {
+      "file": "frontend/workflow.js",
+      "sha256": "9711cdde41a9d1930a62823f3a1df4abd32f144418df70c7d0d06c5aa258c982"
+    },
+    {
+      "file": "tests/widget_catalog_audit.cjs",
+      "sha256": "ad10e905f99e0f793c2542556fc463735ee6f991278e7ae7ef8825db8229c762"
+    },
+    {
+      "file": "tests/widget_live_workspace_browser.cjs",
+      "sha256": "ece7db239f7ffbc6b0e32f07e7d65d4b6e5c1d03522ab465497bc02f569ac063"
+    },
+    {
+      "file": "tests/widget_public_previews_browser.cjs",
+      "sha256": "bfd602e7c1a0c0619abb1a656843d00c7dacc4044f9769cb5587c4ba361ea378"
+    },
+    {
+      "file": "tests/widget_quality_check.cjs",
+      "sha256": "de6a40fd139f3f0294dc1f59f85d693005fdada52979034783b17aa5771785e0"
+    },
+    {
+      "file": "tests/widget_sessions_browser.cjs",
+      "sha256": "ecaaa0b0a7acd362d48a6b169fa0cabc00a18d3230b7d0721285a0f140a0364c"
+    },
+    {
+      "file": "tests/widget_session_test.cjs",
+      "sha256": "a888704f06c76634afbc94967910c354a8f361a1f110d073cc1f7a113c5ff1f7"
+    },
+    {
+      "file": "tests/widget_signup_browser.cjs",
+      "sha256": "f4ba18eb64cadde2e79b8d05bae539e057d456746619cff1be71e5d2f5f8339c"
+    }
+  ]
+}

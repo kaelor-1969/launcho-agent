@@ -1,0 +1,261 @@
+{
+  "browser": "Chrome/157.0.8103.51",
+  "checkedAt": "2026-11-14T08:10:04.127Z",
+  "catalogSource": "content/launcho-widget-catalog.json (test only)",
+  "note": "Read-only public pages, visible text and loaded image smoke checks; not signup availability or visual equivalence.",
+  "results": [
+    {
+      "id": "mock-classic",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=classic",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 1062,
+      "expectedLabelVisible": true,
+      "images": 1,
+      "template": "classic"
+    },
+    {
+      "id": "mock-moda",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=moda",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3872,
+      "expectedLabelVisible": true,
+      "images": 33,
+      "template": "moda"
+    },
+    {
+      "id": "mock-digikala",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=digikala",
+      "ready": "loading",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3663,
+      "expectedLabelVisible": true,
+      "images": 35,
+      "template": "digikala"
+    },
+    {
+      "id": "mock-shaparak",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=shaparak",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3081,
+      "expectedLabelVisible": true,
+      "images": 26,
+      "template": "shaparak"
+    },
+    {
+      "id": "mock-bazar",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=bazar",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 1962,
+      "expectedLabelVisible": true,
+      "images": 5,
+      "template": "bazar"
+    },
+    {
+      "id": "mock-parand",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=parand",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2881,
+      "expectedLabelVisible": true,
+      "images": 22,
+      "template": "parand"
+    },
+    {
+      "id": "mock-techno",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=techno",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 5566,
+      "expectedLabelVisible": true,
+      "images": 54,
+      "template": "techno"
+    },
+    {
+      "id": "mock-Rayan",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=rayan",
+      "ready": "complete",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 4946,
+      "expectedLabelVisible": true,
+      "images": 54,
+      "template": "rayan"
+    },
+    {
+      "id": "mock-zarin",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=zarin",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3935,
+      "expectedLabelVisible": true,
+      "images": 3,
+      "template": "zarin"
+    },
+    {
+      "id": "mock-kashane",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=kashane",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3090,
+      "expectedLabelVisible": true,
+      "images": 33,
+      "template": "kashane"
+    },
+    {
+      "id": "mock-negin",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=negin",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 5062,
+      "expectedLabelVisible": true,
+      "images": 18,
+      "template": "negin"
+    },
+    {
+      "id": "mock-saniye",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=saniye",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 1971,
+      "expectedLabelVisible": true,
+      "images": 4,
+      "template": "saniye"
+    },
+    {
+      "id": "mock-astar",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=astar",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 8487,
+      "expectedLabelVisible": true,
+      "images": 29,
+      "template": "astar"
+    },
+    {
+      "id": "mock-yas",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=yas",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3602,
+      "expectedLabelVisible": true,
+      "images": 13,
+      "template": "yas"
+    },
+    {
+      "id": "mock-bina",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=bina",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3490,
+      "expectedLabelVisible": true,
+      "images": 11,
+      "template": "bina"
+    },
+    {
+      "id": "mock-almas",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=almas",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2101,
+      "expectedLabelVisible": true,
+      "images": 10,
+      "template": "almas"
+    },
+    {
+      "id": "mock-gold",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=gold",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 1618,
+      "expectedLabelVisible": true,
+      "images": 14,
+      "template": "gold"
+    },
+    {
+      "id": "mock-sofre",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=sofre",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 3280,
+      "expectedLabelVisible": true,
+      "images": 5,
+      "template": "sofre"
+    },
+    {
+      "id": "mock-hamdam",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=hamdam",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2920,
+      "expectedLabelVisible": true,
+      "images": 4,
+      "template": "hamdam"
+    },
+    {
+      "id": "mock-golbarg",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=golbarg",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2549,
+      "expectedLabelVisible": true,
+      "images": 24,
+      "template": "golbarg"
+    },
+    {
+      "id": "mock-yadak",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=yadak",
+      "ready": "complete",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2903,
+      "expectedLabelVisible": true,
+      "images": 21,
+      "template": "yadak"
+    },
+    {
+      "id": "mock-lakchery",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=lakchery",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 2680,
+      "expectedLabelVisible": true,
+      "images": 20,
+      "template": "lakchery"
+    },
+    {
+      "id": "mock-negah",
+      "result": "rendered",
+      "url": "https://demo.launcho.ir/?template=negah",
+      "ready": "interactive",
+      "title": "فروشگاه من | فروشگاه آنلاین شما",
+      "text": 4464,
+      "expectedLabelVisible": true,
+      "images": 27,
+      "template": "negah"
+    }
+  ]
+}

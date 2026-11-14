@@ -33,7 +33,15 @@ async function post(url, body, token, timeout = 45000, method = body === undefin
     if (error.name === 'AbortError') throw new Error('دریافت پاسخ طول کشید. می‌توانی دوباره تلاش کنی.');
     if (error.message === 'invalid') throw new Error('پاسخ معتبری دریافت نشد. دوباره تلاش کن.');
     if (error.message === 'http') {
-      if (error.code === 'conversation_busy') {
+      if (['session_expired', 'session_not_found'].includes(error.code)) {
+        error.message = 'جلسهٔ گفتگو در دسترس نیست یا منقضی شده است.';
+      } else if (['review_expired', 'stale_confirmation'].includes(error.code)) {
+        error.message = 'خلاصهٔ قبلی معتبر نیست. اطلاعات را دوباره مرور کن.';
+      } else if (error.code === 'draft_expired') {
+        error.message = 'پیش‌نویس منقضی شده است. پیش از اقدام تازه، اطلاعات را دوباره مرور کن.';
+      } else if (error.code === 'invalid_preferences' || error.status === 422) {
+        error.message = 'اطلاعات واردشده معتبر نیست. انتخاب‌ها را بررسی و اصلاح کن.';
+      } else if (error.code === 'conversation_busy') {
         error.message = 'پاسخ پیام قبلی هنوز در حال آماده‌شدن است. چند لحظه بعد دوباره تلاش کن.';
       } else if (error.code === 'model_rate_limited' || error.status === 429) {
         error.message = 'سرویس پاسخ‌گویی به محدودیت مصرف رسیده. کمی بعد دوباره تلاش کن.';
@@ -54,7 +62,7 @@ const invalid = () => new Error('پاسخ معتبری دریافت نشد. دو
 const sessionEnded = error => ['session_not_found', 'session_expired'].includes(error.code);
 
 export function createSessionApi() {
-  let session, initializing;
+  let session, initializing, needsReconciliation = false;
   async function start() {
     if (session) return session;
     if (!initializing) {
@@ -81,22 +89,34 @@ export function createSessionApi() {
       } catch (error) {
         if (!sessionEnded(error)) throw error;
         session = null;
+        needsReconciliation = true;
         await start();
         data = await send();
       }
       if (typeof data.reply !== 'string' || !data.reply.trim() || data.sessionId !== session.id ||
           !validRevision(data.revision) || data.revision < session.revision) throw invalid();
       session.revision = data.revision;
-      return data;
+      const result = {...data, sessionRestarted: needsReconciliation};
+      needsReconciliation = false;
+      return result;
     },
     async localOptions(kind) {
-      return post('/api/local-signup-options?kind=' + encodeURIComponent(kind));
+      const data = await post('/api/local-signup-options?kind=' + encodeURIComponent(kind));
+      const choices = items => Array.isArray(items) && items.length > 0 && items.every(item =>
+        item && typeof item.id === 'string' && item.id && typeof item.label === 'string' && item.label);
+      if (!choices(data.businessCategories) || !choices(data.templates) ||
+          !data.templates.some(item => item.available === true) ||
+          !Array.isArray(data.periods) || !data.periods.length ||
+          !data.periods.every(value => Number.isSafeInteger(value) && value > 0 && value <= 120) ||
+          !Array.isArray(data.suffixes) || !data.suffixes.length ||
+          !data.suffixes.every(value => typeof value === 'string' && /^[a-z0-9]+(?:\.[a-z0-9]+)*$/.test(value))) throw invalid();
+      return data;
     },
     async savePreferences(preferences) {
       await start();
       const data = await post(endpoint('preferences'), {revision: session.revision, preferences},
                               session.token, 45000, 'PATCH');
-      if (data.sessionId !== session.id || !validRevision(data.revision)) throw invalid();
+      if (data.sessionId !== session.id || !validRevision(data.revision) || data.revision < session.revision) throw invalid();
       session.revision = data.revision;
       return data;
     },

@@ -13,18 +13,19 @@ class Element {
   }
   addEventListener(type, handler) { (this.listeners[type] ||= []).push(handler); }
   async emit(type, extra = {}) {
-    for (const handler of this.listeners[type] || []) await handler({preventDefault() {}, ...extra});
+    for (const handler of this.listeners[type] || []) await handler({preventDefault() {}, isTrusted:true, ...extra});
   }
   append(...nodes) { this.children.push(...nodes); }
   prepend(...nodes) { this.children.unshift(...nodes); }
   replaceChildren(...nodes) { this.children = nodes; }
   setAttribute() {}
   focus() {}
+  getBoundingClientRect() { return {top: 0}; }
   blur() {}
 }
 
 async function widget({sessionFailure = false, canConfirm = true, embedded = false,
-  reply = 'ready <script>bad()</script>'} = {}) {
+  reply = 'ready <script>bad()</script>', draftUrl = 'https://launcho.ir/start?signup=sd_testdraft'} = {}) {
   const nodes = new Map();
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
@@ -34,6 +35,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   let failSession = sessionFailure, failConfirm = false, rejectConfirm = false, failReview = false;
   let releaseConfirm;
   let chatError;
+  let heldStatus;
   let revision = 0;
   const sid = 'session-id-for-testing', token = 'secret-session-token';
   const review = {sessionId: sid, revision: 1, reviewId: 'review-id-for-testing',
@@ -50,7 +52,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
     crypto: require('node:crypto').webcrypto,
     matchMedia: () => ({matches: false, addEventListener() {}}),
     ResizeObserver: class {observe() {}},
-    document: {getElementById: get, documentElement: {dataset: {}}, addEventListener() {},
+    document: {body: {dataset:{}}, getElementById: get, documentElement: {dataset: {}}, addEventListener() {},
       querySelectorAll: () => [], querySelector: () => new Element(),
       createTextNode: textContent => ({textContent}), createElement: () => new Element(), createElementNS: () => new Element()},
     fetch: async (url, options) => {
@@ -79,14 +81,15 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
           if (failReview) throw new TypeError('review response lost after server invalidated previous review');
           data = {...review, revision};
         } else if (url.endsWith('/draft-status')) {
-          data = {status: 'paid'};
+          if (heldStatus) await new Promise(resolve => { heldStatus.resolve = resolve; });
+          data = {status: heldStatus ? 'expired' : 'paid'};
         } else if (url.endsWith('/confirm')) {
           if (rejectConfirm) return {ok: false, status: 410,
-            json: async () => ({detail: {code: 'review_expired', message: 'private-detail'}})};
+            json: async () => ({detail: {code: rejectConfirm, message: 'private-detail'}})};
           if (failConfirm) throw new TypeError('response lost');
           if (releaseConfirm) await new Promise(resolve => { releaseConfirm.resolve = resolve; });
           data = {status: 'draft', ref: 'sd_testdraft',
-            confirmUrl: 'https://launcho.ir/start?signup=sd_testdraft'};
+            confirmUrl: draftUrl};
         } else assert.fail(`Unexpected endpoint ${url}`);
       }
       return {ok: true, json: async () => data};
@@ -122,10 +125,12 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   return {get, calls, settle, window, windowListeners,
     relativeUrl: modules.get('api.js').namespace.relativeUrl,
     failChat: code => { chatError = code; },
+    holdStatus: () => { heldStatus = {}; },
+    releaseStatus: () => heldStatus.resolve(),
     failReview: () => { failReview = true; },
     recoverSession: () => { failSession = false; },
     failConfirmation: () => { failConfirm = true; },
-    rejectConfirmation: () => { rejectConfirm = true; },
+    rejectConfirmation: (code = 'review_expired') => { rejectConfirm = code; },
     holdConfirmation: () => { failConfirm = false; releaseConfirm = {}; },
     releaseConfirmation: () => releaseConfirm.resolve(),
     async send(message = 'create a draft now') {
@@ -217,6 +222,13 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   assert.equal(w.calls.at(-1).method, 'GET');
   assert.match(w.calls.at(-1).url, /\/draft-status$/);
   assert.match(w.get('review-notice').textContent, /پرداخت ثبت شده/);
+  w.holdStatus();
+  const oldStatusButton = w.get('review-summary').children[1];
+  const oldStatus = oldStatusButton.emit('click'); await w.settle();
+  await w.send('new preferences'); await w.get('review-button').emit('click');
+  const freshNotice = w.get('review-notice').textContent;
+  w.releaseStatus(); await oldStatus;
+  assert.equal(w.get('review-notice').textContent, freshNotice, 'late status cannot overwrite a new review');
 
   const failed = await widget({sessionFailure: true});
   await failed.send();
@@ -248,6 +260,14 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   await readonly.get('confirm').emit('click');
   assert.equal(readonly.get('confirm').disabled, true);
   assert.equal(readonly.calls.length, 3);
+  for (const draftUrl of ['javascript:alert(1)', 'https://evil.invalid/start?signup=sd_testdraft',
+    'https://launcho.ir/start?signup=sd_testdraft&token=secret', 'https://launcho.ir/start?signup=sd_testdraft#fragment',
+    'https://owner:secret@launcho.ir/start?signup=sd_testdraft', '/api/local-drafts/sd_testdraft/preview']) {
+    const unsafe = await widget({draftUrl});
+    await unsafe.send(); await unsafe.get('review-button').emit('click'); await unsafe.get('confirm').emit('click');
+    assert.equal(unsafe.get('edit-signup').disabled, true, 'invalid success URL must retain unresolved review');
+    assert.equal(unsafe.get('review-summary').children.some(node => node.href), false);
+  }
 
   const stale = await widget();
   await stale.send(); await stale.get('review-button').emit('click');
@@ -255,6 +275,22 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   assert.equal(stale.get('session-review').hidden, true);
   await stale.send('correct preferences');
   assert.equal(stale.calls.at(-1).url, '/api/chat', 'expired review must allow recovery');
+
+  const ended = await widget();
+  await ended.send(); await ended.get('review-button').emit('click');
+  ended.rejectConfirmation('session_expired'); await ended.get('confirm').emit('click');
+  assert.match(ended.get('error-text').textContent, /پشتیبانی لانچو/);
+  assert.equal(ended.get('edit-signup').disabled, true);
+  const countBefore = ended.calls.length;
+  await ended.send('start over'); await ended.get('review-button').emit('click');
+  assert.equal(ended.calls.length, countBefore, 'missing confirmation session cannot silently start a replacement');
+  let warned = false;
+  ended.windowListeners.beforeunload({preventDefault() { warned = true; }});
+  assert.equal(warned, true);
+  w.windowListeners.beforeunload({preventDefault() { assert.fail('resolved request must not warn'); }});
+  ended.rejectConfirmation('draft_adapter_unavailable'); await ended.get('confirm').emit('click');
+  assert.equal(ended.get('edit-signup').disabled, true, 'adapter availability may change after an unknown outcome');
+  assert.equal(ended.get('session-review').hidden, false, 'an unavailable adapter must not replace an unresolved review');
 
   const embedded = await widget({embedded: true});
   assert.equal(embedded.calls.length, 0);

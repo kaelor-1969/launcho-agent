@@ -115,7 +115,7 @@ class OfferContractTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1] / 'docs/examples'
         for name, model in [('launcho-offer-request-v1', OfferRequest),
                             ('launcho-offer-v1', FinancialOffer), ('launcho-offer-state-v1', OfferState)]:
-            self.assertEqual(json.loads((root / (name + '.schema.json')).read_text()), model.model_json_schema())
+            self.assertEqual(json.loads((root / (name + '.schema.json')).read_text(encoding='utf-8')), model.model_json_schema())
 
     def test_legacy_positional_plan_and_numeric_stage_do_not_crash(self):
         gateway = LocalMockGateway('http://127.0.0.1:8001')

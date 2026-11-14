@@ -1,0 +1,3 @@
+# Keep evidence JSON bytes stable across Windows checkouts for SHA-256 verification.
+*.json text eol=lf
+evidence/*.json text eol=lf

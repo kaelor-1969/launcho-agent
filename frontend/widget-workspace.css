@@ -1,0 +1,55 @@
+/* The connected workspace lives entirely inside the existing widget iframe. */
+:root { --ink:var(--text); --line:var(--border); --accent:var(--blue); }
+.connected-workspace { position:static; width:100%; height:100%; max-width:none; border:0; border-radius:0; box-shadow:none; grid-template-columns:200px minmax(0,1fr); }
+.connected-workspace .chat { min-width:0; direction:rtl; }
+.assistant-content { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.chat-header { min-height:88px; }
+.title-line h1 { font-size:16px; margin:0; }
+.chat-header .icon-button { color:#546889; width:36px; height:36px; margin:0; }
+.chat-header .icon-button svg { width:20px; height:20px; }
+.scroll-area { padding:20px 28px 24px; gap:22px; }
+.message-row.role-assistant { direction:ltr; padding:0; }
+.message-row.role-user { direction:rtl; padding:0; }
+.message-row .bubble { max-width:100%; }
+.message-row.role-assistant .avatar { border:0; border-radius:0; background:transparent; width:44px; height:44px; }
+.message-row.role-assistant .avatar img { width:44px; height:44px; }
+.connected-workspace #welcome .assistant-avatar { transform:scaleX(-1); }
+.message-row.role-user .avatar { border:0; background:var(--avatar-user-bg); }
+.welcome { flex-wrap:wrap; }
+.bubble { font-size:17px; }
+.connected-workspace .waiting { display:flex; direction:ltr; align-items:center; gap:12px; padding:0; margin-top:18px; }
+.service-card { color:var(--text); }
+:root[data-theme=dark] .service-card[aria-pressed=true] { background:var(--hover); border-color:var(--border); }
+:root[data-theme=dark] .service-sidebar { background:var(--bg); }
+.card-kind { color:var(--muted); }
+.service-card .avatar.launcher-avatar { border:0; background:transparent; }
+.input-wrap textarea { flex:1; width:100%; }
+.composer-bottom { justify-content:flex-start; }
+.connected-workspace .starters { display:flex; gap:6px; padding:8px 24px 11px; }
+.connected-workspace .composer .suggestion-slot { min-height:0; }
+.connected-workspace .composer .starters { padding:0 1px 11px; }
+.connected-workspace .starters button,
+.connected-workspace .starters .primary-starter { min-height:32px; padding:5px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--muted); font-size:11px; font-weight:400; }
+.connected-workspace .starters button:hover:not(:disabled) { background:var(--hover); border-color:var(--focus); }
+.mobile-toolbar #change-service { width:100%; direction:rtl; justify-content:space-between; }
+.service-chevron { width:20px; height:20px; flex-shrink:0; }
+#change-service[aria-expanded=true] .service-chevron { transform:rotate(180deg); }
+#close-sheet { width:36px; height:36px; margin:0; }
+#close-sheet svg { width:20px; height:20px; }
+.bubble a { color:var(--blue); text-decoration:underline; }
+.unavailable-service { padding:32px; margin:auto; text-align:center; }
+.unavailable-service h2 { font-size:20px; }
+.unavailable-service p { color:var(--muted); }
+dialog { color:var(--text); background:var(--surface); }
+@media(max-width:850px) {
+  .connected-workspace { grid-template-columns:minmax(0,1fr); }
+  .mobile-toolbar { background:var(--surface); }
+}
+@media(max-width:600px) {
+  .connected-workspace .desktop-control { display:none; }
+  .connected-workspace { width:100%; height:100%; }
+  .scroll-area { padding:16px; }
+  .chat-header { min-height:78px; }
+  .bubble { font-size:15px; }
+  .connected-workspace .starters { padding-inline:14px; }
+}
