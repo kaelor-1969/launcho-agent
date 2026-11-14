@@ -43,3 +43,10 @@ Stage 6 commit: 29b1ad2.
 ## Stage 7
 No supported-browser matrix found; existing docs name Chrome and exclusions. Chrome157.0.8103.51 and Edge157.0.4341.46 full signup suites exited0: all6 service/viewport scenarios plus recovery. Added native mobile service-modal selection/Escape/focus/value retention, AX visible-control naming (20desktop/16mobile each), reduced motion. No production changes required. browser-coverage.md states Chromium-only/AX-smoke limits, no Firefox/Safari/device/screenreader certification.
 Independent stage7 reviewer inspected test source, no own runs; no blocker. Gaps in reverse Tab/focus wrap/Space and dynamic AX states recorded in browser-coverage.md.
+
+Stage 7 commit: 2fdbf0a.
+
+## Stage 8
+Fail-fast node tests/widget_quality_check.cjs ran VM+signup+session/loader suites, exit0 in Chrome and Edge. Runner artifact override is split into signup/sessions subfolders (verified Edge run). Confirmation success fixture now held until duplicate-input/lock assertions finish rather than relying on200ms timing. Screenshots+safe reports written; no raw requests/tokens in committed evidence. Chrome signup rerun exit0 after finite-animation waiting for stable captures. Selected screenshots visually inspected: desktop Persian review,320mobile service sheet/dark review, unknown confirmation, expired status, public classic. Evidence manifest SHA256, install.md and pr-ready.md prepared; final source review/commit pending. Public checks not repeated after stage2.
+
+Stage8 independent source/excerpt review found no blocker; no reviewer execution claimed. Requested signal/manifest checks executed: signal/nullstatus, spawn error and nonzero child stop fail-fast; success runs3children. Exact14file manifest membership+SHA256+doc links PASS; JS syntax and git diff --check PASS. Stage8 completed locally; final commit carries install/evidence/PR handoff. Resolve stage8 SHA with git log -1 --format=%H (subject: test(widget): package quality evidence and installation handoff). No push/PR/merge/deploy. External blockers in dependencies.md remain unresolved.

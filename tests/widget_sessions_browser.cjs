@@ -15,6 +15,8 @@ let failSession = false, failReview = false;
 let confirmError;
 let statusFailure = false, currentDraftStatus = 'draft';
 let blockFrame = false;
+let completeConfirmation;
+const output = process.env.WIDGET_ARTIFACT_DIR ? path.resolve(process.env.WIDGET_ARTIFACT_DIR) : path.resolve(__dirname, '../artifacts/widget-person3/sessions');
 const sid = 'browser-session-id', token = 'browser-session-token';
 const server = http.createServer(async (req, res) => {
   const json = data => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); };
@@ -53,8 +55,10 @@ const server = http.createServer(async (req, res) => {
         res.flushHeaders(); res.write('{');
         return setTimeout(() => res.destroy(), 30);
       }
-      return setTimeout(() => json({status: 'draft', ref: 'sd_browsertest',
-        confirmUrl: 'https://launcho.ir/start?signup=sd_browsertest'}), 200);
+      // Hold the response until the test has observed locks and duplicate input.
+      completeConfirmation = () => json({status: 'draft', ref: 'sd_browsertest',
+        confirmUrl: 'https://launcho.ir/start?signup=sd_browsertest'});
+      return;
     }
     res.writeHead(404); return res.end();
   }
@@ -70,6 +74,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 (async () => {
+  fs.mkdirSync(output, {recursive:true});
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   const base = `http://127.0.0.1:${server.address().port}`;
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'launcho-widget-browser-'));
@@ -115,6 +120,10 @@ const server = http.createServer(async (req, res) => {
       const result = await command('Runtime.evaluate', {expression, returnByValue: true, awaitPromise: true});
       if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
       return result.result.value;
+    };
+    const screenshot = async name => {
+      const shot = await command('Page.captureScreenshot', {format:'png'});
+      fs.writeFileSync(path.join(output, name + '.png'), Buffer.from(shot.data, 'base64'));
     };
     const wait = async expression => {
       for (let i = 0; i < 100; i++) { if (await evaluate(expression)) return; await sleep(50); }
@@ -189,6 +198,7 @@ const server = http.createServer(async (req, res) => {
       assert.equal(calls.length, 4, 'no automatic retry');
       assert.match(await evaluate(`doc.querySelector('#error-text').textContent`), /تازه نکن/);
       assert.equal(await evaluate(`doc.querySelector('#confirm').textContent`), 'بررسی نتیجهٔ همان درخواست');
+      await screenshot(`${width}-unknown-confirmation`);
       // Invalid origins, channels, scopes and senders cannot clear host protection.
       await evaluate(`(() => {
         const channel = new URLSearchParams(new URL(frame.src).hash.slice(1)).get('channel');
@@ -207,11 +217,15 @@ const server = http.createServer(async (req, res) => {
       await confirmWithDoubleClick();
       assert.equal(await evaluate(`doc.querySelector('#confirm').disabled && doc.querySelector('#send').disabled && doc.querySelector('#review-button').disabled`), true);
       await confirmWithKeyboard();
+      for (let i=0; i<100 && !completeConfirmation; i++) await sleep(50);
+      assert.ok(completeConfirmation, 'the held confirmation must reach the fixture');
+      completeConfirmation(); completeConfirmation = null;
       await wait(`doc.querySelector('#confirm').hidden === true`);
       assert.equal(calls.length, 5);
       assert.deepEqual(calls[3].body, calls[4].body);
       assert.equal(await evaluate(`doc.querySelector('#review-summary a').getAttribute('href')`), 'https://launcho.ir/start?signup=sd_browsertest');
       assert.equal(await evaluate(`doc.querySelector('#review-summary a').target === '_blank' && doc.querySelector('#review-summary a').rel === 'noopener noreferrer'`), true);
+      await screenshot(`${width}-continuation`);
       // Every status is read-only, with one in-flight GET and explicit error retry.
       const statusCallCount = () => calls.filter(call=>call.url.endsWith('/draft-status')).length;
       statusFailure = true;
@@ -230,6 +244,7 @@ const server = http.createServer(async (req, res) => {
       assert.equal(statusCallCount(), 9);
       assert.equal(calls.filter(call=>call.url.endsWith('/confirm')).length, 2, 'status reads must not create drafts');
       assert.equal(await evaluate(`!doc.querySelector('#review-summary a').hasAttribute('href') && doc.querySelector('#review-summary a').getAttribute('aria-disabled') === 'true'`), true);
+      await screenshot(`${width}-expired-status`);
       await evaluate('LaunchoWidget.close(); LaunchoWidget.open()');
       assert.equal(calls.filter(c => c.url === '/api/sessions').length, 1);
       assert.equal(await evaluate(`doc.querySelectorAll('input[type=tel], [autocomplete=tel], [data-action=pay]').length`), 0);
@@ -320,11 +335,19 @@ const server = http.createServer(async (req, res) => {
     assert.equal(await evaluate(`document.querySelector('#launcho-widget').shadowRoot.querySelector('.feedback').hidden`), false);
     await sleep(15500);
     assert.match(await evaluate(`document.querySelector('#launcho-widget').shadowRoot.querySelector('.feedback').textContent`), /بارگذاری نشد/);
+    await screenshot('loader-timeout');
     await evaluate('LaunchoWidget.close();LaunchoWidget.open()');
     assert.equal(await evaluate(`document.querySelector('#launcho-widget').shadowRoot.querySelectorAll('iframe').length`), 1);
     assert.equal(calls.length, 0, 'failed iframe loading must not create sessions or operations');
     console.log('PASS: lazy iframe, authenticated pending flags, status states/retry/locks, rejected unload clearing, loader timeout');
     assert.deepEqual(errors, []);
+    const browser = await command('Browser.getVersion');
+    fs.writeFileSync(path.join(output,'report.json'), JSON.stringify({browser:browser.product,userAgent:browser.userAgent,
+      controlledResponses:true, widths:[1280,390], offlineTransport:true, brokenConfirmationSocket:true,
+      exactChatRetry:true, exactConfirmationRetry:true, nativeDoubleClick:true, syntheticApprovalRejected:true,
+      pendingRefreshCancelled:true, resolvedRefreshNoReplay:true, rejectionClearsUnload:true, credentialsMemoryOnly:true,
+      invalidHostFlagsRejected:true, statusStates:true, statusErrorRetry:true, expiredLinkDisabled:true, lazyIframe:true,
+      loaderTimeout:true, demoIsolated:true, errors, untested:['production backend effects','durable refresh recovery','physical devices','Firefox','Safari']},null,2)+'\n');
   } finally {
     if (socket) socket.close();
     chrome.kill();

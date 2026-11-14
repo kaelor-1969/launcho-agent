@@ -29,3 +29,5 @@ Remove-Item Env:WIDGET_ARTIFACT_DIR
 Use a separate PowerShell window for overrides if existing environment values must be retained. No model or production signup is called by these tests.
 
 Independent stage-7 source reviewer found no blocker and did not run browsers. Coverage gaps: AX samples only the shop initial/restored iframe form, not launcher/website/review/error/open modal; dialog checks omit Shift+Tab, full focus-wrap and Space activation; reduced-motion assertion covers typing dots only. These are unverified, not reported as passing.
+
+Stage8 final regression also ran the complete session/loader/offline/refresh suite in both Chrome and Edge with exit0. Committed reports are linked in evidence.md.

@@ -14,6 +14,6 @@ No AGENTS.md found in repository or inspected ancestor directories.
 | 5 | Safe expiry/errors/unknown outcome and refresh, no automatic confirmation or browser credential persistence | Complete locally; durable recovery blocked |
 | 6 | Approved continuation destination, status retry/lock, lazy iframe and loader lifecycle | Complete locally |
 | 7 | Desktop/mobile/short viewport, keyboard/focus/accessibility, report actual browser coverage | Complete for documented Chromium scope |
-| 8 | Regression tests, committed visual evidence, installation and PR handoff | Pending |
+| 8 | Regression tests, committed visual evidence, installation and PR handoff | Complete locally; ready for review, no publication |
 
 Each stage: inspect, smallest coherent change, diff review, fresh independent reviewer, actual tests, scoped commit, update handoff. Controlled fixtures never establish production compatibility.

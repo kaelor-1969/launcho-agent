@@ -111,6 +111,7 @@ const server = http.createServer(async (req, res) => {
     };
     const screenshot = async name => {
       await evaluate('doc.fonts.ready');
+      await evaluate('Promise.all(doc.getAnimations().filter(animation => animation.effect.getTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => {})))');
       const shot = await command('Page.captureScreenshot', {format: 'png'});
       fs.writeFileSync(path.join(output, name + '.png'), Buffer.from(shot.data, 'base64'));
       if (name.endsWith('-form') || name.endsWith('-review')) {
@@ -160,6 +161,7 @@ const server = http.createServer(async (req, res) => {
           if (width < 600) {
             await evaluate(`doc.querySelector('[name=businessName]').value='حفظ انتخاب'; doc.querySelector('#change-service').focus()`);
             await key('Enter'); await wait(`doc.querySelector('#service-sheet').open`);
+            await screenshot(`${width}-service-sheet`);
             assert.equal(await evaluate('doc.activeElement.dataset.service'), 'assistant');
             await key('Tab'); assert.equal(await evaluate('doc.activeElement.dataset.service'), 'callcenter');
             await key('Enter'); await wait(`!doc.querySelector('#service-sheet').open`);
