@@ -1,5 +1,7 @@
 {
   "browser": "Chrome/157.0.8103.51",
+  "checkedAt": "2026-11-14T08:10:04.127Z",
+  "catalogSource": "content/launcho-widget-catalog.json (test only)",
   "note": "Read-only public pages, visible text and loaded image smoke checks; not signup availability or visual equivalence.",
   "results": [
     {
@@ -9,17 +11,19 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 1062,
-      "images": 2,
+      "expectedLabelVisible": true,
+      "images": 1,
       "template": "classic"
     },
     {
       "id": "mock-moda",
       "result": "rendered",
       "url": "https://demo.launcho.ir/?template=moda",
-      "ready": "loading",
+      "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 3872,
-      "images": 39,
+      "expectedLabelVisible": true,
+      "images": 33,
       "template": "moda"
     },
     {
@@ -29,6 +33,7 @@
       "ready": "loading",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 3663,
+      "expectedLabelVisible": true,
       "images": 35,
       "template": "digikala"
     },
@@ -39,6 +44,7 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 3081,
+      "expectedLabelVisible": true,
       "images": 26,
       "template": "shaparak"
     },
@@ -49,6 +55,7 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 1962,
+      "expectedLabelVisible": true,
       "images": 5,
       "template": "bazar"
     },
@@ -59,7 +66,8 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 2881,
-      "images": 48,
+      "expectedLabelVisible": true,
+      "images": 22,
       "template": "parand"
     },
     {
@@ -69,7 +77,8 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 5566,
-      "images": 28,
+      "expectedLabelVisible": true,
+      "images": 54,
       "template": "techno"
     },
     {
@@ -79,16 +88,18 @@
       "ready": "complete",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 4946,
-      "images": 22,
+      "expectedLabelVisible": true,
+      "images": 54,
       "template": "rayan"
     },
     {
       "id": "mock-zarin",
       "result": "rendered",
       "url": "https://demo.launcho.ir/?template=zarin",
-      "ready": "loading",
+      "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 3935,
+      "expectedLabelVisible": true,
       "images": 3,
       "template": "zarin"
     },
@@ -99,7 +110,8 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 3090,
-      "images": 38,
+      "expectedLabelVisible": true,
+      "images": 33,
       "template": "kashane"
     },
     {
@@ -109,17 +121,19 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 5062,
-      "images": 12,
+      "expectedLabelVisible": true,
+      "images": 18,
       "template": "negin"
     },
     {
       "id": "mock-saniye",
       "result": "rendered",
       "url": "https://demo.launcho.ir/?template=saniye",
-      "ready": "complete",
+      "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 1971,
-      "images": 22,
+      "expectedLabelVisible": true,
+      "images": 4,
       "template": "saniye"
     },
     {
@@ -129,7 +143,8 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 8487,
-      "images": 9,
+      "expectedLabelVisible": true,
+      "images": 29,
       "template": "astar"
     },
     {
@@ -139,7 +154,8 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 3602,
-      "images": 24,
+      "expectedLabelVisible": true,
+      "images": 13,
       "template": "yas"
     },
     {
@@ -149,7 +165,8 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 3490,
-      "images": 2,
+      "expectedLabelVisible": true,
+      "images": 11,
       "template": "bina"
     },
     {
@@ -159,7 +176,8 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 2101,
-      "images": 19,
+      "expectedLabelVisible": true,
+      "images": 10,
       "template": "almas"
     },
     {
@@ -169,7 +187,8 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 1618,
-      "images": 13,
+      "expectedLabelVisible": true,
+      "images": 14,
       "template": "gold"
     },
     {
@@ -179,17 +198,19 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 3280,
-      "images": 4,
+      "expectedLabelVisible": true,
+      "images": 5,
       "template": "sofre"
     },
     {
       "id": "mock-hamdam",
       "result": "rendered",
       "url": "https://demo.launcho.ir/?template=hamdam",
-      "ready": "complete",
+      "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 2920,
-      "images": 5,
+      "expectedLabelVisible": true,
+      "images": 4,
       "template": "hamdam"
     },
     {
@@ -199,7 +220,8 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 2549,
-      "images": 3,
+      "expectedLabelVisible": true,
+      "images": 24,
       "template": "golbarg"
     },
     {
@@ -209,7 +231,8 @@
       "ready": "complete",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 2903,
-      "images": 32,
+      "expectedLabelVisible": true,
+      "images": 21,
       "template": "yadak"
     },
     {
@@ -219,17 +242,19 @@
       "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 2680,
-      "images": 25,
+      "expectedLabelVisible": true,
+      "images": 20,
       "template": "lakchery"
     },
     {
       "id": "mock-negah",
       "result": "rendered",
       "url": "https://demo.launcho.ir/?template=negah",
-      "ready": "complete",
+      "ready": "interactive",
       "title": "فروشگاه من | فروشگاه آنلاین شما",
       "text": 4464,
-      "images": 9,
+      "expectedLabelVisible": true,
+      "images": 27,
       "template": "negah"
     }
   ]

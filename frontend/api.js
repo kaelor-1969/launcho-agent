@@ -62,7 +62,7 @@ const invalid = () => new Error('پاسخ معتبری دریافت نشد. دو
 const sessionEnded = error => ['session_not_found', 'session_expired'].includes(error.code);
 
 export function createSessionApi() {
-  let session, initializing;
+  let session, initializing, needsReconciliation = false;
   async function start() {
     if (session) return session;
     if (!initializing) {
@@ -84,20 +84,21 @@ export function createSessionApi() {
       if (!url) throw invalid();
       const send = () => post(url, {message, sessionId: session.id, requestId}, session.token);
       let data;
-      let sessionRestarted = false;
       try {
         data = await send();
       } catch (error) {
         if (!sessionEnded(error)) throw error;
         session = null;
+        needsReconciliation = true;
         await start();
-        sessionRestarted = true;
         data = await send();
       }
       if (typeof data.reply !== 'string' || !data.reply.trim() || data.sessionId !== session.id ||
           !validRevision(data.revision) || data.revision < session.revision) throw invalid();
       session.revision = data.revision;
-      return {...data, sessionRestarted};
+      const result = {...data, sessionRestarted: needsReconciliation};
+      needsReconciliation = false;
+      return result;
     },
     async localOptions(kind) {
       const data = await post('/api/local-signup-options?kind=' + encodeURIComponent(kind));

@@ -23,17 +23,28 @@ Actual round-1 checks: Chrome form suite exit0 (six scenarios plus new own-domai
 
 | Stage | Round-1 implementation evidence | Round-2 validation |
 | --- | --- | --- |
-| 1 | Both forms/edit/Persian review retained; own-domain loss fixed; six Chrome scenarios pass | Pending |
-| 2 | Explicit test catalog23 entries; every preview binding/recommendation; fresh HTTP23/23; missing links unchanged | Pending browser snapshot |
-| 3 | Sole trusted handler, synchronous pending lock, native double-click and synthetic rejection checks | Pending final suite |
-| 4 | CDP offline, truncated accepted confirmation response, exact identities; no system network changes | Pending final suite |
-| 5 | Session-reset form reconciliation added; unknown confirm remains locked/memory-only; expiry/refresh checked | Pending final suite |
-| 6 | Late status race fixed; URL allowlist, statuses, handshake/channel gate and loader timeout | Pending final suite / local service |
-| 7 | Mobile/desktop/short viewport, accessible names, native keyboard, reduced motion; own-domain Tab added | Pending final Chrome/Edge |
-| 8 | Installation/evidence/manifest inspected; original reports are historical until refreshed | Pending final evidence |
+| 1 | Both forms/edit/Persian review retained; own-domain loss fixed | PASS Chrome+Edge six cases, existing-domain round-trip; actual local FastAPI/mock both kinds1280/390 |
+| 2 | Explicit test catalog23 entries; every preview binding/recommendation; missing links unchanged | PASS freshHTTP23/23 and publicChrome23/23 with expected template label visible; not official registration evidence |
+| 3 | Sole trusted handler, synchronous pending lock | PASS native double-click/extra Enter/synthetic rejection in Chrome+Edge |
+| 4 | CDP offline, truncated accepted confirmation response, exact identities | PASS Chrome+Edge, same requestId/review body, no system network changes |
+| 5 | Session reconciliation; unknown locked/memory-only; expiry/refresh | PASS including creation503 and first-new-reply503 followed by manual retry; no replacement confirmation; forced-refresh recovery remains external |
+| 6 | Late status race fixed; URL allowlist, status/handshake/channel and timeout | PASS Chrome+Edge delayed status/new review, full status cases and loader; actual two-origin service forms/review pass |
+| 7 | Mobile/desktop/short viewport, native keyboard, reduced motion | PASS Chrome+Edge,21desktop/17mobile named AX controls; documented screenreader/device/Safari/Firefox limits remain |
+| 8 | Installation, source hashes, selected images and four safe reports | PASS final evidence refreshed; exact hashes/membership and outgoing scope verified before push |
 
 No npm build/lint configuration exists. JavaScript syntax, diff checks and applicable actual tests will be used. Backend/public-contract, physical-device, Firefox/Safari and durable-recovery limits remain explicit; no production signup/model/payment test is authorized or claimed.
 
 ## Round 2
 
-Not yet complete. No push until final independent review, required tests, evidence and outgoing commit/scope checks pass.
+Fresh independent reviewer received the final logic, new scenarios and actual results; no file/test tool access and no independent execution claimed. No remaining blocker found. The reviewer required final reruns and exact final evidence/scope; these gates are applied before publication.
+
+Additional round-2 correction: a per-call restart flag was insufficient if creating the replacement session or its first chat reply failed. The API now keeps `needsReconciliation` from before replacement creation until a validated chat response reaches UI. Both failure/retry paths were added to the real Chrome/Edge form suite and passed on rerun.
+
+Actual validation:
+- Full `node tests/widget_quality_check.cjs` exit0 in Chrome157.0.8103.51 and Edge157.0.4341.46; affected signup suites repeated after the last restart correction, exit0 in each browser.
+- Fresh read-only HTTP23/23 and browser23/23 public previews, exit0. Preview test requires requested label plus URL/text/loaded image; full asset loading/visual equivalence/official availability remain unverified.
+- Actual local FastAPI + mock, ports8040/8041 (different origins), temporary isolated databases: `WIDGET_REVIEW_ONLY=1 node tests/widget_live_workspace_browser.cjs` exit0 for both kinds at1280/390, own domain retained, zero chat/confirm requests. This is local backend integration, not production Launcho. Added test-only lexical variable declaration initially failed; wrapped in IIFE and rerun passed.
+- Existing Python suite: default Windows encoding failed; parent-only `-X utf8` left one child-process failure. Inherited `PYTHONUTF8=1` produced **162 tests OK**, exit0. No Python source modified.
+- All frontend JS and widget CJS syntax and diff checks passed. No npm lint/build task exists; no frontend build step was invented. Docker backend deployment was not run or claimed.
+
+Evidence uses final rerun reports/screenshots, with implementation source hashes in evidence-manifest.json to identify the exact tested code independently of documentation commit SHA. No tokens, database, env file or transient log is committed. Old branch and all user commits preserved. User explicitly authorized dedicated-branch push after these gates, not PR/main/force/merge/deploy.

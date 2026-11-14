@@ -4,15 +4,15 @@
   "accessibility": [
     {
       "width": 1280,
-      "namedControls": 20
+      "namedControls": 21
     },
     {
       "width": 390,
-      "namedControls": 16
+      "namedControls": 17
     },
     {
       "width": 320,
-      "namedControls": 16
+      "namedControls": 17
     }
   ],
   "mainWidget": true,
@@ -61,6 +61,10 @@
   "darkThemeScreenshot": true,
   "mobileServiceKeyboard": true,
   "reducedMotion": true,
+  "ownDomainRoundTrip": true,
+  "emptyCatalogBlocked": true,
+  "sessionRestartReconciled": true,
+  "sessionRestartSurvivesLostReply": true,
   "untested": [
     "real backend integration",
     "real draft creation",

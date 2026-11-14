@@ -18,6 +18,8 @@ fixture.signupOptions = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../c
 let sid = 'signup-browser-session';
 const token = 'signup-browser-token';
 let expireChat = false, renewSession = false, emptyOptions = false;
+let failRenewedChat = false, firstRenewedChat = false, newSessionName = 'جلسهٔ تازه';
+let failRenewedSessionStart = false;
 let revision = 0, preferences = {}, reviewId = 0;
 let optionFailure = false, malformedOptions = false, saveFailure = false, reviewFailure = false, unknown = false;
 let calls = [], currentReview;
@@ -30,8 +32,10 @@ const server = http.createServer(async (req, res) => {
     calls.push({url: req.url, method: req.method, body, token: req.headers['x-session-token']});
     if (req.url === '/api/sessions') {
       if (renewSession) {
+        if (failRenewedSessionStart) { failRenewedSessionStart=false; return json({detail:{code:'session_unavailable'}},503); }
         renewSession = false; sid += '-renewed'; revision = 0;
-        preferences = {kind:'website', businessName:'جلسهٔ تازه', category:fixture.signupOptions.website.businessCategories[1].id,
+        firstRenewedChat = true;
+        preferences = {kind:'website', businessName:newSessionName, category:fixture.signupOptions.website.businessCategories[1].id,
           template:fixture.signupOptions.website.templates[0].id, planMonths:3, domain:{ownDomain:'fresh.example.ir'}};
       }
       return json({sessionId: sid, sessionToken: token, revision, adapterMode: 'local_mock'});
@@ -47,6 +51,10 @@ const server = http.createServer(async (req, res) => {
     assert.equal(req.headers['x-session-token'], token);
     if (req.url === '/api/chat') {
       if (expireChat) { expireChat=false; renewSession=true; return json({detail:{code:'session_expired'}},410); }
+      if (firstRenewedChat) {
+        firstRenewedChat=false;
+        if (failRenewedChat) return json({detail:{code:'model_unavailable'}},503);
+      }
       return json({sessionId:sid, revision, preferences, reply:'پاسخ جلسهٔ تازه', nextAction:'collect_preferences'});
     }
     if (req.url.endsWith('/preferences')) {
@@ -381,14 +389,25 @@ const server = http.createServer(async (req, res) => {
     assert.equal(chatRetries[0].body.requestId, chatRetries[1].body.requestId);
     assert.notEqual(chatRetries[0].body.sessionId, chatRetries[1].body.sessionId);
     assert.equal(confirmCalls(), confirmationsBeforeExpiry);
+    expireChat = true; failRenewedChat = false; failRenewedSessionStart = true; newSessionName = 'جلسهٔ تازهٔ سوم';
+    await evaluate(`doc.querySelector('#message').value='بازیابی با ایجاد ناموفق جلسه'; doc.querySelector('#form').requestSubmit()`);
+    await wait(`!doc.querySelector('#retry').hidden && !doc.querySelector('#retry').disabled`);
+    await evaluate(`doc.querySelector('#retry').click()`);
+    await wait(`doc.querySelector('#waiting').hidden && doc.querySelector('[name=businessName]').value === 'جلسهٔ تازهٔ سوم'`);
     assert.equal(await evaluate(`doc.querySelector('#session-review').hidden && doc.querySelector('#confirm').disabled`), true);
     await screenshot('session-restarted-form');
+    expireChat = true; failRenewedChat = true; newSessionName = 'جلسهٔ تازهٔ دوم';
+    await evaluate(`doc.querySelector('#message').value='بازیابی با پاسخ گم‌شده'; doc.querySelector('#form').requestSubmit()`);
+    await wait(`!doc.querySelector('#retry').hidden && !doc.querySelector('#retry').disabled`);
+    await evaluate(`doc.querySelector('#retry').click()`);
+    await wait(`doc.querySelector('#waiting').hidden && doc.querySelector('[name=businessName]').value === 'جلسهٔ تازهٔ دوم'`);
+    assert.equal(confirmCalls(), confirmationsBeforeExpiry);
     console.log('PASS: own-domain round trip, empty approved catalog blocked, expired session reconciles real form with new session preferences');
     assert.deepEqual(errors, []);
     const browserVersion = await command('Browser.getVersion');
     fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify({browser: browserVersion.product, userAgent:browserVersion.userAgent, accessibility,
       mainWidget: true, controlledResponses: true, externalNetworkBlocked: true, results, optionsRecovery: true, reviewRecovery: true,
-      darkThemeScreenshot: true, mobileServiceKeyboard:true, reducedMotion:true, untested: ['real backend integration', 'real draft creation', 'physical mobile keyboard', 'screen reader speech', 'Safari', 'Firefox'],
+      darkThemeScreenshot: true, mobileServiceKeyboard:true, reducedMotion:true, ownDomainRoundTrip:true, emptyCatalogBlocked:true, sessionRestartReconciled:true, sessionRestartSurvivesLostReply:true, untested: ['real backend integration', 'real draft creation', 'physical mobile keyboard', 'screen reader speech', 'Safari', 'Firefox'],
       backendLimitation: {evidence: 'app/api/routes.py:52-62 (read only)', verification: 'source inspection; backend not executed',
         reproduce: ['Start the existing backend with an adapter mode other than local_mock.', 'GET /api/local-signup-options?kind=shop or kind=website returns 404 by the mode guard.', 'The main widget therefore has no catalog-backed form in that mode.']}, errors}, null, 2));
     console.log('PASS: unavailable/malformed options and review error recovery; no external network or browser exceptions');

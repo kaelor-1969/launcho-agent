@@ -7,8 +7,9 @@ const {spawn} = require('node:child_process');
 const {once} = require('node:events');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const host = process.env.WIDGET_HOST_URL || 'http://127.0.0.1:8001';
+const reviewOnly = process.env.WIDGET_REVIEW_ONLY === '1';
 const profile = fs.mkdtempSync(path.join(os.tmpdir(),'launcho-live-workspace-'));
-const output = path.resolve(__dirname,'../artifacts/widget-connected-live');
+const output = process.env.WIDGET_ARTIFACT_DIR ? path.resolve(process.env.WIDGET_ARTIFACT_DIR) : path.resolve(__dirname,'../artifacts/widget-connected-live');
 fs.mkdirSync(output,{recursive:true});
 const chrome = spawn(process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   ['--headless=new','--disable-gpu','--disable-background-timer-throttling','--disable-renderer-backgrounding','--no-first-run','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],
@@ -104,10 +105,12 @@ let socket;
     assert.equal(await chat(`document.querySelector('#assistant-content').hidden`),true);
     await chat(`document.querySelector('#desktop-services [data-service=assistant]').click()`);
     assert.equal(await chat(`document.querySelector('#local-signup [name=businessName]').value`),'retained draft');
-    await chat(`document.querySelector('#message').value='لانچو چه امکاناتی دارد؟'; document.querySelector('#form').requestSubmit()`);
-    await wait(()=>chat(`document.querySelectorAll('#messages .role-assistant').length>0 && document.querySelector('#waiting').hidden`));
+    if (!reviewOnly) {
+      await chat(`document.querySelector('#message').value='لانچو چه امکاناتی دارد؟'; document.querySelector('#form').requestSubmit()`);
+      await wait(()=>chat(`document.querySelectorAll('#messages .role-assistant').length>0 && document.querySelector('#waiting').hidden`));
+    }
     const history=await chat(`document.querySelector('#messages').textContent`);
-    assert.ok(history.length>20);
+    if (!reviewOnly) assert.ok(history.length>20);
     await evaluate('LaunchoWidget.close(); LaunchoWidget.open()');
     assert.equal(await chat(`document.querySelector('#messages').textContent`),history);
     for (const kind of ['shop', 'website']) {
@@ -120,6 +123,8 @@ let socket;
       await wait(()=>chat(`!document.querySelector('#signup-save').disabled`));
       await chat(`(() => {
         const form = document.querySelector('#local-signup');
+        form.elements.ownDomain.value = '';
+        form.elements.ownDomain.dispatchEvent(new Event('input', {bubbles:true}));
         form.elements.businessName.value = 'آزمون ویجت';
         form.elements.label.value = 'widget-review';
         form.requestSubmit();
@@ -131,17 +136,20 @@ let socket;
       await wait(()=>chat(`!document.querySelector('#local-signup').hidden && !document.querySelector('#signup-save').disabled`));
       assert.equal(await chat(`document.querySelector('#local-signup').elements.businessName.value`),'آزمون ویجت');
       assert.equal(await chat(`document.querySelector('#confirm').disabled`),true);
-      await chat(`document.querySelector('#local-signup').elements.businessName.value = 'نام ویرایش‌شده'; document.querySelector('#local-signup').requestSubmit()`);
+      await chat(`(() => { const form=document.querySelector('#local-signup'); form.elements.businessName.value='نام ویرایش‌شده'; form.elements.ownDomain.value='owner.example.ir'; form.elements.ownDomain.dispatchEvent(new Event('input',{bubbles:true})); form.requestSubmit(); })()`);
       await wait(()=>chat(`!document.querySelector('#session-review').hidden && !document.querySelector('#confirm').disabled`));
       assert.ok(await chat(`document.querySelector('#review-summary').textContent.includes('نام ویرایش‌شده')`));
+      assert.ok(await chat(`document.querySelector('#review-summary').textContent.includes('owner.example.ir')`));
       const reviewShot=await command('Page.captureScreenshot',{format:'png'});
       fs.writeFileSync(path.join(output,`${width}-${kind}-review.png`),Buffer.from(reviewShot.data,'base64'));
       await chat(`document.querySelector('#edit-signup').click()`);
       await wait(()=>chat(`!document.querySelector('#local-signup').hidden && !document.querySelector('#signup-save').disabled`));
+      assert.equal(await chat(`document.querySelector('#local-signup').elements.ownDomain.value`),'owner.example.ir');
     }
     await chat(`document.querySelector('#confirm').click()`);
     assert.equal(calls.filter(url=>url.endsWith('/confirm')).length,0);
-    console.log(`PASS: running host ${host}, ${width}px, real chat, shop/website preferences, edits, Persian review, retained history, no confirmation`);
+    if (reviewOnly) assert.equal(calls.filter(url=>url.endsWith('/api/chat')).length,0);
+    console.log(`PASS: running host ${host}, ${width}px, ${reviewOnly ? 'review-only/no chat API' : 'real chat'}, shop/website preferences, own domain, edits, Persian review, retained history, no confirmation`);
   }
   assert.deepEqual(errors,[]);
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>{socket?.close();chrome.kill();});

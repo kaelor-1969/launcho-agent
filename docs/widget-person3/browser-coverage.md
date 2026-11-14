@@ -31,3 +31,5 @@ Use a separate PowerShell window for overrides if existing environment values mu
 Independent stage-7 source reviewer found no blocker and did not run browsers. Coverage gaps: AX samples only the shop initial/restored iframe form, not launcher/website/review/error/open modal; dialog checks omit Shift+Tab, full focus-wrap and Space activation; reduced-motion assertion covers typing dots only. These are unverified, not reported as passing.
 
 Stage8 final regression also ran the complete session/loader/offline/refresh suite in both Chrome and Edge with exit0. Committed reports are linked in evidence.md.
+
+Pre-push final runs: Chrome and Edge full quality suites PASS; affected signup suites repeated after persistent-restart fixes PASS, with21 named controls atdesktop and17mobile. Existing-domain and empty-catalog checks, late status race, and session reset despite failed creation/reply were added. Both products still share Chromium. Actual FastAPI/local-mock cross-origin form/review checks passed in Chrome1280/390 with no chat/confirm requests.
