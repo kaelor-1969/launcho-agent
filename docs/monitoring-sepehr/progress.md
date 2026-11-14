@@ -26,3 +26,25 @@ decoded bytes and media-type parameters; all four are already implemented.
 Validation: four unit tests with controlled local HTTP servers. First run exposed
 Windows loopback refusal taking longer than the one-second test deadline; adjusted
 the refusal case to five seconds, preserving the separate 100ms timeout test.
+
+Stage-2 commit: `aacc6e6`.
+
+## Stage 3
+
+Real Chrome on separate host/widget origins serving actual frontend assets.
+No frontend/product changes. Existing configured visibility, editable textarea and
+working close button establish shell readiness. Every non-GET/HEAD is blocked
+before navigation, workers blocked, sockets closed; no session is fabricated.
+Six scenarios passed: healthy, loader 503, iframe 503, missing handshake, module
+exception, optional images 404. Receiver observed zero writes in every scenario.
+Healthy/optional scenarios observed blocked session initialization, explicitly
+`session_verified: false`. Failure screenshot is optional and fully masked;
+safe diagnostics retain stage/counters only, no URLs/errors/page text.
+Browser launch itself now uses the configured deadline as well as page probing.
+Raw local evidence is ignored under `artifacts/monitoring/browser-results.json`.
+Independent evidence-only reviewer requested actual loaded-frame URL validation;
+added before interaction. Also blocked GET `/api/` requests. Stack attribution
+uses the current repository's `/widget/` module layout; future relocated scripts
+require review. Deadline covers all interactions; cleanup runs in finally. Origin
+filtering is not a guarantee that an arbitrary host's GET handlers are side-effect
+free: only approved hosts with safe resource GETs may be monitored.

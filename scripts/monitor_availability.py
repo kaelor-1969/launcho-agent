@@ -119,6 +119,128 @@ async def probe_health(base, endpoint, timeout):
         return result(False, 'connection')
 
 
+async def probe_widget(config):
+    # Imported lazily: HTTP/state/delivery unit tests do not need a browser.
+    from playwright.async_api import async_playwright, Error as BrowserError
+    details = {'loader': False, 'iframe': False, 'ui_shell': False,
+               'blocked_writes': 0, 'essential_failures': 0,
+               'widget_js_errors': 0, 'host_js_errors': 0,
+               'optional_failures': 0, 'session_verified': False}
+    widget_origin = origin(config.loader_url)
+    allowed = {origin(config.host_url), widget_origin}
+    browser = None
+    context = None
+    page = None
+    phase = 'browser_start'
+
+    def essential(req):
+        u = urlsplit(req.url)
+        return (req.url == config.loader_url or
+                (origin(req.url) == widget_origin and u.path.startswith('/widget/') and
+                 req.resource_type in ('document', 'script', 'stylesheet')))
+
+    async def guard(route):
+        req = route.request
+        if req.method not in ('GET', 'HEAD'):
+            details['blocked_writes'] += 1
+            await route.abort()
+        elif origin(req.url) not in allowed or urlsplit(req.url).path.startswith('/api/'):
+            await route.abort()
+        else:
+            await route.continue_()
+
+    def failed(req):
+        if req.method in ('GET', 'HEAD'):
+            key = 'essential_failures' if essential(req) else 'optional_failures'
+            details[key] += 1
+
+    def response(res):
+        if res.url == config.loader_url and res.status == 200:
+            details['loader'] = True
+        if res.status >= 300:
+            key = 'essential_failures' if essential(res.request) else 'optional_failures'
+            details[key] += 1
+
+    def js_error(error):
+        # Never retain exception text, URLs, page content or credentials.
+        key = 'widget_js_errors' if widget_origin + '/widget/' in (error.stack or '') else 'host_js_errors'
+        details[key] += 1
+
+    try:
+        async with async_playwright() as pw:
+            try:
+                channel = None if config.browser_channel == 'chromium' else config.browser_channel
+                browser = await pw.chromium.launch(channel=channel, timeout=config.timeout * 1000)
+                context = await browser.new_context(service_workers='block', accept_downloads=False)
+                await context.route('**/*', guard)
+                # Fail closed on versions lacking socket interception.
+                await context.route_web_socket('**/*', lambda socket: socket.close())
+                page = await context.new_page()
+                page.on('requestfailed', failed)
+                page.on('response', response)
+                page.on('pageerror', js_error)
+
+                async def inspect():
+                    nonlocal phase
+                    phase = 'host_navigation'
+                    nav = await page.goto(config.host_url, wait_until='domcontentloaded', timeout=0)
+                    if nav is None or nav.status != 200 or page.url != config.host_url:
+                        return result(False, 'host_status_or_redirect', **details)
+                    phase = 'loader'
+                    await page.wait_for_function('typeof window.LaunchoWidget?.open === "function"', timeout=0)
+                    scripts = page.locator('script[src]')
+                    if not await scripts.evaluate_all('(els, url) => els.filter(e => e.src === url).length === 1', config.loader_url):
+                        return result(False, 'loader_installation', **details)
+                    await page.evaluate('window.LaunchoWidget.open()')
+                    phase = 'iframe'
+                    frame_node = page.locator('#launcho-widget iframe')
+                    await frame_node.wait_for(state='attached', timeout=0)
+                    if await frame_node.count() != 1:
+                        return result(False, 'iframe_count', **details)
+                    src = await frame_node.get_attribute('src')
+                    if origin(src) != widget_origin or urlsplit(src).path not in ('/widget/widget.html', '/widget/widget-legacy.html'):
+                        return result(False, 'iframe_target', **details)
+                    details['iframe'] = True
+                    phase = 'ui_shell'
+                    await frame_node.wait_for(state='visible', timeout=0)
+                    frame = await frame_node.element_handle()
+                    frame = await frame.content_frame()
+                    await frame.locator('#message').wait_for(state='visible', timeout=0)
+                    if origin(frame.url) != widget_origin or urlsplit(frame.url).path not in ('/widget/widget.html', '/widget/widget-legacy.html'):
+                        return result(False, 'iframe_navigation', **details)
+                    await frame.locator('#close').wait_for(state='visible', timeout=0)
+                    if not await frame.locator('#message').is_editable() or not await frame.locator('#close').is_enabled():
+                        return result(False, 'ui_controls', **details)
+                    # Exercise reversible close control, never a business action.
+                    await frame.locator('#close').click(timeout=0)
+                    await frame_node.wait_for(state='hidden', timeout=0)
+                    details['ui_shell'] = True
+                    ok = details['loader'] and not details['essential_failures'] and not details['widget_js_errors']
+                    return result(bool(ok), 'ok' if ok else 'widget_resource_or_js', **details)
+
+                try:
+                    return await asyncio.wait_for(inspect(), config.timeout)
+                except asyncio.TimeoutError:
+                    return result(False, phase + '_timeout', **details)
+                finally:
+                    if not details['ui_shell'] and config.screenshot_dir and page:
+                        # Mask the entire page: no host/customer text or frame pixels persist.
+                        folder = Path(config.screenshot_dir)
+                        folder.mkdir(parents=True, exist_ok=True)
+                        try:
+                            await page.screenshot(path=str(folder / 'widget-failure.png'),
+                                                  mask=[page.locator('html')], timeout=2000)
+                        except BrowserError:
+                            pass
+            finally:
+                if context:
+                    await context.close()
+                if browser:
+                    await browser.close()
+    except (BrowserError, AttributeError):
+        return result(False, 'browser_unavailable', **details)
+
+
 async def run(args):
     config = Config(**json.loads(Path(args.config).read_text(encoding='utf-8')))
     while True:
@@ -126,6 +248,8 @@ async def run(args):
         for name in ('live', 'ready'):
             outcomes[name] = await probe_health(config.service_url, name, config.timeout)
             emit('check', check=name, label=config.label, **outcomes[name])
+        outcomes['widget'] = await probe_widget(config)
+        emit('check', check='widget', label=config.label, **outcomes['widget'])
         if args.once:
             return 0 if all(o['ok'] for o in outcomes.values()) else 1
         await asyncio.sleep(config.interval)
