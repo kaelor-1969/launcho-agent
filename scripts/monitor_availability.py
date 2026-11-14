@@ -285,11 +285,38 @@ class State:
 
 class Sender:
     def __init__(self, config, dry_run=True):
+        self.config = config
+        self.dry_run = dry_run
+        self.url = os.environ.get('LAUNCHO_MONITOR_WEBHOOK', '')
+        self.token = os.environ.get('LAUNCHO_MONITOR_WEBHOOK_TOKEN', '')
+        if any(ord(c) < 32 or ord(c) > 126 for c in self.token):
+            raise ValueError('Webhook token contains invalid header characters.')
         if not dry_run:
-            raise ValueError('External delivery not configured; use dry-run.')
+            valid_url(self.url, secret=True)
+            u = urlsplit(self.url)
+            if u.scheme != 'https' and u.hostname not in ('127.0.0.1', 'localhost', '::1'):
+                raise ValueError('Webhook requires HTTPS except for loopback tests.')
+
     async def send(self, payload):
-        emit('alert_dry_run', payload=payload)
-        return True
+        if self.dry_run:
+            emit('alert_dry_run', payload=payload)
+            return True
+        headers = {'Authorization': f'Bearer {self.token}'} if self.token else {}
+        for attempt in range(self.config.delivery_attempts):
+            try:
+                async def post():
+                    async with httpx.AsyncClient(trust_env=False, follow_redirects=False) as client:
+                        async with client.stream('POST', self.url, json=payload, headers=headers) as res:
+                            return 200 <= res.status_code < 300
+                if await asyncio.wait_for(post(), self.config.timeout):
+                    emit('alert_delivered', event_id=payload['id'])
+                    return True
+            except (httpx.HTTPError, asyncio.TimeoutError):
+                pass
+            if attempt + 1 < self.config.delivery_attempts:
+                await asyncio.sleep(0.2 * (attempt + 1))
+        emit('alert_delivery_failed', event_id=payload['id'], attempts=self.config.delivery_attempts)
+        return False
 
 
 async def cycle(config, state, sender, widget_probe=probe_widget):

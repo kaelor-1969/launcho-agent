@@ -1,8 +1,12 @@
 # Remaining dependencies
 
-- Sepehr/operator: approved real host URL and widget service origin; approved
-  alert destination and credentials in environment (never in Git/chat/logs).
-  Repository inspection found no configured alert channel. No destination guessed.
+- User confirmed development/mock environment: `https://launchox.ir/` host and
+  `https://ag.launchox.ir` widget/API. Initial read-only HTTP and browser checks
+  passed on 2026-11-14; no non-GET/HEAD browser requests were allowed through.
+  `https://launcho.ir` belongs to final acceptance and was not checked here.
+- Sepehr/operator: choose approved alert channel; user explicitly requested a
+  synthetic receiver until then. Supply `LAUNCHO_MONITOR_WEBHOOK` and optional
+  `LAUNCHO_MONITOR_WEBHOOK_TOKEN` in the process environment. No channel guessed.
 - Parsa: provision an independent monitoring host with Python, Playwright/Chromium,
   outbound HTTPS, read access to the approved host, persistent private monitor
   state directory and restricted logs. Configure CSP frame-ancestors for that host.

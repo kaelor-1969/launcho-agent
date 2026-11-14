@@ -66,3 +66,23 @@ Independent evidence-only review confirmed lock acquisition is outside the owned
 lock cleanup try/finally. Added a fifth test for os.replace failure: no alert is
 sent when persistence fails. Persistence failure stops monitoring visibly instead
 of risking an alert storm; operator must repair the monitor state volume.
+
+Stage-4 commit: `4709878`.
+
+## Stage 5
+
+Generic environment-only webhook transport, default dry-run, optional Bearer token,
+HTTPS except loopback, strict header validation, no redirect/proxy environment,
+bounded attempts/deadlines and no credential-bearing logs. One labelled test mode.
+Initial four local receiver tests passed; added timeout/refused-connection test
+after independent evidence-only reviewer noted that gap. No actual channel chosen
+or tested; user expressly requested the synthetic receiver. Same event ID must be
+deduplicated by receivers if a response is lost between attempts. Failed send
+sequences are not replayed: notification may be lost permanently.
+
+User supplied development host launchox.ir and service ag.launchox.ir. A real
+read-only one-shot run passed both health contracts and browser loader/frame/shell
+on those hosts, blocked one automatic session POST, observed one optional-resource
+failure and no essential/JS failure. Session was not verified. Browser security
+was unchanged. Web text-fetch tool could not access these URLs, but actual local
+HTTP/Chrome monitor execution succeeded. launcho.ir remains final acceptance only.
