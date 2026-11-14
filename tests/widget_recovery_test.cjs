@@ -7,11 +7,11 @@ const saved = {version:1, id:'saved-session', token:'owner-capability', pending:
 const snapshot = {sessionId:saved.id, revision:4, preferences:{kind:'shop', businessName:'نمونه'},
   history:[{role:'user', content:'سلام'}, {role:'assistant', content:'درود'}],
   adapterMode:'local_mock', expiresAt:'2099-01-01T00:00:00Z'};
-async function runtime({values = new Map(), broken = false, response = snapshot, error = null} = {}) {
+async function runtime({values = new Map(), broken = false, markerFailure = false, response = snapshot, error = null} = {}) {
   const calls = [];
   const storage = {
     getItem(k) { if (broken) throw new Error('blocked'); return values.get(k) ?? null; },
-    setItem(k,v) { if (broken) throw new Error('quota'); values.set(k,v); },
+    setItem(k,v) { if (broken || (markerFailure && JSON.parse(v).pending)) throw new Error('quota'); values.set(k,v); },
     removeItem(k) { if (broken) throw new Error('blocked'); values.delete(k); },
   };
   const context = vm.createContext({URL, AbortController, setTimeout, clearTimeout,
@@ -60,7 +60,7 @@ async function runtime({values = new Map(), broken = false, response = snapshot,
     if (pending) {
       await assert.rejects(w.api.start()); await assert.rejects(w.api.start());
       assert.equal(w.calls.length,2); assert.ok(w.calls.every(c => c.method === 'GET'));
-    } else { await w.api.start(); assert.equal(w.calls.at(-1).url,'/api/sessions'); }
+    } else { assert.equal((await w.api.start()).recoveryExpired,true); assert.equal(w.calls.at(-1).url,'/api/sessions'); }
   }
   for (const response of [{...snapshot,sessionId:'wrong'}, {...snapshot,revision:-1},
     {...snapshot,history:[{role:'system',content:'bad'}]}, {...snapshot,expiresAt:'2000-01-01'},
@@ -79,5 +79,16 @@ async function runtime({values = new Map(), broken = false, response = snapshot,
   assert.equal((await scoped.api.start()).id,'new-session');
   const memory = await runtime({values});
   assert.equal((await memory.api.start()).id,'new-session','recovery remains explicit opt-in');
+  for (const pending of [false,true]) {
+    const w = await runtime({values:new Map([[key,JSON.stringify({...saved,pending})]]),markerFailure:true,
+      response:{...snapshot,draftState:pending?'unknown':'awaiting'}});
+    w.api.configureRecovery(true,'https://host.example');
+    const current=await w.api.start();const before=w.calls.length;
+    await assert.rejects(w.api.confirm({revision:4,reviewId:'review',confirmationToken:'secret'}),error=>error.notSent===true);
+    assert.equal(w.calls.length,before,'failed pending marker write must prevent confirm POST');
+    assert.equal(current.confirmationUnresolved,pending,'existing unknown state must survive blocked retry');
+    assert.equal(JSON.parse(w.values.get(key)).pending,pending);
+    assert.equal(w.api.storageAvailable,false);
+  }
   console.log('PASS: opt-in recovery, authoritative state, scope, pending marker, expiry, invalid and blocked storage');
 })().catch(error => {console.error(error); process.exitCode=1;});

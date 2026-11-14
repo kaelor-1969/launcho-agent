@@ -38,6 +38,11 @@ const server = http.createServer(async (req,res) => {
         adapterMode:'local_mock',draftState,...(draftState==='completed'?{draft}:{})});
     }
     if (req.url.endsWith('/draft-status')) return failStatus ? json({status:'untrusted'}) : json({status});
+    if (req.url.endsWith('/review')) {
+      assert.equal(calls.at(-1).body.revision,4);
+      return json({sessionId:sid,revision:4,reviewId:'storage-test-review',confirmationToken:'storage-test-confirmation',
+        canConfirm:true,summary:prefs,expiresAt:'2099-01-01T00:00:00Z'});
+    }
     if (req.url === '/api/chat') {
       await sleep(150);
       return json({sessionId:sid,revision:4,reply:'پاسخ معتبر سرور',nextAction:'collect_preferences'});
@@ -156,6 +161,22 @@ const server = http.createServer(async (req,res) => {
     assert.equal(calls.length,beforeOffline,'online event never retries automatically');
     failStatus=false;await evaluate(`doc.querySelector('#retry').click()`);
     await wait(`doc.querySelector('#review-summary a')?.getAttribute('aria-disabled')==='true'`);
+    draftState='rejected';await reload();
+    await wait(`doc.querySelector('#error-text').textContent.includes('درخواست قبلی رد شده') && !doc.querySelector('#signup-save').disabled`);
+    assert.equal(await evaluate(`doc.querySelector('#confirm').disabled`),true);
+    assert.equal(await evaluate(`doc.querySelector('#review-button').hidden`),false);
+    await shot('recovered-rejected');
+    await evaluate(`doc.querySelector('#review-button').click()`);
+    await wait(`!doc.querySelector('#confirm').hidden && !doc.querySelector('#confirm').disabled`);
+    await evaluate(`(() => {const w=frame.contentWindow;w.originalSetItem=w.Storage.prototype.setItem;
+      w.Storage.prototype.setItem=function(k,v){if(k.startsWith('launcho:tab-session:') && JSON.parse(v).pending)throw new w.DOMException('blocked','QuotaExceededError');return w.originalSetItem.call(this,k,v);};doc.querySelector('#confirm').focus();})()`);
+    await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
+    await command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await wait(`doc.querySelector('#error-text').textContent.includes('تأیید ارسال نشد') && !doc.querySelector('#confirm').disabled`);
+    assert.equal(calls.filter(c=>c.url.endsWith('/confirm')).length,0,'storage marker failure must block native confirmation before HTTP');
+    assert.equal(await evaluate(`(() => {const e=new frame.contentWindow.Event('beforeunload',{cancelable:true});frame.contentWindow.dispatchEvent(e);return e.defaultPrevented;})()`),false,'known unsent first attempt must not claim unknown operation');
+    await shot('confirmation-storage-blocked');
+    await evaluate(`frame.contentWindow.Storage.prototype.setItem=frame.contentWindow.originalSetItem`);
     draftState=undefined;
     const viewports=[];
     for (const [width,height] of [[1280,900],[390,844],[844,390],[320,480]]) {
@@ -186,7 +207,7 @@ const server = http.createServer(async (req,res) => {
     fs.writeFileSync(path.join(output,'report.json'),JSON.stringify({browser:browser.product,controlledResponses:true,
       restoredPreferences:true,hostRefresh:true,iframeRefresh:true,unknownLocked:true,expiredPendingNoReplacement:true,
       keyboardQuestionExactlyOnce:true,lateOptionsIgnored:true,choicesReadOnly:true,viewports,
-      completedReadBeforeLink:true,expiredDisabled:true,malformedStatusBlocked:true,offlineRecovery:true,reconnectNoMutation:true,confirmRequests:0,errors},null,2)+'\n');
+      completedReadBeforeLink:true,expiredDisabled:true,rejectedNotice:true,markerWriteFailurePreventsPost:true,malformedStatusBlocked:true,offlineRecovery:true,reconnectNoMutation:true,confirmRequests:0,errors},null,2)+'\n');
     console.log('PASS: native browser opt-in host/iframe refresh, preferences/history, unknown locks, expiry and GET-only recovery');
   } finally {socket?.close();chrome.kill();server.closeAllConnections();server.close();}
 })().catch(error=>{console.error(error);server.closeAllConnections();server.close();process.exitCode=1;});

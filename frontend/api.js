@@ -65,11 +65,12 @@ export function createSessionApi() {
   let session, initializing, needsReconciliation = false;
   let recoveryKey = null, attemptedRecovery = false, storageAvailable = true;
   const store = value => {
-    if (!recoveryKey) return;
+    if (!recoveryKey) return true;
     try {
       if (value) window.sessionStorage.setItem(recoveryKey, JSON.stringify(value));
       else window.sessionStorage.removeItem(recoveryKey);
-    } catch { storageAvailable = false; }
+      return true;
+    } catch { storageAvailable = false; return false; }
   };
   const remember = () => store({version: 1, id: session.id, token: session.token,
     pending: session.confirmationUnresolved === true});
@@ -94,6 +95,7 @@ export function createSessionApi() {
     if (session) return refresh ? readSession() : session;
     if (!initializing) {
       initializing = (async () => {
+        let recoveryExpired = false;
         if (recoveryKey && !attemptedRecovery) {
           attemptedRecovery = true;
           let saved;
@@ -108,13 +110,14 @@ export function createSessionApi() {
               if (!sessionEnded(error) || saved.pending) { session = null; attemptedRecovery = false; throw error; }
               session = null;
               store(null);
+              recoveryExpired = true;
             }
           }
         }
         const data = await post('/api/sessions', {});
         if (typeof data.sessionId !== 'string' || !data.sessionId ||
             typeof data.sessionToken !== 'string' || !data.sessionToken || !validRevision(data.revision)) throw invalid();
-        session = { id: data.sessionId, token: data.sessionToken, revision: data.revision, mode: data.adapterMode };
+        session = { id: data.sessionId, token: data.sessionToken, revision: data.revision, mode: data.adapterMode, recoveryExpired };
         remember();
         return session;
       })().finally(() => { initializing = null; });
@@ -192,8 +195,15 @@ export function createSessionApi() {
     },
     // Called only from the visible confirm button, never from chat/model output.
     async confirm(review) {
+      const alreadyUnresolved = session.confirmationUnresolved === true;
       session.confirmationUnresolved = true;
-      remember();
+      if (!remember()) {
+        // In tab mode, never dispatch a mutation whose pending marker could be lost.
+        session.confirmationUnresolved = alreadyUnresolved;
+        const error = new Error('تأیید ارسال نشد؛ ذخیره‌سازی مرورگر برای بازیابی در دسترس نیست. بدون تازه‌سازی، تنظیمات مرورگر را بررسی کن یا از پشتیبانی کمک بگیر.');
+        error.notSent = true;
+        throw error;
+      }
       return post(endpoint('confirm'), {
         revision: review.revision, reviewId: review.reviewId,
         confirmationToken: review.confirmationToken, confirmed: true,

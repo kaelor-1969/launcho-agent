@@ -125,9 +125,12 @@ async function initializeSession(refresh = false) {
   try {
     const session = await sessionApi.start(refresh);
     recoveryLocked = false;
+    let recoveryNotice = session.recoveryExpired
+      ? 'جلسهٔ قبلی منقضی شده یا در دسترس نیست؛ جلسهٔ تازه آغاز شد. انتخاب‌ها را دوباره وارد کن.' : '';
     if (session.mode === 'local_mock' && !signupAvailable) await initializeLocalSignup();
     if (session.restored) {
       const state = session.restored;
+      if (state.draftState === 'rejected') recoveryNotice = 'درخواست قبلی رد شده است. انتخاب‌ها را بررسی و دوباره مرور کن؛ تأیید تازه‌ای ارسال نشده است.';
       recoveryLocked = session.confirmationUnresolved || ['creating', 'unknown'].includes(state.draftState);
       $('messages').replaceChildren();
       for (const turn of state.history) appendMessage(turn.role, turn.content);
@@ -142,9 +145,9 @@ async function initializeSession(refresh = false) {
       }
     }
     sessionReady = true;
-    showError(recoveryLocked
+    showError([recoveryLocked
       ? 'نتیجهٔ درخواست قبلی هنوز مشخص نیست. فقط وضعیت را دوباره بررسی کن؛ برای بازیابی تأیید از پشتیبانی لانچو کمک بگیر.'
-      : !sessionApi.storageAvailable ? 'ذخیره‌سازی مرورگر در دسترس نیست؛ بازیابی پس از تازه‌سازی ممکن نیست.' : '', recoveryLocked);
+      : recoveryNotice, !sessionApi.storageAvailable ? 'ذخیره‌سازی مرورگر در دسترس نیست؛ بازیابی پس از تازه‌سازی ممکن نیست.' : ''].filter(Boolean).join(' '), recoveryLocked);
   } catch {
     recoveryLocked = true;
     showError('بازیابی یا ایجاد جلسه انجام نشد. بدون ارسال تأیید، دوباره وضعیت را بررسی کن.', true);
@@ -617,6 +620,7 @@ $('edit-signup').addEventListener('click', () => {
 $('confirm').addEventListener('click', async (event) => {
   if (!event.isTrusted) return;
   if (pending || recoveryLocked || failed || !review?.canConfirm) return;
+  const retryingConfirmation = confirmationPending;
   pending = true;
   confirmationPending = true;
   notify('confirmation-pending');
@@ -631,7 +635,11 @@ $('confirm').addEventListener('click', async (event) => {
     $('review-button').hidden = true;
   } catch (error) {
     // Preserve this exact review after a timeout. Only another click retries it.
-    if (['stale_confirmation', 'review_expired', 'draft_expired', 'review_rejected', 'draft_rejected'].includes(error.code)) {
+    if (error.notSent) {
+      confirmationPending = retryingConfirmation;
+      if (!confirmationPending) notify('confirmation-resolved');
+      showError(error.message);
+    } else if (['stale_confirmation', 'review_expired', 'draft_expired', 'review_rejected', 'draft_rejected'].includes(error.code)) {
       confirmationPending = false;
       sessionApi.resolveConfirmation();
       notify('confirmation-resolved');
