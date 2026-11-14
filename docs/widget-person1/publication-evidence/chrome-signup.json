@@ -1,0 +1,86 @@
+{
+  "browser": "Chrome/157.0.8103.51",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+  "accessibility": [
+    {
+      "width": 1280,
+      "namedControls": 21
+    },
+    {
+      "width": 390,
+      "namedControls": 17
+    },
+    {
+      "width": 320,
+      "namedControls": 17
+    }
+  ],
+  "mainWidget": true,
+  "controlledResponses": true,
+  "externalNetworkBlocked": true,
+  "results": [
+    {
+      "width": 1280,
+      "height": 900,
+      "kind": "shop",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "kind": "website",
+      "passed": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "kind": "shop",
+      "passed": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "kind": "website",
+      "passed": true
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "kind": "shop",
+      "passed": true
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "kind": "website",
+      "passed": true
+    }
+  ],
+  "optionsRecovery": true,
+  "reviewRecovery": true,
+  "darkThemeScreenshot": true,
+  "mobileServiceKeyboard": true,
+  "reducedMotion": true,
+  "ownDomainRoundTrip": true,
+  "emptyCatalogBlocked": true,
+  "sessionRestartReconciled": true,
+  "sessionRestartSurvivesLostReply": true,
+  "untested": [
+    "real backend integration",
+    "real draft creation",
+    "physical mobile keyboard",
+    "screen reader speech",
+    "Safari",
+    "Firefox"
+  ],
+  "backendLimitation": {
+    "evidence": "app/api/routes.py:52-62 (read only)",
+    "verification": "source inspection; backend not executed",
+    "reproduce": [
+      "Start the existing backend with an adapter mode other than local_mock.",
+      "GET /api/local-signup-options?kind=shop or kind=website returns 404 by the mode guard.",
+      "The main widget therefore has no catalog-backed form in that mode."
+    ]
+  },
+  "errors": []
+}

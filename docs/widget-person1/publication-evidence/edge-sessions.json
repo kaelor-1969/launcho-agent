@@ -1,0 +1,34 @@
+{
+  "browser": "Edg/157.0.4341.46",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0",
+  "controlledResponses": true,
+  "widths": [
+    1280,
+    390
+  ],
+  "offlineTransport": true,
+  "brokenConfirmationSocket": true,
+  "exactChatRetry": true,
+  "exactConfirmationRetry": true,
+  "nativeDoubleClick": true,
+  "syntheticApprovalRejected": true,
+  "pendingRefreshCancelled": true,
+  "resolvedRefreshNoReplay": true,
+  "rejectionClearsUnload": true,
+  "credentialsMemoryOnly": true,
+  "invalidHostFlagsRejected": true,
+  "statusStates": true,
+  "statusErrorRetry": true,
+  "expiredLinkDisabled": true,
+  "lazyIframe": true,
+  "loaderTimeout": true,
+  "demoIsolated": true,
+  "errors": [],
+  "untested": [
+    "production backend effects",
+    "durable refresh recovery",
+    "physical devices",
+    "Firefox",
+    "Safari"
+  ]
+}

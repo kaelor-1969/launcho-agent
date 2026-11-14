@@ -28,3 +28,5 @@
 راهنما: [installation.md](installation.md)؛ نیازهای دقیق دینا و نمونهٔ درخواست/پاسخ: [dependencies.md](dependencies.md)؛ شواهد و محدودیت‌ها: [evidence.md](evidence.md) و [manifest](evidence-manifest.json)؛ ادامهٔ کار: [handoff.md](handoff.md). نمونهٔ نصب: `frontend/host-example.html`.
 
 هیچ push، PR، merge یا deployment انجام نشده است. آماده‌بودن production یا تکمیل وابستگی‌های بیرونی ادعا نمی‌شود.
+
+به‌روزرسانی پس از تحویل: کاربر نام شاخه را به `work/widget-session-recovery-and-resilience` تغییر داد و سپس صریحاً بررسی مجدد، push و ادغام را درخواست کرد. محدودیت پیشین انتشار برای این درخواست لغو شده است. وضعیت این اقدام و نتایج بازآزمایی در [publication-review.md](publication-review.md) ثبت می‌شود؛ بند قبلی، وضعیت زمان تحویل اولیه را توصیف می‌کند.

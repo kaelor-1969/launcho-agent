@@ -1,0 +1,10 @@
+{
+  "localServices": true,
+  "separateHostOrigin": true,
+  "testCatalogOnly": true,
+  "realProduction": false,
+  "chatRequests": 0,
+  "confirmRequests": 0,
+  "tabRecovery": true,
+  "result": "PASS: actual cross-origin tab recovery 1280px, authoritative preferences, one GET and zero mutation replays\nPASS: running host http://127.0.0.1:12168, 1280px, review-only/no chat API, shop/website preferences, own domain, edits, Persian review, retained history, no confirmation\nPASS: actual cross-origin tab recovery 390px, authoritative preferences, one GET and zero mutation replays\nPASS: running host http://127.0.0.1:12168, 390px, review-only/no chat API, shop/website preferences, own domain, edits, Persian review, retained history, no confirmation\n"
+}
