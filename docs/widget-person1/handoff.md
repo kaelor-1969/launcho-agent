@@ -11,3 +11,5 @@ After stage4: stage3 0fbcfee. Questions exact-one action and late option respons
 After stage5: stage4 5c8ca07 plus test fix bfe9927. Landscape scroll regression fixed; four emulated viewports and legacy baseline verified. Next stage6 create connected sample host/installation docs and review loader security. Stage7 collect final Chrome/Edge evidence; stage8 reconcile all statuses. No backend/Python/content edits.
 
 After stage6: stage5 96a2ba1. Connected sample/installation docs ready and loader reinjection tested PASS. Stage7 next: expand regression runner, native Chrome/Edge evidence and actual local FastAPI/mock cross-origin review-only integration. Use isolated temp DB/env, never production/model/confirm. Stage8 final documentation/status reconciliation remains.
+
+After stage7: stage6 d5d8b84. Chrome+Edge full runner PASS; actual isolated FastAPI/mock cross-origin host recovery PASS. Reports/images committed under evidence/. Stage8 next: final source review, cache version alignment, final affected tests/regression, evidence hashes and final dependency matrix. No backend changes or external writes.

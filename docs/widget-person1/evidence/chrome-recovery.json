@@ -1,0 +1,61 @@
+{
+  "browser": "Chrome/157.0.8103.51",
+  "controlledResponses": true,
+  "restoredPreferences": true,
+  "hostRefresh": true,
+  "iframeRefresh": true,
+  "unknownLocked": true,
+  "expiredPendingNoReplacement": true,
+  "keyboardQuestionExactlyOnce": true,
+  "lateOptionsIgnored": true,
+  "choicesReadOnly": true,
+  "viewports": [
+    {
+      "width": 1280,
+      "height": 900,
+      "frameVisible": true,
+      "overflow": false,
+      "inputVisible": true,
+      "scrollHeight": 526,
+      "rtl": true,
+      "label": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "frameVisible": true,
+      "overflow": false,
+      "inputVisible": true,
+      "scrollHeight": 577,
+      "rtl": true,
+      "label": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "frameVisible": true,
+      "overflow": false,
+      "inputVisible": true,
+      "scrollHeight": 104,
+      "rtl": true,
+      "label": true
+    },
+    {
+      "width": 320,
+      "height": 480,
+      "frameVisible": true,
+      "overflow": false,
+      "inputVisible": true,
+      "scrollHeight": 213,
+      "rtl": true,
+      "label": true
+    }
+  ],
+  "completedReadBeforeLink": true,
+  "expiredDisabled": true,
+  "malformedStatusBlocked": true,
+  "offlineRecovery": true,
+  "reconnectNoMutation": true,
+  "confirmRequests": 0,
+  "errors": []
+}

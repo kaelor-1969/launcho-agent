@@ -10,7 +10,7 @@ Baseline: `b0861164feae11ba7caaf1ce93bba61b45e94eb6`, clean main; branch `work/w
 | 4 | Existing questions/options stay separate from confirmation; stale results ignored | Complete controlled local UI; production choices/questions dependent |
 | 5 | Preserve documented dimensions; check desktop/portrait/landscape/short viewport | Complete emulated scope; approved reference and physical devices dependent |
 | 6 | Idempotent loader, authenticated messages, sample host and installation | Complete local sample; actual Launcho installation external |
-| 7 | Real browser fixtures, request identity/count assertions, visual evidence | Pending |
+| 7 | Real browser fixtures, request identity/count assertions, visual evidence | Complete Chrome/Edge and actual local integration scope |
 | 8 | Final regression, dependencies and handoff | Pending |
 
 Each stage receives source/diff self-review, a fresh independent reviewer, actual relevant tests and a scoped nonempty local commit. Existing work is retained. Controlled fixtures do not establish production compatibility.
