@@ -5,7 +5,7 @@ Baseline: `b0861164feae11ba7caaf1ce93bba61b45e94eb6`, clean main; branch `work/w
 | Stage | Acceptance | Status |
 | --- | --- | --- |
 | 1 | Audit actual session/options/review/confirm/status contract | Complete locally |
-| 2 | Refresh reads authoritative state; never automatically confirms; storage failures safe | Pending |
+| 2 | Refresh reads authoritative state; never automatically confirms; storage failures safe | Complete locally with opt-in; unknown-operation reconciliation dependent |
 | 3 | Offline/reconnect and duplicate activation never automatically mutate | Pending |
 | 4 | Existing questions/options stay separate from confirmation; stale results ignored | Pending |
 | 5 | Preserve documented dimensions; check desktop/portrait/landscape/short viewport | Pending |

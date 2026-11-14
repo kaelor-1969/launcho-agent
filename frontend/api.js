@@ -1,4 +1,4 @@
-// Session credentials stay in memory for the lifetime of the widget.
+// Default memory-only; explicit tab recovery retains only the owner capability.
 export function relativeUrl(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
   try {
@@ -63,14 +63,61 @@ const sessionEnded = error => ['session_not_found', 'session_expired'].includes(
 
 export function createSessionApi() {
   let session, initializing, needsReconciliation = false;
-  async function start() {
-    if (session) return session;
+  let recoveryKey = null, attemptedRecovery = false, storageAvailable = true;
+  const store = value => {
+    if (!recoveryKey) return;
+    try {
+      if (value) window.sessionStorage.setItem(recoveryKey, JSON.stringify(value));
+      else window.sessionStorage.removeItem(recoveryKey);
+    } catch { storageAvailable = false; }
+  };
+  const remember = () => store({version: 1, id: session.id, token: session.token,
+    pending: session.confirmationUnresolved === true});
+  async function readSession() {
+    const data = await post(`/api/sessions/${encodeURIComponent(session.id)}`, undefined, session.token);
+    if (data.sessionId !== session.id || !validRevision(data.revision) ||
+        !data.preferences || typeof data.preferences !== 'object' || Array.isArray(data.preferences) ||
+        !Array.isArray(data.history) || data.history.some(turn => !turn ||
+          !['user', 'assistant'].includes(turn.role) || typeof turn.content !== 'string') ||
+        !Number.isFinite(Date.parse(data.expiresAt)) || Date.parse(data.expiresAt) <= Date.now() ||
+        (data.draftState !== undefined && !['awaiting', 'creating', 'unknown', 'rejected', 'completed'].includes(data.draftState)) ||
+        (data.draftState === 'completed' && !data.draft)) throw invalid();
+    session.revision = data.revision;
+    session.mode = data.adapterMode;
+    session.restored = data;
+    if (['creating', 'unknown'].includes(data.draftState)) session.confirmationUnresolved = true;
+    if (['completed', 'rejected'].includes(data.draftState)) session.confirmationUnresolved = false;
+    remember();
+    return session;
+  }
+  async function start(refresh = false) {
+    if (session) return refresh ? readSession() : session;
     if (!initializing) {
-      initializing = post('/api/sessions', {}).then(data => {
+      initializing = (async () => {
+        if (recoveryKey && !attemptedRecovery) {
+          attemptedRecovery = true;
+          let saved;
+          try { saved = JSON.parse(window.sessionStorage.getItem(recoveryKey)); }
+          catch { storageAvailable = false; }
+          if (saved?.version === 1 && typeof saved.id === 'string' && saved.id.length > 0 && saved.id.length <= 256 &&
+              typeof saved.token === 'string' && saved.token.length > 0 && saved.token.length <= 512 && typeof saved.pending === 'boolean') {
+            session = {id: saved.id, token: saved.token, confirmationUnresolved: saved.pending};
+            try { return await readSession(); }
+            catch (error) {
+              // Never replace an unresolved operation, even after session expiry.
+              if (!sessionEnded(error) || saved.pending) { session = null; attemptedRecovery = false; throw error; }
+              session = null;
+              store(null);
+            }
+          }
+        }
+        const data = await post('/api/sessions', {});
         if (typeof data.sessionId !== 'string' || !data.sessionId ||
             typeof data.sessionToken !== 'string' || !data.sessionToken || !validRevision(data.revision)) throw invalid();
         session = { id: data.sessionId, token: data.sessionToken, revision: data.revision, mode: data.adapterMode };
-      }).finally(() => { initializing = null; });
+        remember();
+        return session;
+      })().finally(() => { initializing = null; });
     }
     await initializing;
     return session;
@@ -78,6 +125,14 @@ export function createSessionApi() {
   function endpoint(action) { return `/api/sessions/${encodeURIComponent(session.id)}/${action}`; }
   return {
     start,
+    configureRecovery(enabled, scope) {
+      if (session || initializing || attemptedRecovery) return;
+      recoveryKey = enabled ? 'launcho:tab-session:v1:' + scope : null;
+    },
+    get storageAvailable() { return storageAvailable; },
+    resolveConfirmation() {
+      if (session) { session.confirmationUnresolved = false; remember(); }
+    },
     async sendMessage(apiUrl, message, requestId) {
       await start();
       const url = relativeUrl(apiUrl);
@@ -89,6 +144,7 @@ export function createSessionApi() {
       } catch (error) {
         if (!sessionEnded(error)) throw error;
         session = null;
+        store(null);
         needsReconciliation = true;
         await start();
         data = await send();
@@ -130,10 +186,14 @@ export function createSessionApi() {
     },
     async draftStatus() {
       await start();
-      return post(endpoint('draft-status'), undefined, session.token);
+      const data = await post(endpoint('draft-status'), undefined, session.token);
+      if (!['draft', 'opened', 'mobile_verified', 'invoiced', 'paid', 'active', 'expired'].includes(data.status)) throw invalid();
+      return data;
     },
     // Called only from the visible confirm button, never from chat/model output.
     async confirm(review) {
+      session.confirmationUnresolved = true;
+      remember();
       return post(endpoint('confirm'), {
         revision: review.revision, reviewId: review.reviewId,
         confirmationToken: review.confirmationToken, confirmed: true,

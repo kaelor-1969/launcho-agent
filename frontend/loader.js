@@ -6,7 +6,7 @@
   // Keep the previous UI available without changing API/session behavior.
   const workspace = script.dataset.interface !== 'legacy' && script.dataset.demo !== 'true';
   const widgetUrl = new URL(workspace ? '/widget/widget.html' : '/widget/widget-legacy.html', script.src);
-  widgetUrl.searchParams.set('v', new URL(script.src).searchParams.get('v') || (workspace ? 'workspace-20261114-3' : 'legacy-20261114-3'));
+  widgetUrl.searchParams.set('v', new URL(script.src).searchParams.get('v') || (workspace ? 'workspace-20261114-4' : 'legacy-20261114-4'));
   const widgetOrigin = widgetUrl.origin;
   const channel = crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint32Array(4))).join('-');
   const options = {
@@ -14,6 +14,7 @@
     position: script.dataset.position === 'left' ? 'left' : 'right',
     apiUrl: '/api/chat',
     demo: script.dataset.demo === 'true',
+    sessionRecovery: script.dataset.sessionRecovery === 'tab' ? 'tab' : 'memory',
     workflowUrl: null,
     offset: 24,
     mobileOffset: 16,

@@ -1,4 +1,4 @@
-import { createSessionApi, relativeUrl } from './api.js?v=8';
+import { createSessionApi, relativeUrl } from './api.js?v=9';
 import { setupConnectedWorkspace } from './widget-workspace.js';
 import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js?v=3';
 
@@ -18,6 +18,7 @@ let sessionReady = false;
 let sessionStarting = false;
 let review = null;
 let confirmationPending = false;
+let recoveryLocked = false;
 // Pending credentials remain memory-only. Warn before losing the only exact retry.
 window.addEventListener('beforeunload', event => {
   if (!confirmationPending) return;
@@ -69,6 +70,7 @@ window.addEventListener('message', async (event) => {
       apiUrl = url;
     } catch { return; }
     configured = true;
+    sessionApi.configureRecovery(data.sessionRecovery === 'tab', parentOrigin);
     demoMode = document.body.dataset.interface !== 'workspace' && data.demo === true;
     structured = demoMode;
     if (demoMode) await configureWorkflow(data, notify);
@@ -99,12 +101,12 @@ function hasVisibleText(message) {
 
 function updateInput() {
   const length = Array.from(input.value.trim()).length;
-  const blocked = pending || signupSaving || sessionStarting || confirmationPending || (!demoMode && !sessionReady);
+  const blocked = pending || signupSaving || sessionStarting || confirmationPending || recoveryLocked || (!demoMode && !sessionReady);
   $('send').disabled = blocked || !configured || !hasVisibleText(input.value) || length > 5000;
   $('retry').disabled = pending || sessionStarting;
   $('review-button').disabled = blocked || !configured || Boolean(failed);
   // An unknown result locks edits, but permits an explicit retry of this review.
-  $('confirm').disabled = pending || signupSaving || !review?.canConfirm;
+  $('confirm').disabled = pending || signupSaving || recoveryLocked || !review?.canConfirm;
   $('edit-signup').disabled = blocked;
   if (signupAvailable) {
     $('local-signup').querySelectorAll('input,select,button').forEach(control => {
@@ -116,17 +118,36 @@ function updateInput() {
   input.style.height = 'auto';
   input.style.height = `${Math.min(120, input.scrollHeight)}px`;
 }
-async function initializeSession() {
-  if (sessionReady || sessionStarting || demoMode) return;
+async function initializeSession(refresh = false) {
+  if ((sessionReady && !refresh) || sessionStarting || demoMode) return;
   sessionStarting = true;
   updateInput();
   try {
-    const session = await sessionApi.start();
-    if (session.mode === 'local_mock') await initializeLocalSignup();
+    const session = await sessionApi.start(refresh);
+    recoveryLocked = false;
+    if (session.mode === 'local_mock' && !signupAvailable) await initializeLocalSignup();
+    if (session.restored) {
+      const state = session.restored;
+      recoveryLocked = session.confirmationUnresolved || ['creating', 'unknown'].includes(state.draftState);
+      $('messages').replaceChildren();
+      for (const turn of state.history) appendMessage(turn.role, turn.content);
+      if (resetSignupSession && !recoveryLocked) await resetSignupSession(state.preferences);
+      $('review-button').hidden = recoveryLocked;
+      if (state.draftState === 'completed') {
+        // A completed creation is not proof of current registration status.
+        if (!Number.isFinite(Date.parse(state.draft.expiresAt))) throw new Error('invalid');
+        const result = await sessionApi.draftStatus();
+        showDraft({...state.draft, adapterMode: state.adapterMode});
+        applyDraftStatus(Date.parse(state.draft.expiresAt) <= Date.now() ? 'expired' : result.status);
+      }
+    }
     sessionReady = true;
-    showError('');
+    showError(recoveryLocked
+      ? 'نتیجهٔ درخواست قبلی هنوز مشخص نیست. فقط وضعیت را دوباره بررسی کن؛ برای بازیابی تأیید از پشتیبانی لانچو کمک بگیر.'
+      : !sessionApi.storageAvailable ? 'ذخیره‌سازی مرورگر در دسترس نیست؛ بازیابی پس از تازه‌سازی ممکن نیست.' : '', recoveryLocked);
   } catch {
-    showError('جلسه گفتگو ایجاد نشد. دوباره تلاش کن.', true);
+    recoveryLocked = true;
+    showError('بازیابی یا ایجاد جلسه انجام نشد. بدون ارسال تأیید، دوباره وضعیت را بررسی کن.', true);
   } finally {
     sessionStarting = false;
     updateInput();
@@ -270,7 +291,7 @@ async function initializeLocalSignup() {
   };
   form.onsubmit = async event => {
     event.preventDefault();
-    if (pending || signupSaving || signupLoading || confirmationPending || !sessionReady || failed ||
+    if (pending || signupSaving || signupLoading || confirmationPending || recoveryLocked || !sessionReady || failed ||
         optionsKind !== form.elements.kind.value || !form.reportValidity()) return;
     form.elements.businessName.value = form.elements.businessName.value.trim();
     if (!hasVisibleText(form.elements.businessName.value)) {
@@ -400,7 +421,7 @@ function appendMessage(role, message) {
   $('messages').append(row);
 }
 async function submit(message, retry = false) {
-  if (pending || signupSaving || sessionStarting || confirmationPending || (!demoMode && !sessionReady) || !configured || workflowActive()) return;
+  if (pending || signupSaving || sessionStarting || confirmationPending || recoveryLocked || (!demoMode && !sessionReady) || !configured || workflowActive()) return;
   message = message.trim();
   if (!hasVisibleText(message)) return;
   if (Array.from(message).length > 5000) {
@@ -454,7 +475,7 @@ async function submit(message, retry = false) {
 $('form').addEventListener('submit', (event) => { event.preventDefault(); if (!composing) submit(input.value); });
 input.addEventListener('input', () => {
   updateInput();
-  if (!failed && !pending && !confirmationPending && (demoMode || sessionReady)) {
+  if (!failed && !pending && !confirmationPending && !recoveryLocked && (demoMode || sessionReady)) {
     showError(Array.from(input.value.trim()).length > 5000 ? 'پیامت باید حداکثر ۵۰۰۰ کاراکتر باشد.' : '');
   }
 });
@@ -466,7 +487,8 @@ input.addEventListener('keydown', (event) => {
   }
 });
 $('retry').addEventListener('click', () => {
-  if (!sessionReady && !demoMode) initializeSession();
+  if (recoveryLocked && !demoMode) initializeSession(true);
+  else if (!sessionReady && !demoMode) initializeSession();
   else if (failed) submit(failed.message, true);
 });
 
@@ -479,6 +501,16 @@ const draftStatusText = new Map([
   ['active', 'فروشگاه فعال است. برای شروع، اولین محصول را از پنل اضافه کنید.'],
   ['expired', 'پیش‌نویس منقضی شده است. برای ادامه پیش‌نویس تازه بسازید.'],
 ]);
+
+function applyDraftStatus(status) {
+  $('review-notice').textContent = draftStatusText.get(status) || 'وضعیت ثبت‌نام دریافت نشد.';
+  if (status === 'expired') {
+    const link = $('review-summary').children[0];
+    link.removeAttribute('href');
+    link.setAttribute('aria-disabled', 'true');
+    link.textContent = 'پیش‌نویس منقضی شده است';
+  }
+}
 
 function showDraft(draft) {
   // Accept only the official continuation URL from the structured server result.
@@ -526,10 +558,11 @@ function showDraft(draft) {
   $('confirm').hidden = true;
   $('review-notice').textContent = local ? 'این پیش‌نویس فقط برای توسعهٔ محلی است.' : 'شماره موبایل و اطلاعات پرداخت را فقط در فرم رسمی لانچو وارد کن.';
   $('session-review').hidden = false;
+  if (draft.expiresAt && Date.parse(draft.expiresAt) <= Date.now()) applyDraftStatus('expired');
 }
 
 async function requestReview() {
-  if (pending || signupSaving || signupLoading || confirmationPending || failed || !sessionReady) return;
+  if (pending || signupSaving || signupLoading || confirmationPending || recoveryLocked || failed || !sessionReady) return;
   // A new server review invalidates the previous confirmation, even if its
   // response is lost. Never leave the previous review available for approval.
   review = null;
@@ -576,14 +609,14 @@ async function requestReview() {
 }
 $('review-button').addEventListener('click', requestReview);
 $('edit-signup').addEventListener('click', () => {
-  if (pending || signupSaving || confirmationPending || failed || !review?.summary || !editSignup) return;
+  if (pending || signupSaving || confirmationPending || recoveryLocked || failed || !review?.summary || !editSignup) return;
   editSignup(review.summary);
 });
 
 // This is the only production path that can authorize draft creation.
 $('confirm').addEventListener('click', async (event) => {
   if (!event.isTrusted) return;
-  if (pending || failed || !review?.canConfirm) return;
+  if (pending || recoveryLocked || failed || !review?.canConfirm) return;
   pending = true;
   confirmationPending = true;
   notify('confirmation-pending');
@@ -592,6 +625,7 @@ $('confirm').addEventListener('click', async (event) => {
   try {
     showDraft(await sessionApi.confirm(review));
     confirmationPending = false;
+    sessionApi.resolveConfirmation();
     notify('confirmation-resolved');
     review = null;
     $('review-button').hidden = true;
@@ -599,6 +633,7 @@ $('confirm').addEventListener('click', async (event) => {
     // Preserve this exact review after a timeout. Only another click retries it.
     if (['stale_confirmation', 'review_expired', 'draft_expired', 'review_rejected', 'draft_rejected'].includes(error.code)) {
       confirmationPending = false;
+      sessionApi.resolveConfirmation();
       notify('confirmation-resolved');
       review = null;
       $('session-review').hidden = true;
