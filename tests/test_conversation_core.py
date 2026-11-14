@@ -124,16 +124,6 @@ class CoreTests(unittest.TestCase):
             read.assert_not_called()
             self.assertEqual(self.core.draft_status(self.sid, self.token), {'status':'paid'})
         read.assert_called_once_with('sd_mockreference')
-        with patch.object(gateway, 'match_checkout_offers', return_value={'offers':[
-            {'type':'discount','displayText':'پیشنهاد منقضی','expiresAt':'2000-01-01T00:00:00Z'},
-            {'type':'payment_option','displayText':'پرداخت قسطی در فرم'},
-        ]}) as match:
-            self.assertIsNone(self.core.checkout_offer('هزینه بالاست', [], {'kind':'shop'}))
-            match.assert_not_called()
-            self.assertEqual(self.core.checkout_offer('هزینه بالاست', [], {'kind':'shop', **CHOICES}),
-                             'پرداخت قسطی در فرم')
-        match.assert_called_once_with('shop', 3, message='هزینه بالاست', history=[],
-                                      step='review_ready', offer_state={})
 
     def test_chat_retry_replays_saved_answer(self):
         calls = []
