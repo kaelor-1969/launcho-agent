@@ -466,14 +466,23 @@ function showDraft(draft) {
   statusButton.type = 'button';
   statusButton.textContent = 'بررسی وضعیت ثبت‌نام';
   statusButton.addEventListener('click', async () => {
+    if (statusButton.disabled) return;
     statusButton.disabled = true;
+    statusButton.setAttribute('aria-busy', 'true');
+    $('review-notice').textContent = 'در حال بررسی وضعیت ثبت‌نام…';
     try {
       const result = await sessionApi.draftStatus();
       $('review-notice').textContent = draftStatusText.get(result.status) || 'وضعیت ثبت‌نام دریافت نشد.';
+      if (result.status === 'expired') {
+        link.removeAttribute('href');
+        link.setAttribute('aria-disabled', 'true');
+        link.textContent = 'پیش‌نویس منقضی شده است';
+      }
     } catch {
       $('review-notice').textContent = 'پیگیری وضعیت فعلاً در دسترس نیست. کمی بعد دوباره بررسی کنید.';
     } finally {
       statusButton.disabled = false;
+      statusButton.setAttribute('aria-busy', 'false');
     }
   });
   $('review-summary').replaceChildren(link, statusButton);

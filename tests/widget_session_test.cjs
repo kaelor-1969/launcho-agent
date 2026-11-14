@@ -25,7 +25,7 @@ class Element {
 }
 
 async function widget({sessionFailure = false, canConfirm = true, embedded = false,
-  reply = 'ready <script>bad()</script>'} = {}) {
+  reply = 'ready <script>bad()</script>', draftUrl = 'https://launcho.ir/start?signup=sd_testdraft'} = {}) {
   const nodes = new Map();
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
@@ -87,7 +87,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
           if (failConfirm) throw new TypeError('response lost');
           if (releaseConfirm) await new Promise(resolve => { releaseConfirm.resolve = resolve; });
           data = {status: 'draft', ref: 'sd_testdraft',
-            confirmUrl: 'https://launcho.ir/start?signup=sd_testdraft'};
+            confirmUrl: draftUrl};
         } else assert.fail(`Unexpected endpoint ${url}`);
       }
       return {ok: true, json: async () => data};
@@ -249,6 +249,14 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   await readonly.get('confirm').emit('click');
   assert.equal(readonly.get('confirm').disabled, true);
   assert.equal(readonly.calls.length, 3);
+  for (const draftUrl of ['javascript:alert(1)', 'https://evil.invalid/start?signup=sd_testdraft',
+    'https://launcho.ir/start?signup=sd_testdraft&token=secret', 'https://launcho.ir/start?signup=sd_testdraft#fragment',
+    'https://owner:secret@launcho.ir/start?signup=sd_testdraft', '/api/local-drafts/sd_testdraft/preview']) {
+    const unsafe = await widget({draftUrl});
+    await unsafe.send(); await unsafe.get('review-button').emit('click'); await unsafe.get('confirm').emit('click');
+    assert.equal(unsafe.get('edit-signup').disabled, true, 'invalid success URL must retain unresolved review');
+    assert.equal(unsafe.get('review-summary').children.some(node => node.href), false);
+  }
 
   const stale = await widget();
   await stale.send(); await stale.get('review-button').emit('click');

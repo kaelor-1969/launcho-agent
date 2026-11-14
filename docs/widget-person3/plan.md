@@ -12,7 +12,7 @@ No AGENTS.md found in repository or inspected ancestor directories.
 | 3 | Native double activation produces one request, synthetic approval rejected, pending controls locked | Complete locally |
 | 4 | Browser transport disconnection and lost response; explicit retry preserves chat requestId and confirmation body | Complete locally |
 | 5 | Safe expiry/errors/unknown outcome and refresh, no automatic confirmation or browser credential persistence | Complete locally; durable recovery blocked |
-| 6 | Approved continuation destination, status retry/lock, lazy iframe and loader lifecycle | Pending |
+| 6 | Approved continuation destination, status retry/lock, lazy iframe and loader lifecycle | Complete locally |
 | 7 | Desktop/mobile/short viewport, keyboard/focus/accessibility, report actual browser coverage | Pending |
 | 8 | Regression tests, committed visual evidence, installation and PR handoff | Pending |
 
