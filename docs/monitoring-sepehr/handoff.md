@@ -31,3 +31,13 @@ continuous sends or alter Runflare under this handoff alone.
 To resume: read plan.md, progress.md, verification.md and runbook.md, inspect Git
 status/HEAD, preserve commits and apply only the explicitly requested owner follow-up.
 No push, PR, merge, deployment, key rotation or production outage performed.
+
+## Later publication checkpoint
+
+User subsequently authorized push and merge after a double-check. Main `80327d1`
+was incorporated as `16d9a2d`. See publication-review.md for the completed repeated
+194-test suite, seven Chrome cases, 15-group drill, fixture readiness correction
+and observed external development failures. This source checkpoint precedes the
+authorized push/PR merge; use Git/GitHub for its final publication commit and PR.
+The previous no-push statements describe earlier delivery only. Operational
+activation, real alert channel and launcho.ir acceptance remain outstanding.

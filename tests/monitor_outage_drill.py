@@ -47,12 +47,15 @@ def start(module, port, env, logs):
     try:
         with httpx.Client(trust_env=False) as client:
             deadline = time.monotonic() + 30
+            # A responding root proves only liveness. Establish real readiness
+            # before a scenario asserts that the restarted agent is healthy.
+            readiness_path = '/health/ready' if module == 'app.main:app' else '/'
             while time.monotonic() < deadline:
                 if process.poll() is not None:
                     raise RuntimeError('Owned fixture process exited; inspect private startup log.')
                 try:
                     if ('Uvicorn running on' in log_path.read_text(encoding='utf-8', errors='replace') and
-                            client.get(f'http://127.0.0.1:{port}/', timeout=.2).status_code == 200 and process.poll() is None):
+                            client.get(f'http://127.0.0.1:{port}{readiness_path}', timeout=5).status_code == 200 and process.poll() is None):
                         return process
                 except httpx.HTTPError:
                     pass

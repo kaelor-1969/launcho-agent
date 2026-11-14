@@ -62,6 +62,9 @@ databases and local webhook receiver:
 The drill never stops pre-existing services. It launches and stops its own process
 handles and temporary servers. It does not send chat/confirmation operations. Its
 outage threshold is two samples to keep the drill short; default config uses three.
+Before a healthy/restarted-agent scenario, fixture startup waits for the real
+`/health/ready` response; the root greeting is only liveness. This setup wait does
+not change the monitor's per-check deadline or incident thresholds.
 
 ## Configuration and logs
 

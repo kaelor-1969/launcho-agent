@@ -151,3 +151,16 @@ Final repeated full suite: 194 tests in 53.466 seconds, native process exit 0.
 No changes to application/backend/frontend business logic, session/database/schema,
 content, backup tooling, deployment or CI. No keys rotated or Runflare changed.
 No push, PR, merge, deployment, production interruption or ongoing alerts/scheduler.
+
+## Subsequent publication authorization and review
+
+User authorized double-check, push and merge after the original local delivery.
+Merged current main `80327d1` as `16d9a2d`, preserving PR #20 service wording.
+Revalidated: serial full suite 194 passed (78.211 seconds), seven browser cases
+passed, corrected real-process drill all 15 groups passed with native exit 0 and
+owned-resource cleanup. Fixture startup now waits for actual agent readiness;
+monitor deadlines/thresholds and all assertions are unchanged. Initial concurrent
+timeouts and the new external development connection/timeout failures are retained
+in [publication-review.md](publication-review.md). No current remote-uptime claim.
+This checkpoint is ready for branch push and PR merge; no deployment or live-alert
+activation is included in the new authorization.
