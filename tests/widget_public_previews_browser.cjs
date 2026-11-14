@@ -7,7 +7,7 @@ const {once} = require('node:events');
 const assert = require('node:assert/strict');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const root = path.resolve(__dirname, '..');
-const rows = require('../content/launcho-mock.json').signupOptions.shop.templates;
+const rows = require('../content/launcho-widget-catalog.json').signupOptions.shop.templates;
 const output = path.join(root, 'artifacts/widget-person3/public-previews');
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'launcho-previews-'));
 const chrome = spawn(process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -51,10 +51,10 @@ let socket;
       let state;
       for (let i = 0; i < 100; i++) {
         await sleep(150);
-        state = await evaluate(`({url:location.href, ready:document.readyState, title:document.title, text:document.body?.innerText.length||0, images:[...document.images].filter(image=>image.complete&&image.naturalWidth>0).length, template:new URL(location.href).searchParams.get('template')})`);
-        if (state.url === row.previewUrl && state.ready !== 'loading' && state.text > 100 && state.images > 0) break;
+        state = await evaluate(`({url:location.href, ready:document.readyState, title:document.title, text:document.body?.innerText.length||0, expectedLabelVisible:document.body?.innerText.includes(${JSON.stringify(row.label)})||false, images:[...document.images].filter(image=>image.complete&&image.naturalWidth>0).length, template:new URL(location.href).searchParams.get('template')})`);
+        if (state.url === row.previewUrl && state.ready !== 'loading' && state.text > 100 && state.images > 0 && state.expectedLabelVisible) break;
       }
-      const rendered = state.url === row.previewUrl && state.template === new URL(row.previewUrl).searchParams.get('template') && state.text > 100 && state.images > 0;
+      const rendered = state.url === row.previewUrl && state.template === new URL(row.previewUrl).searchParams.get('template') && state.text > 100 && state.images > 0 && state.expectedLabelVisible;
       const shot = await command('Page.captureScreenshot', {format: 'png'});
       fs.writeFileSync(path.join(output, row.id + '.png'), Buffer.from(shot.data, 'base64'));
       results.push({id: row.id, result: rendered ? 'rendered' : 'unverified', ...state});
@@ -62,6 +62,7 @@ let socket;
     } catch (error) { results.push({id: row.id, result: 'unverified', error: error.message}); }
   }
   const report = {browser: (await command('Browser.getVersion')).product,
+    checkedAt: new Date().toISOString(), catalogSource: 'content/launcho-widget-catalog.json (test only)',
     note: 'Read-only public pages, visible text and loaded image smoke checks; not signup availability or visual equivalence.', results};
   fs.writeFileSync(path.join(root, 'docs/widget-person3/public-preview-browser.json'), JSON.stringify(report, null, 2) + '\n');
   if (results.some(row => row.result !== 'rendered')) process.exitCode = 1;

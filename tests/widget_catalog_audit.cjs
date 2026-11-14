@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
-const fixture = JSON.parse(fs.readFileSync(path.join(root, 'content/launcho-mock.json'), 'utf8'));
+const fixture = JSON.parse(fs.readFileSync(path.join(root, 'content/launcho-widget-catalog.json'), 'utf8'));
 const evidence = JSON.parse(fs.readFileSync(path.join(root, 'content/public-template-evidence.json'), 'utf8'));
 const rows = fixture.signupOptions.shop.templates;
 const visible = evidence.samples.filter(row => !row.hidden);
@@ -22,7 +22,7 @@ async function worker() {
       const html = await response.text();
       results.push({id: row.id, label: row.label, url: url.href, http: response.status,
         finalUrl: response.url, title: html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? null,
-        result: response.ok ? 'reachable' : 'http-error', registration: 'unverified'});
+        result: response.ok && new URL(response.url).origin === url.origin ? 'reachable' : 'http-error', registration: 'unverified'});
     } catch (error) {
       results.push({id: row.id, label: row.label, url: url.href, result: 'unverified',
         error: error.cause?.code || error.name, registration: 'unverified'});
@@ -33,6 +33,7 @@ async function worker() {
   await Promise.all(Array.from({length: 4}, worker));
   results.sort((a, b) => a.id.localeCompare(b.id));
   const report = {checkedAt: new Date().toISOString(), shopCount: rows.length,
+    catalogSource: 'content/launcho-widget-catalog.json (test only)',
     publicVisibleCount: visible.length, publicHiddenCount: evidence.samples.length - visible.length,
     missingPublicPreviews: visible.filter(row => !row.demoHref).map(row => ({id: row.id, title: row.title})),
     websiteTemplates: fixture.signupOptions.website.templates.map(row => ({id: row.id, hasPreview: !!row.previewUrl})),
@@ -43,4 +44,5 @@ async function worker() {
     reachable: results.filter(row => row.result === 'reachable').length,
     httpErrors: results.filter(row => row.result === 'http-error').length,
     unverified: results.filter(row => row.result === 'unverified').length, output}));
+  if (results.some(row => row.result !== 'reachable')) process.exitCode = 1;
 })().catch(error => { console.error(error); process.exitCode = 1; });

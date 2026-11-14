@@ -12,7 +12,12 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const root = path.resolve(__dirname, '../frontend');
 const output = process.env.WIDGET_ARTIFACT_DIR ? path.resolve(process.env.WIDGET_ARTIFACT_DIR) : path.resolve(__dirname, '../artifacts/widget-signup-stage1');
 const fixture = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../content/launcho-mock.json'), 'utf8'));
-const sid = 'signup-browser-session', token = 'signup-browser-token';
+// The general mock intentionally has no approved choices. Use only the explicit
+// test-only widget catalog for controlled frontend responses, as the local gateway does.
+fixture.signupOptions = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../content/launcho-widget-catalog.json'), 'utf8')).signupOptions;
+let sid = 'signup-browser-session';
+const token = 'signup-browser-token';
+let expireChat = false, renewSession = false, emptyOptions = false;
 let revision = 0, preferences = {}, reviewId = 0;
 let optionFailure = false, malformedOptions = false, saveFailure = false, reviewFailure = false, unknown = false;
 let calls = [], currentReview;
@@ -23,15 +28,27 @@ const server = http.createServer(async (req, res) => {
     for await (const chunk of req) raw += chunk;
     const body = raw ? JSON.parse(raw) : undefined;
     calls.push({url: req.url, method: req.method, body, token: req.headers['x-session-token']});
-    if (req.url === '/api/sessions') return json({sessionId: sid, sessionToken: token, revision, adapterMode: 'local_mock'});
+    if (req.url === '/api/sessions') {
+      if (renewSession) {
+        renewSession = false; sid += '-renewed'; revision = 0;
+        preferences = {kind:'website', businessName:'جلسهٔ تازه', category:fixture.signupOptions.website.businessCategories[1].id,
+          template:fixture.signupOptions.website.templates[0].id, planMonths:3, domain:{ownDomain:'fresh.example.ir'}};
+      }
+      return json({sessionId: sid, sessionToken: token, revision, adapterMode: 'local_mock'});
+    }
     if (req.url.startsWith('/api/local-signup-options?')) {
       await sleep(60);
       if (optionFailure) return json({detail: {code: 'options_unavailable'}}, 503);
       if (malformedOptions) return json({businessCategories: 'invalid'});
+      if (emptyOptions) return json({businessCategories:[],templates:[],periods:[3],suffixes:['ir'],availability:'unavailable'});
       const kind = new URL(req.url, 'http://localhost').searchParams.get('kind');
       return json({...fixture.signupOptions[kind], periods: fixture.pricing.plans.map(x => x.months), suffixes: fixture.pricing.domains.map(x => x.tld)});
     }
     assert.equal(req.headers['x-session-token'], token);
+    if (req.url === '/api/chat') {
+      if (expireChat) { expireChat=false; renewSession=true; return json({detail:{code:'session_expired'}},410); }
+      return json({sessionId:sid, revision, preferences, reply:'پاسخ جلسهٔ تازه', nextAction:'collect_preferences'});
+    }
     if (req.url.endsWith('/preferences')) {
       assert.equal(req.method, 'PATCH');
       assert.equal(body.revision, revision);
@@ -219,7 +236,7 @@ const server = http.createServer(async (req, res) => {
         if (await evaluate(`!doc.querySelector('#local-template-preview').hidden`)) {
           await key('Tab'); assert.equal(await evaluate('doc.activeElement.id'), 'local-template-preview');
         }
-        for (const name of ['planMonths', 'label', 'tld']) {
+        for (const name of ['planMonths', 'label', 'tld', 'ownDomain']) {
           await key('Tab'); assert.equal(await evaluate('doc.activeElement.name'), name);
         }
         await key('Tab'); assert.equal(await evaluate('doc.activeElement.id'), 'signup-save');
@@ -254,6 +271,17 @@ const server = http.createServer(async (req, res) => {
         assert.equal(confirmCalls(), 0);
         await screenshot(`${width}-${kind}-edited-review`);
         await edit();
+        const beforeOwnDomain = calls.length;
+        await change('ownDomain', 'https://invalid.example.ir/path');
+        await evaluate(`doc.querySelector('#local-signup').requestSubmit()`); await sleep(100);
+        assert.equal(calls.length, beforeOwnDomain, 'invalid existing domain cannot be saved');
+        await change('ownDomain', 'owner.example.ir');
+        await save(); await edit();
+        assert.equal(await evaluate(`doc.querySelector('[name=ownDomain]').value`), 'owner.example.ir');
+        assert.equal(await evaluate(`doc.querySelector('[name=label]').disabled && doc.querySelector('[name=tld]').disabled`), true);
+        await save();
+        assert.deepEqual(preferences.domain, {ownDomain:'owner.example.ir'}, 'editing must round-trip the server existing domain');
+        await edit(); await change('ownDomain',''); await change('label','edited-name'); await change('tld','com');
         // Change service type as part of editing; only that service's choices survive.
         const otherKind = kind === 'shop' ? 'website' : 'shop';
         await change('kind', otherKind); await wait(`!doc.querySelector('#signup-save').disabled`);
@@ -319,7 +347,11 @@ const server = http.createServer(async (req, res) => {
     await evaluate(`doc.querySelector('#signup-retry').click()`);
     await wait(`!doc.querySelector('#signup-retry').hidden && !doc.querySelector('#signup-retry').disabled`);
     assert.equal(await evaluate(`doc.querySelector('#signup-save').disabled`), true);
-    malformedOptions = false;
+    malformedOptions = false; emptyOptions = true;
+    await evaluate(`doc.querySelector('#signup-retry').click()`);
+    await wait(`!doc.querySelector('#signup-retry').hidden && !doc.querySelector('#signup-retry').disabled`);
+    assert.equal(await evaluate(`doc.querySelector('#signup-save').disabled`), true, 'unavailable approved catalog must not enable saving');
+    emptyOptions = false;
     await evaluate(`doc.querySelector('#signup-retry').click()`); await wait(`!doc.querySelector('#signup-save').disabled`);
     await change('businessName', 'آزمون بازیابی'); await change('label', 'recovery');
     reviewFailure = true;
@@ -334,6 +366,24 @@ const server = http.createServer(async (req, res) => {
     await wait(`doc.documentElement.dataset.theme === 'dark'`);
     await screenshot('320-dark-review');
     assert.equal(await evaluate(`doc.documentElement.scrollWidth <= frame.clientWidth`), true);
+    await edit();
+    const oldSid = sid, confirmationsBeforeExpiry = confirmCalls();
+    expireChat = true;
+    await evaluate(`doc.querySelector('#message').value='ادامه پس از انقضای جلسه'; doc.querySelector('#form').requestSubmit()`);
+    await wait(`doc.querySelector('#waiting').hidden && !doc.querySelector('#signup-save').disabled && doc.querySelector('[name=businessName]').value === 'جلسهٔ تازه'`);
+    assert.notEqual(sid, oldSid);
+    assert.equal(await evaluate(`doc.querySelector('[name=kind]').value`), 'website');
+    assert.equal(await evaluate(`doc.querySelector('[name=ownDomain]').value`), 'fresh.example.ir');
+    assert.equal(await evaluate(`doc.querySelector('[name=category]').value`), preferences.category);
+    assert.equal(await evaluate(`doc.querySelector('[name=planMonths]').value`), '3');
+    assert.equal(await evaluate(`doc.querySelector('[name=label]').value`), '');
+    const chatRetries = calls.filter(call=>call.url === '/api/chat').slice(-2);
+    assert.equal(chatRetries[0].body.requestId, chatRetries[1].body.requestId);
+    assert.notEqual(chatRetries[0].body.sessionId, chatRetries[1].body.sessionId);
+    assert.equal(confirmCalls(), confirmationsBeforeExpiry);
+    assert.equal(await evaluate(`doc.querySelector('#session-review').hidden && doc.querySelector('#confirm').disabled`), true);
+    await screenshot('session-restarted-form');
+    console.log('PASS: own-domain round trip, empty approved catalog blocked, expired session reconciles real form with new session preferences');
     assert.deepEqual(errors, []);
     const browserVersion = await command('Browser.getVersion');
     fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify({browser: browserVersion.product, userAgent:browserVersion.userAgent, accessibility,

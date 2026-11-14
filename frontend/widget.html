@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="./widget.css?v=workspace-3">
   <link rel="stylesheet" href="./widget-workspace-base.css?v=workspace-3">
   <link rel="stylesheet" href="./widget-workspace.css?v=workspace-3">
-  <script type="module" src="./widget.js?v=22"></script>
+  <script type="module" src="./widget.js?v=23"></script>
 </head>
 <body data-interface="workspace">
   <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -57,6 +57,7 @@
           <label>نام لاتین دامنه <input name="label" dir="ltr" maxlength="63" pattern="[a-z0-9]+(-[a-z0-9]+)*" autocapitalize="none" spellcheck="false" required></label>
           <label>پسوند <select name="tld" dir="ltr" required></select></label>
         </div>
+        <label>دامنهٔ موجود (اختیاری) <input name="ownDomain" dir="ltr" maxlength="253" autocapitalize="none" spellcheck="false" placeholder="example.ir"></label>
         <button id="signup-save" class="primary" type="submit">ذخیره و مرور</button>
         <button id="signup-retry" type="button" hidden>تلاش دوباره برای دریافت گزینه‌ها</button>
         <p id="local-signup-status" role="status"></p>

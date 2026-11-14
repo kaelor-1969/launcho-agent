@@ -16,6 +16,7 @@ let confirmError;
 let statusFailure = false, currentDraftStatus = 'draft';
 let blockFrame = false;
 let completeConfirmation;
+let holdStatus = false, completeStatus, reviewNumber = 0;
 const output = process.env.WIDGET_ARTIFACT_DIR ? path.resolve(process.env.WIDGET_ARTIFACT_DIR) : path.resolve(__dirname, '../artifacts/widget-person3/sessions');
 const sid = 'browser-session-id', token = 'browser-session-token';
 const server = http.createServer(async (req, res) => {
@@ -23,6 +24,7 @@ const server = http.createServer(async (req, res) => {
   if (req.url.endsWith('/draft-status')) {
     calls.push({url:req.url, token:req.headers['x-session-token'], method:req.method});
     assert.equal(req.method, 'GET'); assert.equal(req.headers['x-session-token'], token);
+    if (holdStatus) { completeStatus=()=>json({status:'expired'}); return; }
     return setTimeout(() => {
       if (statusFailure) { res.statusCode=503; return json({detail:{code:'draft_status_unavailable'}}); }
       json({status:currentDraftStatus});
@@ -40,7 +42,7 @@ const server = http.createServer(async (req, res) => {
     if (req.url === '/api/chat') return json({sessionId: sid, revision: 1, reply: '<script>bad()</script>', nextAction: 'review'});
     if (req.url.endsWith('/review')) {
       if (failReview) { res.statusCode = 503; return json({detail: {code: 'internal_error'}}); }
-      return json({sessionId: sid, revision: 1, reviewId: 'browser-review-id',
+      return json({sessionId: sid, revision: 1, reviewId: 'browser-review-id-' + (++reviewNumber),
       confirmationToken: 'browser-confirmation-token', canConfirm: true,
       summary: {kind: 'shop', businessName: 'نمونه', category: 'fashion', planMonths: 3,
         template: 'classic', domain: {ownDomain: 'example.ir'}}});
@@ -245,6 +247,19 @@ const server = http.createServer(async (req, res) => {
       assert.equal(calls.filter(call=>call.url.endsWith('/confirm')).length, 2, 'status reads must not create drafts');
       assert.equal(await evaluate(`!doc.querySelector('#review-summary a').hasAttribute('href') && doc.querySelector('#review-summary a').getAttribute('aria-disabled') === 'true'`), true);
       await screenshot(`${width}-expired-status`);
+      // A delayed status for draft A must not change the notice for review B.
+      holdStatus = true;
+      await evaluate(`window.oldStatusButton=doc.querySelector('#review-summary button'); oldStatusButton.click()`);
+      for (let i=0; i<100 && !completeStatus; i++) await sleep(50);
+      assert.ok(completeStatus);
+      await evaluate(`doc.querySelector('#message').value='مرور تازه'; doc.querySelector('#form').requestSubmit()`);
+      await wait(`!doc.querySelector('#review-button').hidden && !doc.querySelector('#review-button').disabled`);
+      await evaluate(`doc.querySelector('#review-button').click()`);
+      await wait(`!doc.querySelector('#confirm').disabled`);
+      const freshNotice = await evaluate(`doc.querySelector('#review-notice').textContent`);
+      completeStatus(); completeStatus = null; holdStatus = false;
+      await wait(`!oldStatusButton.disabled`);
+      assert.equal(await evaluate(`doc.querySelector('#review-notice').textContent`), freshNotice, 'late status response must not overwrite fresh review notice');
       await evaluate('LaunchoWidget.close(); LaunchoWidget.open()');
       assert.equal(calls.filter(c => c.url === '/api/sessions').length, 1);
       assert.equal(await evaluate(`doc.querySelectorAll('input[type=tel], [autocomplete=tel], [data-action=pay]').length`), 0);

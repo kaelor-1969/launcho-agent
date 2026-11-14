@@ -1,6 +1,7 @@
 {
-  "checkedAt": "2026-11-14T00:17:46.560Z",
+  "checkedAt": "2026-11-14T08:07:27.947Z",
   "shopCount": 23,
+  "catalogSource": "content/launcho-widget-catalog.json (test only)",
   "publicVisibleCount": 25,
   "publicHiddenCount": 1,
   "missingPublicPreviews": [

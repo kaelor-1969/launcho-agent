@@ -84,18 +84,20 @@ export function createSessionApi() {
       if (!url) throw invalid();
       const send = () => post(url, {message, sessionId: session.id, requestId}, session.token);
       let data;
+      let sessionRestarted = false;
       try {
         data = await send();
       } catch (error) {
         if (!sessionEnded(error)) throw error;
         session = null;
         await start();
+        sessionRestarted = true;
         data = await send();
       }
       if (typeof data.reply !== 'string' || !data.reply.trim() || data.sessionId !== session.id ||
           !validRevision(data.revision) || data.revision < session.revision) throw invalid();
       session.revision = data.revision;
-      return data;
+      return {...data, sessionRestarted};
     },
     async localOptions(kind) {
       const data = await post('/api/local-signup-options?kind=' + encodeURIComponent(kind));

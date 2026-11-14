@@ -1,4 +1,4 @@
-import { createSessionApi, relativeUrl } from './api.js?v=7';
+import { createSessionApi, relativeUrl } from './api.js?v=8';
 import { setupConnectedWorkspace } from './widget-workspace.js';
 import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js?v=3';
 
@@ -36,6 +36,8 @@ let signupLoading = false;
 let signupSaving = false;
 let editSignup;
 let prepareSignupReview;
+let resetSignupSession;
+let updateDomainFields;
 const persianNumber = value => new Intl.NumberFormat('fa-IR', {useGrouping: false}).format(value);
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
 let theme = 'light';
@@ -108,6 +110,7 @@ function updateInput() {
     $('local-signup').querySelectorAll('input,select,button').forEach(control => {
       control.disabled = blocked || Boolean(failed) || signupLoading || (control.id === 'signup-save' && !localOptions);
     });
+    updateDomainFields?.();
   }
   document.querySelectorAll('[data-question]').forEach((button) => { button.disabled = blocked || !configured || Boolean(failed); });
   input.style.height = 'auto';
@@ -133,6 +136,15 @@ let localOptions;
 async function initializeLocalSignup() {
   signupAvailable = true;
   const form = $('local-signup');
+  updateDomainFields = () => {
+    const own = form.elements.ownDomain.value.trim();
+    form.elements.ownDomain.setCustomValidity(own && !/^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,24}$/.test(own)
+      ? 'دامنهٔ موجود را بدون مسیر و پروتکل وارد کن؛ مانند example.ir.' : '');
+    for (const name of ['label', 'tld']) {
+      form.elements[name].required = !own;
+      form.elements[name].disabled = form.elements[name].disabled || Boolean(own);
+    }
+  };
   let optionsRequest = 0;
   let optionsKind;
   let retainedChoices = {};
@@ -204,6 +216,7 @@ async function initializeLocalSignup() {
     }
   };
   const invalidate = () => {
+    if (confirmationPending) return;
     review = null;
     $('session-review').hidden = true;
     $('review-button').hidden = true;
@@ -236,9 +249,24 @@ async function initializeLocalSignup() {
       form.elements.planMonths.value = String(summary.planMonths ?? '');
       form.elements.tld.value = summary.domain?.tld || '';
       form.elements.label.value = summary.domain?.label || '';
+      form.elements.ownDomain.value = summary.domain?.ownDomain || '';
       updatePreview();
     }
+    updateInput();
     revealCard('signup-title');
+  };
+  resetSignupSession = async preferences => {
+    form.reset();
+    retainedChoices = {};
+    optionsKind = null;
+    const current = preferences && typeof preferences === 'object' ? preferences : {};
+    form.elements.kind.value = current.kind === 'website' ? 'website' : 'shop';
+    await loadOptions();
+    await editSignup({...current, kind: form.elements.kind.value,
+      category: current.category ?? form.elements.category.value,
+      template: current.template ?? form.elements.template.value,
+      planMonths: current.planMonths ?? Number(form.elements.planMonths.value),
+      domain: current.domain ?? {label: '', tld: form.elements.tld.value}});
   };
   form.onsubmit = async event => {
     event.preventDefault();
@@ -261,7 +289,7 @@ async function initializeLocalSignup() {
       await sessionApi.savePreferences({
         kind: fields.kind, businessName: fields.businessName, category: fields.category,
         template: fields.template, planMonths: Number(fields.planMonths),
-        domain: {label: fields.label, tld: fields.tld},
+        domain: fields.ownDomain?.trim() ? {ownDomain: fields.ownDomain.trim()} : {label: fields.label, tld: fields.tld},
       });
       signupSaving = false;
       await requestReview();
@@ -407,6 +435,10 @@ async function submit(message, retry = false) {
     // Give the explicit demo a visible pending state, without calling an API.
     if (demoMode) await new Promise(resolve => setTimeout(resolve, 700));
     const result = demoMode ? {reply: 'برای بررسی مراحل در این نمونه، «ساخت فروشگاه» را انتخاب کن.'} : await sessionApi.sendMessage(apiUrl, message, requestId);
+    if (result.sessionRestarted) {
+      if (resetSignupSession) await resetSignupSession(result.preferences);
+      appendMessage('assistant', 'جلسهٔ قبلی در دسترس نبود؛ جلسهٔ تازه شروع شد. انتخاب‌ها را مطابق جلسهٔ تازه دوباره بررسی کن.');
+    }
     appendMessage('assistant', result.reply);
     $('review-button').hidden = result.nextAction !== 'review';
   } catch (error) {
@@ -472,6 +504,7 @@ function showDraft(draft) {
     $('review-notice').textContent = 'در حال بررسی وضعیت ثبت‌نام…';
     try {
       const result = await sessionApi.draftStatus();
+      if ($('session-review').hidden || $('review-summary').children[0] !== link) return;
       $('review-notice').textContent = draftStatusText.get(result.status) || 'وضعیت ثبت‌نام دریافت نشد.';
       if (result.status === 'expired') {
         link.removeAttribute('href');
@@ -479,6 +512,7 @@ function showDraft(draft) {
         link.textContent = 'پیش‌نویس منقضی شده است';
       }
     } catch {
+      if ($('session-review').hidden || $('review-summary').children[0] !== link) return;
       $('review-notice').textContent = 'پیگیری وضعیت فعلاً در دسترس نیست. کمی بعد دوباره بررسی کنید.';
     } finally {
       statusButton.disabled = false;

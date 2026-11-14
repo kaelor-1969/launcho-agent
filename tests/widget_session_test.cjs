@@ -35,6 +35,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   let failSession = sessionFailure, failConfirm = false, rejectConfirm = false, failReview = false;
   let releaseConfirm;
   let chatError;
+  let heldStatus;
   let revision = 0;
   const sid = 'session-id-for-testing', token = 'secret-session-token';
   const review = {sessionId: sid, revision: 1, reviewId: 'review-id-for-testing',
@@ -80,7 +81,8 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
           if (failReview) throw new TypeError('review response lost after server invalidated previous review');
           data = {...review, revision};
         } else if (url.endsWith('/draft-status')) {
-          data = {status: 'paid'};
+          if (heldStatus) await new Promise(resolve => { heldStatus.resolve = resolve; });
+          data = {status: heldStatus ? 'expired' : 'paid'};
         } else if (url.endsWith('/confirm')) {
           if (rejectConfirm) return {ok: false, status: 410,
             json: async () => ({detail: {code: rejectConfirm, message: 'private-detail'}})};
@@ -123,6 +125,8 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   return {get, calls, settle, window, windowListeners,
     relativeUrl: modules.get('api.js').namespace.relativeUrl,
     failChat: code => { chatError = code; },
+    holdStatus: () => { heldStatus = {}; },
+    releaseStatus: () => heldStatus.resolve(),
     failReview: () => { failReview = true; },
     recoverSession: () => { failSession = false; },
     failConfirmation: () => { failConfirm = true; },
@@ -218,6 +222,13 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   assert.equal(w.calls.at(-1).method, 'GET');
   assert.match(w.calls.at(-1).url, /\/draft-status$/);
   assert.match(w.get('review-notice').textContent, /پرداخت ثبت شده/);
+  w.holdStatus();
+  const oldStatusButton = w.get('review-summary').children[1];
+  const oldStatus = oldStatusButton.emit('click'); await w.settle();
+  await w.send('new preferences'); await w.get('review-button').emit('click');
+  const freshNotice = w.get('review-notice').textContent;
+  w.releaseStatus(); await oldStatus;
+  assert.equal(w.get('review-notice').textContent, freshNotice, 'late status cannot overwrite a new review');
 
   const failed = await widget({sessionFailure: true});
   await failed.send();
