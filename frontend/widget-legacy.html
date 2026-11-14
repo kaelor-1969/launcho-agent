@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>دستیار لانچو</title>
+  <link rel="icon" href="data:,">
+  <link rel="preload" href="./assets/Vazirmatn.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./widget.css">
+  <script type="module" src="./widget.js?v=19"></script>
+</head>
+<body>
+  <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <symbol id="person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5 20v-1a7 7 0 0 1 14 0v1H5Z"/></symbol>
+    </defs>
+  </svg>
+  <section class="chat" role="region" aria-labelledby="chat-title">
+    <header class="header">
+      <span class="wordmark" lang="en">LAUNCHO</span>
+      <span class="header-divider" aria-hidden="true"></span>
+      <h1 id="chat-title">دستیار لانچو</h1>
+      <button id="close" class="icon-button" type="button" aria-label="بستن گفتگو"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button>
+    </header>
+    <main id="scroll-area" class="scroll-area" tabindex="0" aria-label="محتوای گفتگو">
+      <section id="welcome" class="welcome message-row role-assistant" aria-labelledby="welcome-title">
+        <span class="avatar" aria-hidden="true"><img class="assistant-avatar" src="./assets/phoenix-avatar-left.png" alt="" width="42" height="42"></span>
+        <h2 id="welcome-title" class="greeting">سلام! چطور کمکت کنم؟</h2>
+        <p id="welcome-description" class="sr-only">درباره ساخت فروشگاه و امکانات لانچو بپرس.</p>
+      </section>
+      <div id="messages" class="messages" role="log" aria-label="پیام‌های گفتگو" aria-live="polite" aria-relevant="additions"></div>
+      <div id="waiting" class="waiting" role="status" hidden><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>در حال نوشتن…</span></div>
+      <section id="workflow" aria-label="مراحل ساخت فروشگاه" hidden></section>
+      <button id="leave-workflow" type="button" hidden>بازگشت به گفتگو</button>
+      <form id="local-signup" class="flow-card" aria-labelledby="signup-title" hidden>
+        <h2 id="signup-title" tabindex="-1">اطلاعات کسب‌وکار</h2>
+        <p>اطلاعات را کامل کن؛ در مرحلهٔ بعد مرور می‌کنی.</p>
+        <label>نوع سرویس <select name="kind"><option value="shop">فروشگاه</option><option value="website">سایت‌ساز</option></select></label>
+        <label>نام کسب‌وکار <input name="businessName" maxlength="80" autocomplete="organization" required></label>
+        <label>دسته‌بندی <select name="category" required></select></label>
+        <label>قالب <select name="template" required></select></label>
+        <a id="local-template-preview" target="_blank" rel="noopener noreferrer" hidden>مشاهده نمونهٔ قالب</a>
+        <label>دورهٔ اشتراک <select name="planMonths" required></select></label>
+        <div class="signup-domain">
+          <label>نام لاتین دامنه <input name="label" dir="ltr" maxlength="63" pattern="[a-z0-9]+(-[a-z0-9]+)*" autocapitalize="none" spellcheck="false" required></label>
+          <label>پسوند <select name="tld" dir="ltr" required></select></label>
+        </div>
+        <button id="signup-save" class="primary" type="submit">ذخیره و مرور</button>
+        <button id="signup-retry" type="button" hidden>تلاش دوباره برای دریافت گزینه‌ها</button>
+        <p id="local-signup-status" role="status"></p>
+        <p class="signup-hint">این اتصال آزمایشی است؛ فروشگاه واقعی ایجاد نمی‌شود. نمونهٔ قالب به معنی تأیید ثبت آن در لانچو نیست.</p>
+      </form>
+      <button id="review-button" type="button" hidden>مرور خلاصه و تأیید</button>
+      <section id="session-review" class="flow-card" aria-labelledby="review-title" hidden>
+        <h2 id="review-title" tabindex="-1">مرور اطلاعات</h2>
+        <div id="review-summary"></div>
+        <button id="edit-signup" type="button" hidden>ویرایش انتخاب‌ها</button>
+        <p id="edit-notice" class="signup-hint" hidden>پس از ویرایش، خلاصهٔ تازه را دوباره مرور کن.</p>
+        <p id="review-notice"></p>
+        <button id="confirm" class="primary" type="button" disabled>تأیید و ساخت پیش‌نویس</button>
+      </section>
+    </main>
+    <nav class="starters" aria-label="پیشنهادهای گفتگو">
+      <button class="primary-starter" type="button" data-question="برای ساخت فروشگاه با لانچو از کجا شروع کنم؟">ساخت فروشگاه</button>
+      <button type="button" data-question="لانچو چه امکاناتی دارد؟">امکانات</button>
+      <button class="price-card" type="button" data-question="برای اطلاع از تعرفه‌های لانچو از کجا اقدام کنم؟">تعرفه‌ها</button>
+    </nav>
+    <footer class="composer">
+      <div id="error" class="error" role="alert" hidden><span id="error-text"></span><button id="retry" type="button" hidden>تلاش مجدد</button></div>
+      <form id="form" novalidate>
+        <label class="sr-only" for="message">پیام شما</label>
+        <div class="input-row"><button id="send" class="send" type="submit" aria-label="ارسال پیام" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3.7 9.6c-.9.4-.9 1.2 0 1.5l6.4 2.1 2.2 6.5c.3.9 1.1.9 1.5 0L21 3Z"/><path d="m10.1 13.2 5.8-5.7"/></svg></button><textarea id="message" rows="1" placeholder="پیامت را بنویس…" aria-describedby="input-hint" spellcheck="false"></textarea></div>
+        <p id="input-hint" class="sr-only">پاسخ‌ها با هوش مصنوعی تولید می‌شوند.</p>
+      </form>
+    </footer>
+  </section>
+</body>
+</html>

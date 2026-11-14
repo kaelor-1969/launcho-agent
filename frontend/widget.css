@@ -187,3 +187,13 @@ textarea::placeholder { color: var(--muted); font-size: 17px; font-weight: 550; 
 .flow-error button { font: inherit; min-height: 44px; padding: var(--s2); border: 1px solid var(--border); border-radius: var(--s2); background: var(--surface); color: inherit; }
 .flow-card a { display: flex; align-items: center; min-height: 44px; color: var(--blue); }
 #review-button { min-height: 44px; padding: var(--s2); border: 1px solid var(--border); border-radius: var(--s2); background: var(--input-bg); color: var(--text); font: inherit; }
+
+/* Signup and review only: keep the chat composer and send control unchanged. */
+#local-signup, #session-review { flex-shrink: 0; }
+#local-signup label { display: grid; gap: var(--s1); font-weight: 600; }
+.signup-domain { display: grid; grid-template-columns: minmax(0, 1fr) minmax(76px, .35fr); gap: var(--s2); }
+.signup-domain label { min-width: 0; }
+.signup-hint { color: var(--muted); font-size: 12px; }
+#session-review dl { padding: var(--s3); border: 1px solid var(--border); border-radius: var(--s3); }
+#session-review dt, #session-review dd { padding-block: var(--s1); }
+#edit-signup { color: var(--focus); border-color: var(--focus); background: transparent; }

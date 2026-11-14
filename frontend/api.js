@@ -90,13 +90,22 @@ export function createSessionApi() {
       return data;
     },
     async localOptions(kind) {
-      return post('/api/local-signup-options?kind=' + encodeURIComponent(kind));
+      const data = await post('/api/local-signup-options?kind=' + encodeURIComponent(kind));
+      const choices = items => Array.isArray(items) && items.length > 0 && items.every(item =>
+        item && typeof item.id === 'string' && item.id && typeof item.label === 'string' && item.label);
+      if (!choices(data.businessCategories) || !choices(data.templates) ||
+          !data.templates.some(item => item.available === true) ||
+          !Array.isArray(data.periods) || !data.periods.length ||
+          !data.periods.every(value => Number.isSafeInteger(value) && value > 0 && value <= 120) ||
+          !Array.isArray(data.suffixes) || !data.suffixes.length ||
+          !data.suffixes.every(value => typeof value === 'string' && /^[a-z0-9]+(?:\.[a-z0-9]+)*$/.test(value))) throw invalid();
+      return data;
     },
     async savePreferences(preferences) {
       await start();
       const data = await post(endpoint('preferences'), {revision: session.revision, preferences},
                               session.token, 45000, 'PATCH');
-      if (data.sessionId !== session.id || !validRevision(data.revision)) throw invalid();
+      if (data.sessionId !== session.id || !validRevision(data.revision) || data.revision < session.revision) throw invalid();
       session.revision = data.revision;
       return data;
     },

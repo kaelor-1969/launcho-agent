@@ -99,6 +99,11 @@ const server = http.createServer(async (req, res) => {
       for (let i = 0; i < 100; i++) { if (await evaluate(expression)) return; await sleep(50); }
       throw new Error(`Timed out: ${expression}`);
     };
+    const confirmWithKeyboard = async () => {
+      await evaluate(`doc.querySelector('#confirm').focus()`);
+      await command('Input.dispatchKeyEvent', {type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r'});
+      await command('Input.dispatchKeyEvent', {type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13});
+    };
     await command('Runtime.enable');
     for (const width of [1280, 390]) {
       calls.length = 0; lost = true;
@@ -127,11 +132,14 @@ const server = http.createServer(async (req, res) => {
       await wait(`doc.querySelector('#confirm').disabled === false`);
       assert.equal(calls.length, 3);
       await evaluate(`doc.querySelector('#confirm').click()`);
+      assert.equal(calls.length, 3, 'scripted clicks cannot authorize confirmation');
+      await confirmWithKeyboard();
       await wait(`doc.querySelector('#error').hidden === false`);
       assert.equal(calls.length, 4, 'no automatic retry');
       await evaluate(`doc.querySelector('#message').dispatchEvent(new doc.defaultView.Event('input', {bubbles:true}))`);
       assert.equal(await evaluate(`doc.querySelector('#error').hidden`), false, 'typing must preserve unknown-outcome guidance');
-      await evaluate(`doc.querySelector('#confirm').click(); doc.querySelector('#confirm').click()`);
+      await confirmWithKeyboard();
+      await confirmWithKeyboard();
       await wait(`doc.querySelector('#confirm').hidden === true`);
       assert.equal(calls.length, 5);
       assert.deepEqual(calls[3].body, calls[4].body);

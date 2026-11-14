@@ -13,13 +13,14 @@ class Element {
   }
   addEventListener(type, handler) { (this.listeners[type] ||= []).push(handler); }
   async emit(type, extra = {}) {
-    for (const handler of this.listeners[type] || []) await handler({preventDefault() {}, ...extra});
+    for (const handler of this.listeners[type] || []) await handler({preventDefault() {}, isTrusted:true, ...extra});
   }
   append(...nodes) { this.children.push(...nodes); }
   prepend(...nodes) { this.children.unshift(...nodes); }
   replaceChildren(...nodes) { this.children = nodes; }
   setAttribute() {}
   focus() {}
+  getBoundingClientRect() { return {top: 0}; }
   blur() {}
 }
 
@@ -50,7 +51,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
     crypto: require('node:crypto').webcrypto,
     matchMedia: () => ({matches: false, addEventListener() {}}),
     ResizeObserver: class {observe() {}},
-    document: {getElementById: get, documentElement: {dataset: {}}, addEventListener() {},
+    document: {body: {dataset:{}}, getElementById: get, documentElement: {dataset: {}}, addEventListener() {},
       querySelectorAll: () => [], querySelector: () => new Element(),
       createTextNode: textContent => ({textContent}), createElement: () => new Element(), createElementNS: () => new Element()},
     fetch: async (url, options) => {

@@ -3,7 +3,10 @@
   if (window.LaunchoWidget) return;
   const script = document.currentScript;
   if (!script || !script.src) return;
-  const widgetUrl = new URL('/widget/widget.html', script.src);
+  // Keep the previous UI available without changing API/session behavior.
+  const workspace = script.dataset.interface !== 'legacy' && script.dataset.demo !== 'true';
+  const widgetUrl = new URL(workspace ? '/widget/widget.html' : '/widget/widget-legacy.html', script.src);
+  widgetUrl.searchParams.set('v', new URL(script.src).searchParams.get('v') || (workspace ? 'workspace-20261114-3' : 'legacy-20261114-3'));
   const widgetOrigin = widgetUrl.origin;
   const channel = crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint32Array(4))).join('-');
   const options = {
@@ -14,8 +17,8 @@
     workflowUrl: null,
     offset: 24,
     mobileOffset: 16,
-    width: 380,
-    height: 450,
+    width: workspace ? null : 380,
+    height: workspace ? null : 450,
   };
   const dimensions = { width: [280, 960], height: [320, 960] };
   function setDimensions(values) {
@@ -48,7 +51,7 @@
   function post(type, payload = {}) {
     if (!frame || !ready) return;
     const data = { scope: 'launcho', channel, type, ...payload };
-    if (type === 'configure') Object.assign(data, options, { open: opened });
+    if (type === 'configure') Object.assign(data, options, { open: opened, expanded });
     frame.contentWindow.postMessage(data, widgetOrigin);
   }
   function viewport() {
@@ -66,7 +69,7 @@
       clearTimeout(templateHintTimer);
       templateHint.hidden = true;
     }
-    resizeButton.hidden = !opened;
+    resizeButton.hidden = !opened || workspace;
     button.setAttribute('aria-expanded', String(opened));
     button.setAttribute('aria-label', opened ? 'بستن گفتگو' : 'دستیار لانچو');
     button.dataset.open = String(opened);
@@ -99,8 +102,8 @@
       host.dataset.position = options.position;
       host.style.setProperty('--desktop-offset', `${options.offset}px`);
       host.style.setProperty('--mobile-offset', `${options.mobileOffset}px`);
-      host.style.setProperty('--panel-width', `${options.width}px`);
-      host.style.setProperty('--panel-height', `${options.height}px`);
+      host.style.setProperty('--panel-width', options.width ? `${options.width}px` : '67vw');
+      host.style.setProperty('--panel-height', options.height ? `${options.height}px` : '85dvh');
       host.dataset.theme = options.theme === 'auto' ? (systemTheme.matches ? 'dark' : 'light') : options.theme;
     }
     post('configure');
@@ -127,6 +130,7 @@
       feedback.hidden = true;
       frame.style.visibility = 'visible';
     } else if (data.type === 'close' && ready) setOpen(false);
+    else if (data.type === 'resize' && ready && opened && workspace) toggleSize();
     else if (data.type === 'templates-link-opened' && ready && opened) {
       setOpen(false);
       templateHint.hidden = false;
@@ -136,10 +140,17 @@
       window.dispatchEvent(new CustomEvent('launcho:templates:open', { detail: { select: window.LaunchoWidget.selectTemplate } }));
     }
   });
+  function toggleSize() {
+    expanded = !expanded;
+    panel.dataset.expanded = String(expanded);
+    resizeButton.setAttribute('aria-pressed', String(expanded));
+    post('configure');
+  }
   function mount() {
     host = document.createElement('div');
     host.id = 'launcho-widget';
     host.dataset.position = options.position;
+    host.dataset.interface = workspace ? 'workspace' : 'legacy';
     // Host CSS cannot turn the invisible wrapper into a page-sized click target.
     host.style.setProperty('all', 'initial', 'important');
     host.style.setProperty('position', 'fixed', 'important');
@@ -180,6 +191,14 @@
         @media(max-width:480px){:host{--offset:var(--mobile-offset,16px);--gap:12px}.panel{right:calc(12px + env(safe-area-inset-right));width:calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right))}:host([data-position=left]) .panel{left:calc(12px + env(safe-area-inset-left))}}
         @media(prefers-reduced-motion:reduce){button,.launcher-hint{transition:none}button:hover{transform:none}.panel::before{animation:none}}
         @media(max-width:480px){.resize{display:none}.panel[data-expanded=true]{width:calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right));height:var(--panel-height,450px)}}
+        :host([data-interface=workspace]){--frame-width:1px;--radius:22px}
+        :host([data-interface=workspace]) .panel{width:var(--panel-width,67vw);height:var(--panel-height,85dvh)}
+        :host([data-interface=workspace]) .panel[data-expanded=true]{width:calc(100vw - var(--offset) - var(--offset));height:calc(var(--viewport-height) - var(--offset) - var(--offset) - var(--size) - var(--gap))}
+        @media(max-width:600px){
+          :host([data-interface=workspace]) .panel,:host([data-interface=workspace]) .panel[data-expanded=true]{top:0;bottom:auto;right:0;left:0;width:100vw;max-width:none;height:var(--viewport-height);max-height:none;border-radius:0;padding:0}
+          :host([data-interface=workspace]) iframe{border-radius:0}
+          :host([data-interface=workspace]) .launcher[data-open=true],:host([data-interface=workspace]) .resize{display:none}
+        }
       </style>
       <div class="panel" id="launcho-panel" hidden><p class="feedback" role="status">در حال آماده‌سازی گفتگو…</p></div>
       <button type="button" aria-label="دستیار لانچو" aria-expanded="false" aria-controls="launcho-panel" data-open="false"><img class="mascot" alt="" width="52" height="52"><span class="launcher-hint" aria-hidden="true">از لانچو بپرس</span><svg class="close" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button>`;
@@ -208,11 +227,7 @@
     resizeButton.setAttribute('aria-label', 'تغییر اندازهٔ گفتگو');
     resizeButton.setAttribute('aria-pressed', 'false');
     resizeButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg>';
-    resizeButton.addEventListener('click', () => {
-      expanded = !expanded;
-      panel.dataset.expanded = String(expanded);
-      resizeButton.setAttribute('aria-pressed', String(expanded));
-    });
+    resizeButton.addEventListener('click', toggleSize);
     shadow.append(resizeButton);
     button.addEventListener('click', () => setOpen(!opened));
     shadow.addEventListener('keydown', (event) => {
