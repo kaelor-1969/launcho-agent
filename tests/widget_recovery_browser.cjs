@@ -110,7 +110,7 @@ const server = http.createServer(async (req,res) => {
     delayOptions=true;
     for (const failObsolete of [false,true]) {
     obsoleteOptionsFailure=failObsolete;
-    await evaluate(`const k=doc.querySelector('[name=kind]');k.value='website';k.dispatchEvent(new Event('change',{bubbles:true}));k.value='shop';k.dispatchEvent(new Event('change',{bubbles:true}));`);
+    await evaluate(`(() => {const k=doc.querySelector('[name=kind]');k.value='website';k.dispatchEvent(new Event('change',{bubbles:true}));k.value='shop';k.dispatchEvent(new Event('change',{bubbles:true}));})()`);
     await wait(`!doc.querySelector('#signup-save').disabled`);await sleep(300);
     assert.equal(await evaluate(`doc.querySelector('[name=kind]').value`),'shop');
     assert.deepEqual(await evaluate(`Array.from(doc.querySelector('[name=template]').options).map(o=>o.value)`),catalog.shop.templates.filter(t=>t.available).map(t=>t.id));
