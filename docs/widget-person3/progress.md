@@ -19,3 +19,8 @@ Stage 2 commit: ce48fd7.
 
 ## Stage 3
 Chrome session suite PASS at1280/390: real pointer double-click plus extra Enter create only one in-flight request; exact review body retained. Synthetic activation rejected. Reviewer found a test race in immediate server-call counting; fixed by atomically asserting synthetic click never disables confirm. Rerun exit0; second review approved. No production change needed.
+
+Stage 3 commit: 3c0e015.
+
+## Stage 4
+Chrome session suite exit0 at1280/390 with CDP offline transport (no system network changes). Offline chat never reached HTTP fixture; reconnection alone did not resend in100ms observation; manual retry matched captured original postData and one user bubble. Confirm fixture flushed partial JSON then destroyed socket after recording accepted body; UI froze edits and manually retried identical confirmation. Source reviewer approved, no own execution. Fixture does not prove backend operation deduplication.

@@ -35,8 +35,11 @@ const server = http.createServer(async (req, res) => {
     if (req.url.endsWith('/confirm')) {
       if (lost) {
         lost = false;
-        res.statusCode = 503;
-        return json({detail: {code: 'draft_outcome_unknown'}});
+        // The server accepted the request, but the response connection breaks.
+        // Flush partial JSON so Chrome cannot transparently retry an unopened socket.
+        res.writeHead(200, {'Content-Type':'application/json'});
+        res.flushHeaders(); res.write('{');
+        return setTimeout(() => res.destroy(), 30);
       }
       return setTimeout(() => json({status: 'draft', ref: 'sd_browsertest',
         confirmUrl: 'https://launcho.ir/start?signup=sd_browsertest'}), 200);
@@ -71,11 +74,12 @@ const server = http.createServer(async (req, res) => {
     socket = new WebSocket(targets.find(t => t.type === 'page').webSocketDebuggerUrl);
     await once(socket, 'open');
     let id = 0;
-    const pending = new Map(), errors = [];
+    const pending = new Map(), errors = [], networkRequests = [];
     socket.addEventListener('message', event => {
       const data = JSON.parse(event.data);
       if (data.id) { const cb = pending.get(data.id); pending.delete(data.id); cb(data); }
       if (data.method === 'Runtime.exceptionThrown') errors.push(data.params.exceptionDetails.text);
+      if (data.method === 'Network.requestWillBeSent' && data.params.request.url.endsWith('/api/chat')) networkRequests.push(data.params.request);
     });
     const command = (method, params = {}) => new Promise((resolve, reject) => {
       const key = ++id;
@@ -116,6 +120,7 @@ const server = http.createServer(async (req, res) => {
       }
     };
     await command('Runtime.enable');
+    await command('Network.enable');
     for (const width of [1280, 390]) {
       calls.length = 0; lost = true;
       await command('Emulation.setDeviceMetricsOverride', {width, height: 844, deviceScaleFactor: 1, mobile: width < 480});
@@ -132,9 +137,20 @@ const server = http.createServer(async (req, res) => {
         return url.origin === location.origin && url.pathname === '/widget/widget.html' &&
           new URLSearchParams(url.hash.slice(1)).get('parentOrigin') === location.origin;
       })()`));
+      // Real browser transport offline; never change the system network settings.
+      await command('Network.emulateNetworkConditions', {offline:true, latency:0, downloadThroughput:-1, uploadThroughput:-1});
       await evaluate(`doc.querySelector('#message').value = 'confirm now'; doc.querySelector('#form').requestSubmit()`);
+      await wait(`!doc.querySelector('#error').hidden && !doc.querySelector('#retry').disabled`);
+      assert.equal(calls.length, 1, 'offline request must not reach the HTTP fixture');
+      const offlineBody = JSON.parse(networkRequests.at(-1).postData);
+      await command('Network.emulateNetworkConditions', {offline:false, latency:0, downloadThroughput:-1, uploadThroughput:-1});
+      await sleep(100);
+      assert.equal(calls.length, 1, 'reconnection must not retry automatically');
+      await evaluate(`doc.querySelector('#retry').click()`);
       await wait(`doc.querySelector('#review-button').hidden === false`);
       assert.equal(calls.length, 2);
+      assert.deepEqual(calls[1].body, offlineBody, 'offline retry must preserve message/session/requestId');
+      assert.equal(await evaluate(`doc.querySelectorAll('#messages .role-user').length`), 1);
       const {requestId, ...chatBody} = calls[1].body;
       assert.match(requestId, /^[a-f0-9-]{36}$/);
       assert.deepEqual(chatBody, {message: 'confirm now', sessionId: sid});
@@ -167,7 +183,7 @@ const server = http.createServer(async (req, res) => {
         assert.equal(JSON.stringify(call.body).includes(token), false);
       }
       assert.equal(await evaluate(`doc.body.textContent.includes('browser-session-token') || doc.body.textContent.includes('browser-confirmation-token')`), false);
-      console.log(`PASS: Chromium ${width}px session, chat, review, manual confirmation retry, iframe origin, memory-only credentials`);
+      console.log(`PASS: Chromium ${width}px offline transport, exact chat retry, broken confirmation socket, native double-click, iframe origin, memory-only credentials`);
 
       // A separate page lifecycle checks failure recovery and invalidated reviews.
       failSession = true;
