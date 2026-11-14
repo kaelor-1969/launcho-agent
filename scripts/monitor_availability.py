@@ -93,7 +93,7 @@ def result(ok, code, **fields):
 
 async def probe_health(base, endpoint, timeout):
     async def request():
-        async with httpx.AsyncClient(trust_env=False, follow_redirects=False) as client:
+        async with httpx.AsyncClient(trust_env=False, follow_redirects=False, timeout=None) as client:
             async with client.stream('GET', f'{base.rstrip("/")}/health/{endpoint}') as response:
                 if response.status_code != 200:
                     return result(False, 'http_status', status=response.status_code)
@@ -106,7 +106,7 @@ async def probe_health(base, endpoint, timeout):
                         return result(False, 'body_too_large')
                 try:
                     data = json.loads(body)
-                except (ValueError, UnicodeError):
+                except (ValueError, UnicodeError, RecursionError):
                     return result(False, 'invalid_json')
                 expected = 'ok' if endpoint == 'live' else 'ready'
                 return result(isinstance(data, dict) and data.get('status') == expected,
@@ -147,7 +147,19 @@ async def probe_widget(config):
         elif origin(req.url) not in allowed or urlsplit(req.url).path.startswith('/api/'):
             await route.abort()
         else:
-            await route.continue_()
+            # Route handlers do not re-run for redirect hops. Fetch without
+            # following redirects so an allowed resource cannot escape policy.
+            try:
+                response = await route.fetch(max_redirects=0, timeout=config.timeout * 1000)
+                if 300 <= response.status < 400:
+                    await route.abort()
+                else:
+                    await route.fulfill(response=response)
+            except BrowserError:
+                try:
+                    await route.abort()
+                except BrowserError:
+                    pass  # Context may already have closed at the probe deadline.
 
     def failed(req):
         if req.method in ('GET', 'HEAD'):
@@ -222,15 +234,17 @@ async def probe_widget(config):
                     return await asyncio.wait_for(inspect(), config.timeout)
                 except asyncio.TimeoutError:
                     return result(False, phase + '_timeout', **details)
+                except BrowserError:
+                    return result(False, phase + '_browser_error', **details)
                 finally:
                     if not details['ui_shell'] and config.screenshot_dir and page:
                         # Mask the entire page: no host/customer text or frame pixels persist.
-                        folder = Path(config.screenshot_dir)
-                        folder.mkdir(parents=True, exist_ok=True)
                         try:
+                            folder = Path(config.screenshot_dir)
+                            folder.mkdir(parents=True, exist_ok=True)
                             await page.screenshot(path=str(folder / 'widget-failure.png'),
                                                   mask=[page.locator('html')], timeout=2000)
-                        except BrowserError:
+                        except (BrowserError, OSError):
                             pass
             finally:
                 if context:
@@ -305,7 +319,7 @@ class Sender:
         for attempt in range(self.config.delivery_attempts):
             try:
                 async def post():
-                    async with httpx.AsyncClient(trust_env=False, follow_redirects=False) as client:
+                    async with httpx.AsyncClient(trust_env=False, follow_redirects=False, timeout=None) as client:
                         async with client.stream('POST', self.url, json=payload, headers=headers) as res:
                             return 200 <= res.status_code < 300
                 if await asyncio.wait_for(post(), self.config.timeout):

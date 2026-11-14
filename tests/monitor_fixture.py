@@ -15,10 +15,11 @@ ROOT = Path(__file__).resolve().parents[1] / 'frontend'
 
 
 class Handler(BaseHTTPRequestHandler):
-    def __init__(self, *args, widget_base='', fault='none', calls=None, **kwargs):
+    def __init__(self, *args, widget_base='', fault='none', calls=None, redirect_to='', **kwargs):
         self.widget_base = widget_base
         self.fault = fault
         self.calls = calls if calls is not None else []
+        self.redirect_to = redirect_to
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -26,6 +27,7 @@ class Handler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         content_type = 'text/html; charset=utf-8'
         status = 200
+        location = ''
         if path.startswith('/health/'):
             content_type = 'application/json'
             body = json.dumps({'status': 'ok' if path == '/health/live' else 'ready'}).encode()
@@ -39,6 +41,8 @@ class Handler(BaseHTTPRequestHandler):
                 status, body = 404, b''
             elif self.fault == 'loader' and path.endswith('loader.js'):
                 status, body = 503, b''
+            elif self.fault == 'redirect' and path.endswith('loader.js'):
+                status, body, location = 302, b'', self.redirect_to
             elif self.fault == 'iframe' and path.endswith('widget.html'):
                 status, body = 503, b''
             elif self.fault == 'not_ready' and path.endswith('widget.js'):
@@ -55,6 +59,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(body)))
+        if location:
+            self.send_header('Location', location)
         self.end_headers()
         try:
             self.wfile.write(body)
@@ -70,8 +76,8 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-def server(port=0, widget_base='', fault='none', calls=None):
-    return ThreadingHTTPServer(('127.0.0.1', port), partial(Handler, widget_base=widget_base, fault=fault, calls=calls))
+def server(port=0, widget_base='', fault='none', calls=None, redirect_to=''):
+    return ThreadingHTTPServer(('127.0.0.1', port), partial(Handler, widget_base=widget_base, fault=fault, calls=calls, redirect_to=redirect_to))
 
 
 if __name__ == '__main__':

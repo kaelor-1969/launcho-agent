@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import monitor_availability as monitor
@@ -76,6 +77,20 @@ class HealthTests(unittest.TestCase):
         with receiver(delay=.25) as (url, _):
             self.assertEqual(asyncio.run(monitor.probe_health(url, 'live', .1))['code'], 'timeout')
         self.assertEqual(asyncio.run(monitor.probe_health(url, 'live', 5))['code'], 'connection')
+
+    def test_configured_timeout_can_exceed_httpx_default(self):
+        with receiver(delay=5.1) as (url, _):
+            self.assertTrue(asyncio.run(monitor.probe_health(url, 'live', 7))['ok'])
+
+    def test_deep_json_or_parser_recursion_cannot_stop_monitor(self):
+        # Python JSON implementations have different nesting limits. This valid
+        # JSON array must fail the health contract whether parsing succeeds or not.
+        with receiver(body=b'[' * 1100 + b'0' + b']' * 1100) as (url, _):
+            outcome = asyncio.run(monitor.probe_health(url, 'live', 2))
+            self.assertFalse(outcome['ok'])
+            self.assertIn(outcome['code'], ('health_contract', 'invalid_json'))
+        with receiver() as (url, _), patch.object(monitor.json, 'loads', side_effect=RecursionError):
+            self.assertEqual(asyncio.run(monitor.probe_health(url, 'live', 2))['code'], 'invalid_json')
 
     def test_config_validation(self):
         for kw in [{'timeout': 0}, {'interval': float('nan')}, {'failure_threshold': True},

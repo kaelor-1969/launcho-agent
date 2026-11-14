@@ -86,3 +86,44 @@ on those hosts, blocked one automatic session POST, observed one optional-resour
 failure and no essential/JS failure. Session was not verified. Browser security
 was unchanged. Web text-fetch tool could not access these URLs, but actual local
 HTTP/Chrome monitor execution succeeded. launcho.ir remains final acceptance only.
+
+Stage-5 commit: `7a6c0d7`.
+
+## Stage 6
+
+Owned real FastAPI and local mock API subprocesses with isolated temporary databases,
+blank AI credentials/invalid AI destination and a separate local host/alert receiver.
+Initial full drill passed all 15 observation/assertion groups, including restart
+after every sample, exact payload/count checks and cleanup of every owned resource.
+Independent reviewer suggested stronger startup ownership; added own Uvicorn log
+marker plus process liveness and HTTP readiness. A simultaneous validation run
+exceeded the original 10-second cold-start budget; a 30-second startup budget
+repeat then passed. No check was skipped or weakened; health/UI acceptance unchanged.
+
+Primary/fresh independent source-excerpt reviews also found and fixed:
+
+- HTTPX default 5-second deadline could override a longer configured total timeout.
+  Both health/sender clients now use timeout=None inside the outer total deadline.
+  Real 5.1-second controlled response with configured 7-second budget tests this.
+- JSON parser RecursionError now yields invalid_json without stopping the monitor.
+  Python 3.13 accepted the 1100-deep valid array (older parsers may reject it), so
+  the portable test asserts failed health and separately injects parser recursion.
+- Browser redirect hops could bypass the initial route-origin guard. Approved
+  resources now use route.fetch(max_redirects=0), reject 3xx before following and
+  fulfill only nonredirect responses. A seventh real-browser test verified zero
+  requests to a forbidden redirect destination. See official API behavior:
+  https://playwright.dev/python/docs/api/class-route#route-fetch
+- Navigation errors now retain the failing phase; screenshot-directory failures
+  cannot stop the probe. Full-page masking remains enabled for optional screenshots.
+
+Seven browser fixture cases passed after these corrections. Final unittest
+discovery passed **194 tests** in 62.768 seconds. The final approved development
+check also passed live/ready/UI shell, blocked one session POST, and retained one
+optional-resource failure without failing the check. Final owned-process drill
+also passed all 15 groups with exact event counts; every owned process/server
+was stopped and temporary databases removed. Source-excerpt reviewers accepted
+the corrected timeout/parser/redirect/ownership code; they did not execute tests.
+
+Development checks: initial success, a subsequent 15-second UI-shell timeout with
+healthy live/ready, then successful bounded repeats. The timeout is retained in
+evidence and is not dismissed as uptime success. No production incident claimed.

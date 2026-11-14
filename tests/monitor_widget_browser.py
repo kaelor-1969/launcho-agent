@@ -27,21 +27,27 @@ def running(**kwargs):
 
 async def main():
     reports = []
-    for fault in ('none', 'loader', 'iframe', 'not_ready', 'js_error', 'optional'):
+    for fault in ('none', 'loader', 'iframe', 'not_ready', 'js_error', 'optional', 'redirect'):
         calls = []
-        with running(fault=fault, calls=calls) as service, running(widget_base=service, calls=calls) as host:
+        forbidden_calls = []
+        with running(calls=forbidden_calls) as forbidden, \
+                running(fault=fault, calls=calls, redirect_to=forbidden + '/must-never-be-requested') as service, \
+                running(widget_base=service, calls=calls) as host:
             config = Config(service_url=service, host_url=host + '/',
                             loader_url=service + '/widget/loader.js', timeout=4,
                             screenshot_dir='artifacts/monitoring/screenshots')
             outcome = await probe_widget(config)
             assert outcome['ok'] == (fault in ('none', 'optional')), (fault, outcome)
             assert all(method == 'GET' for method, _ in calls), calls
+            assert forbidden_calls == [], forbidden_calls
             if outcome['ok']:
                 assert outcome['loader'] and outcome['iframe'] and outcome['ui_shell']
                 assert outcome['blocked_writes'] >= 1, outcome
                 assert outcome['session_verified'] is False
             if fault == 'loader':
                 assert not outcome['loader']
+            if fault == 'redirect':
+                assert not outcome['loader'] and outcome['essential_failures'] >= 1
             if fault == 'iframe':
                 assert outcome['loader'] and not outcome['ui_shell']
             if fault == 'not_ready':
@@ -55,7 +61,7 @@ async def main():
     folder = Path('artifacts/monitoring')
     folder.mkdir(parents=True, exist_ok=True)
     (folder / 'browser-results.json').write_text(json.dumps(reports, indent=2), encoding='utf-8')
-    print('PASS: six real-browser scenarios; zero outgoing writes')
+    print('PASS: seven real-browser scenarios; zero outgoing writes or forbidden redirects')
 
 
 if __name__ == '__main__':
