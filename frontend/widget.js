@@ -664,6 +664,15 @@ document.querySelectorAll('[data-question]').forEach((button) => {
 new ResizeObserver(() => scrollToBottom()).observe($('messages'));
 $('welcome').addEventListener('transitionend', () => scrollToBottom());
 setupConnectedWorkspace(notify);
+function updateConnectionStatus() {
+  const offline = globalThis.navigator?.onLine === false;
+  $('network-status').hidden = !offline;
+  $('network-status').textContent = offline
+    ? 'ارتباط شبکه قطع است. پس از اتصال، درخواست قبلی را با دکمهٔ تلاش مجدد بررسی کن؛ ارسال خودکار انجام نمی‌شود.' : '';
+}
+window.addEventListener('offline', updateConnectionStatus);
+window.addEventListener('online', updateConnectionStatus);
+updateConnectionStatus();
 updateInput();
 if (configured) initializeSession();
 notify('ready');

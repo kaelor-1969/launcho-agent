@@ -13,7 +13,7 @@ const catalog = JSON.parse(fs.readFileSync('content/launcho-widget-catalog.json'
 const pricing = JSON.parse(fs.readFileSync('content/launcho-mock.json','utf8')).pricing;
 const sid = 'recovery-browser-session', token = 'recovery-owner-token';
 const calls = [];
-let draftState, status = 'draft', failRead = false;
+let draftState, status = 'draft', failRead = false, failStatus = false;
 const prefs = {kind:'shop',businessName:'نمونهٔ بازیابی',category:catalog.shop.businessCategories[0].id,
   template:catalog.shop.templates.find(t => t.available).id,planMonths:3,domain:{ownDomain:'example.ir'}};
 const draft = {ref:'sd_recovery',status:'draft',expiresAt:'2099-01-01T00:00:00Z',
@@ -35,7 +35,7 @@ const server = http.createServer(async (req,res) => {
         history:[{role:'user',content:'پیام پیش از تازه‌سازی'},{role:'assistant',content:'پاسخ معتبر سرور'}],
         adapterMode:'local_mock',draftState,...(draftState==='completed'?{draft}:{})});
     }
-    if (req.url.endsWith('/draft-status')) return json({status});
+    if (req.url.endsWith('/draft-status')) return failStatus ? json({status:'untrusted'}) : json({status});
     if (req.url === '/api/chat') return json({sessionId:sid,revision:4,reply:'پاسخ معتبر سرور',nextAction:'collect_preferences'});
     return json({},404);
   }
@@ -109,12 +109,25 @@ const server = http.createServer(async (req,res) => {
     await shot('recovered-completed');
     status='expired';await reload();await wait(`doc.querySelector('#review-summary a')?.getAttribute('aria-disabled')==='true'`);
     await shot('recovered-expired');
+    failStatus=true;await reload();await wait(`!doc.querySelector('#retry').hidden && !doc.querySelector('#retry').disabled`);
+    assert.equal(await evaluate(`!!doc.querySelector('#review-summary a[href]')`),false,'invalid status must not expose continuation');
+    const beforeOffline=calls.length;
+    await command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+    await wait(`!doc.querySelector('#network-status').hidden`);
+    await evaluate(`doc.querySelector('#retry').click()`);await wait(`!doc.querySelector('#retry').disabled`);
+    assert.equal(calls.length,beforeOffline,'offline recovery GET cannot reach server');
+    await shot('recovery-offline');
+    await command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+    await wait(`doc.querySelector('#network-status').hidden`);await sleep(100);
+    assert.equal(calls.length,beforeOffline,'online event never retries automatically');
+    failStatus=false;await evaluate(`doc.querySelector('#retry').click()`);
+    await wait(`doc.querySelector('#review-summary a')?.getAttribute('aria-disabled')==='true'`);
     assert.equal(calls.filter(c=>c.url.endsWith('/confirm')).length,0,'no recovery path may confirm');
     assert.deepEqual(errors,[]);
     const browser=await command('Browser.getVersion');
     fs.writeFileSync(path.join(output,'report.json'),JSON.stringify({browser:browser.product,controlledResponses:true,
       restoredPreferences:true,hostRefresh:true,iframeRefresh:true,unknownLocked:true,expiredPendingNoReplacement:true,
-      completedReadBeforeLink:true,expiredDisabled:true,confirmRequests:0,errors},null,2)+'\n');
+      completedReadBeforeLink:true,expiredDisabled:true,malformedStatusBlocked:true,offlineRecovery:true,reconnectNoMutation:true,confirmRequests:0,errors},null,2)+'\n');
     console.log('PASS: native browser opt-in host/iframe refresh, preferences/history, unknown locks, expiry and GET-only recovery');
   } finally {socket?.close();chrome.kill();server.closeAllConnections();server.close();}
 })().catch(error=>{console.error(error);server.closeAllConnections();server.close();process.exitCode=1;});
