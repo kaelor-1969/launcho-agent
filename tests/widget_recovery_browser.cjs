@@ -13,7 +13,7 @@ const catalog = JSON.parse(fs.readFileSync('content/launcho-widget-catalog.json'
 const pricing = JSON.parse(fs.readFileSync('content/launcho-mock.json','utf8')).pricing;
 const sid = 'recovery-browser-session', token = 'recovery-owner-token';
 const calls = [];
-let draftState, status = 'draft', failRead = false, failStatus = false;
+let draftState, status = 'draft', failRead = false, failStatus = false, delayOptions = false, obsoleteOptionsFailure = false;
 const prefs = {kind:'shop',businessName:'نمونهٔ بازیابی',category:catalog.shop.businessCategories[0].id,
   template:catalog.shop.templates.find(t => t.available).id,planMonths:3,domain:{ownDomain:'example.ir'}};
 const draft = {ref:'sd_recovery',status:'draft',expiresAt:'2099-01-01T00:00:00Z',
@@ -26,6 +26,8 @@ const server = http.createServer(async (req,res) => {
     if (req.url === '/api/sessions') return json({sessionId:sid,sessionToken:token,revision:0,adapterMode:'local_mock'});
     if (req.url.startsWith('/api/local-signup-options?')) {
       const kind = new URL(req.url,'http://localhost').searchParams.get('kind');
+      if (delayOptions) await sleep(kind === 'website' ? 250 : 20);
+      if (obsoleteOptionsFailure && kind === 'website') return json({detail:{code:'options_unavailable'}},503);
       return json({...catalog[kind],periods:pricing.plans.map(x=>x.months),suffixes:pricing.domains.map(x=>x.tld)});
     }
     assert.equal(req.headers['x-session-token'],token);
@@ -36,7 +38,10 @@ const server = http.createServer(async (req,res) => {
         adapterMode:'local_mock',draftState,...(draftState==='completed'?{draft}:{})});
     }
     if (req.url.endsWith('/draft-status')) return failStatus ? json({status:'untrusted'}) : json({status});
-    if (req.url === '/api/chat') return json({sessionId:sid,revision:4,reply:'پاسخ معتبر سرور',nextAction:'collect_preferences'});
+    if (req.url === '/api/chat') {
+      await sleep(150);
+      return json({sessionId:sid,revision:4,reply:'پاسخ معتبر سرور',nextAction:'collect_preferences'});
+    }
     return json({},404);
   }
   if (req.url === '/') {
@@ -90,7 +95,29 @@ const server = http.createServer(async (req,res) => {
     await shot('restored-preferences');
     // Reloading only the iframe must use the same tab capability too.
     await evaluate(`frame.contentWindow.location.reload()`);await wait(`frame.contentDocument!==doc && frame.contentDocument?.querySelector('#message')`);
-    await evaluate('window.doc=frame.contentDocument');await wait(`!doc.querySelector('#signup-save').disabled`);
+    await evaluate('window.doc=frame.contentDocument');await wait(`doc.querySelector('#messages').textContent.includes('پاسخ معتبر سرور') && !doc.querySelector('#signup-save').disabled`);
+    const question = await evaluate(`(() => {const b=doc.querySelectorAll('[data-question]')[1];b.focus();return b.dataset.question;})()`);
+    const beforeQuestion = calls.length;
+    await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
+    await command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await evaluate(`doc.querySelectorAll('[data-question]')[1].click();doc.querySelectorAll('[data-question]')[1].click();doc.querySelector('#message').value='overlapping form';doc.querySelector('#form').requestSubmit()`);
+    await wait(`!doc.querySelectorAll('[data-question]')[1].disabled`);
+    const questionCalls = calls.slice(beforeQuestion);
+    assert.equal(questionCalls.length,1,'question activation sends exactly one action');
+    assert.equal(questionCalls[0].url,'/api/chat');assert.equal(questionCalls[0].body.message,question);
+    assert.match(questionCalls[0].body.requestId,/^[a-f0-9-]{36}$/);
+    const beforeOptions = calls.length;
+    delayOptions=true;
+    for (const failObsolete of [false,true]) {
+    obsoleteOptionsFailure=failObsolete;
+    await evaluate(`const k=doc.querySelector('[name=kind]');k.value='website';k.dispatchEvent(new Event('change',{bubbles:true}));k.value='shop';k.dispatchEvent(new Event('change',{bubbles:true}));`);
+    await wait(`!doc.querySelector('#signup-save').disabled`);await sleep(300);
+    assert.equal(await evaluate(`doc.querySelector('[name=kind]').value`),'shop');
+    assert.deepEqual(await evaluate(`Array.from(doc.querySelector('[name=template]').options).map(o=>o.value)`),catalog.shop.templates.filter(t=>t.available).map(t=>t.id));
+    assert.equal(await evaluate(`doc.querySelector('#local-signup-status').textContent`),'','obsolete failure cannot overwrite latest successful options');
+    }
+    assert.ok(calls.slice(beforeOptions).every(c=>c.method==='GET'),'choice changes must not save/review/confirm automatically');
+    delayOptions=false;obsoleteOptionsFailure=false;
     for(const state of ['creating','unknown']) {
       draftState=state;await reload();await wait(`!doc.querySelector('#retry').hidden && !doc.querySelector('#retry').disabled`);
       assert.equal(await evaluate(`doc.querySelector('#signup-save').disabled`),true);
@@ -127,6 +154,7 @@ const server = http.createServer(async (req,res) => {
     const browser=await command('Browser.getVersion');
     fs.writeFileSync(path.join(output,'report.json'),JSON.stringify({browser:browser.product,controlledResponses:true,
       restoredPreferences:true,hostRefresh:true,iframeRefresh:true,unknownLocked:true,expiredPendingNoReplacement:true,
+      keyboardQuestionExactlyOnce:true,lateOptionsIgnored:true,choicesReadOnly:true,
       completedReadBeforeLink:true,expiredDisabled:true,malformedStatusBlocked:true,offlineRecovery:true,reconnectNoMutation:true,confirmRequests:0,errors},null,2)+'\n');
     console.log('PASS: native browser opt-in host/iframe refresh, preferences/history, unknown locks, expiry and GET-only recovery');
   } finally {socket?.close();chrome.kill();server.closeAllConnections();server.close();}
