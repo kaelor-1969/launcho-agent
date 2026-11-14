@@ -7,6 +7,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     env:
+      PYTHONUTF8: '1'
       AI_API_KEY: test-placeholder
       AI_MODEL_NAME: test-model
       AI_BASE_URL: https://example.invalid/v1

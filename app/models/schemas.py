@@ -2,6 +2,7 @@ from typing import Literal
 import re
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.core.privacy import has_visible_text, reject_sensitive
+from app.services.offer_contract import FinancialOffer
 
 
 class StrictModel(BaseModel):
@@ -70,6 +71,7 @@ class ChatResponse(BaseModel):
     revision: int | None = None
     preferences: dict | None = None
     nextAction: str | None = None
+    financialOffer: FinancialOffer | None = None
 
 
 class EditRequest(StrictModel):

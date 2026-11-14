@@ -14,8 +14,10 @@ from pydantic import ValidationError
 from app.core.config import PROJECT_ROOT
 from app.core.privacy import has_visible_text, redact
 from app.models.schemas import Preferences, PreferenceUpdate
-from app.services.ai_service import CHECKOUT_OFFER_LABEL, generate_turn, is_price_question, is_financial_objection
+from app.services.ai_service import generate_turn
 from app.services.draft_gateway import build_gateway, unwrap, GatewayRejected, GatewayUnavailable
+from app.services.financial_context import financial_context
+from app.services.offer_contract import OfferState, validated_offers
 from app.services.session_store import CoreError, SessionStore, digest
 
 
@@ -138,6 +140,12 @@ class ConversationCore:
             row = self.store.authenticate(db,sid,token)
             history = json.loads(row['history'])
             if request_id:
+                saved = db.execute('SELECT message_hash,response FROM chat_responses '
+                                   'WHERE session_id=? AND request_id=?', (sid, request_id)).fetchone()
+                if saved:
+                    if saved['message_hash'] != digest(safe):
+                        raise CoreError(409, 'request_conflict', 'شناسهٔ پیام قبلاً استفاده شده است.')
+                    return json.loads(saved['response'])
                 for previous, answer in zip(history[::2], history[1::2]):
                     if previous.get('requestId') == request_id:
                         if previous['content'] != safe:
@@ -145,7 +153,11 @@ class ConversationCore:
                         prefs = json.loads(row['prefs'])
                         return self.chat_result(sid, row['revision'], prefs, answer['content'])
             self.ensure_editable(db,row)
-            shown_offer = db.execute('SELECT 1 FROM shown_local_offers WHERE session_id=?', (sid,)).fetchone()
+            state = OfferState.model_validate_json(row['offer_state'])
+            if financial_context(safe, history)['rejected']:
+                state.financialOffersDeclined = True
+                state.rejectedOfferIds = list(dict.fromkeys(state.rejectedOfferIds + state.shownOfferIds))
+            stage = self.financial_stage(db, row)
             lease = time.time()+150
             db.execute('UPDATE sessions SET chat_until=? WHERE id=?',(lease,sid))
         try:
@@ -165,21 +177,6 @@ class ConversationCore:
                     options = {**options, 'serviceInfo': service_info()}
                 except GatewayUnavailable:
                     pass
-            match_offers = getattr(self.gateway, 'match_price_offers', None)
-            if match_offers and not shown_offer and is_financial_objection(safe):
-                try:
-                    offers = unwrap(match_offers(
-                        prefs['kind'], prefs.get('planMonths'),
-                        message=safe, history=history, offer_state={},
-                        step='review_ready' if self.complete(prefs) else 'collecting_preferences',
-                    )).get('offers')
-                    if isinstance(offers, list):
-                        options = {**options, 'demoOffers': offers}
-                except GatewayUnavailable:
-                    pass
-            checkout_offer = self.checkout_offer(safe, history, prefs)
-            if checkout_offer:
-                options = {**options, 'checkoutOffer': checkout_offer}
             if self.model is generate_turn:
                 reply, update = self.model(safe, history, prefs, options, pricing,
                                            allow_preferences=self.gateway.can_create and bool(options and pricing))
@@ -192,25 +189,43 @@ class ConversationCore:
                 except (ValidationError, CoreError):
                     prefs = json.loads(row['prefs'])
                     reply = 'انتخاب‌ها معتبر نبودند. لطفاً از گزینه‌های مجاز استفاده کنید؛ اطلاعات قبلی حفظ شد.'
+            changed = prefs != json.loads(row['prefs'])
+            if changed:
+                stage = self.preference_stage(prefs)
+            offer = self.financial_offer(safe, history, prefs, stage, state)
             if safe != message:
                 reply = 'بخش حساس پیام پیش از پردازش و ذخیره پوشانده شد. اطلاعات ورود را فقط در فرم رسمی وارد کنید.\n' + reply
             user_turn = {'role':'user','content':safe}
             if request_id:
                 user_turn['requestId'] = request_id
-            history = (history + [user_turn,
-                       {'role':'assistant','content':reply}])[-12:]
             with self.store.transaction() as db:
                 current = self.store.authenticate(db,sid,token)
                 if current['revision'] != row['revision'] or current['chat_until'] != lease:
                     raise CoreError(409,'stale_revision','اطلاعات تغییر کرده؛ دوباره وضعیت را دریافت کنید.')
-                if options.get('demoOffers') and 'پیشنهاد آزمایشی' in reply:
-                    db.execute('INSERT OR IGNORE INTO shown_local_offers VALUES (?)', (sid,))
-                changed = prefs != json.loads(current['prefs'])
-                db.execute('UPDATE sessions SET prefs=?,history=?,revision=revision+?,review_id=?,chat_until=0 WHERE id=?',
+                final_stage = stage if changed else self.financial_stage(db, current)
+                if offer:
+                    # Recheck expiry and eligibility after network/model latency, at commit time.
+                    offers = validated_offers({'offers': [offer]}, kind=prefs['kind'],
+                                              stage=final_stage, plan_months=prefs.get('planMonths'),
+                                              allow_simulation=self.gateway.mode == 'local_mock',
+                                              state=state.model_dump())['offers']
+                    offer = offers[0] if offers else None
+                if offer:
+                    reply += '\n' + offer['displayText']
+                    state.shownOfferIds.append(offer['offerId'])
+                    state.anyFinancialOfferShown = True
+                history = (history + [user_turn, {'role': 'assistant', 'content': reply}])[-12:]
+                result = self.chat_result(sid, current['revision'] + int(changed), prefs, reply)
+                if offer:
+                    result['financialOffer'] = offer
+                db.execute('UPDATE sessions SET prefs=?,history=?,revision=revision+?,review_id=?, '
+                           'offer_state=?,chat_until=0 WHERE id=?',
                            (json.dumps(prefs,ensure_ascii=False),json.dumps(history,ensure_ascii=False),int(changed),
-                            None if changed else current['review_id'],sid))
-            result = self.get_session(sid,token)
-            return self.chat_result(sid, result['revision'], prefs, reply)
+                            None if changed else current['review_id'],state.model_dump_json(),sid))
+                if request_id:
+                    db.execute('INSERT INTO chat_responses VALUES (?,?,?,?)',
+                               (sid, request_id, digest(safe), json.dumps(result, ensure_ascii=False)))
+            return result
         finally:
             with self.store.transaction() as db:
                 db.execute('UPDATE sessions SET chat_until=0 WHERE id=? AND chat_until=?',(sid,lease))
@@ -219,34 +234,51 @@ class ConversationCore:
         return {'reply':reply,'sessionId':sid,'revision':revision,'preferences':prefs,
                 'nextAction':'review' if self.gateway.can_create and self.complete(prefs) else 'collect_preferences'}
 
-    def checkout_offer(self, message, history, prefs):
-        match = getattr(self.gateway, 'match_checkout_offers', None)
-        if (match is None or not self.complete(prefs) or not is_price_question(message)
-                or not re.search(r'اقساط|قسط|پیش[\s‌]*پرداخت|گران|گرونه|هزینه.{0,16}بالا|هزینه.{0,16}زیاد', message)
-                or any(turn['role'] == 'assistant' and CHECKOUT_OFFER_LABEL in turn['content'] for turn in history)):
+    def financial_stage(self, db, row):
+        prefs = json.loads(row['prefs'])
+        if row['review_id']:
+            review = db.execute('SELECT * FROM reviews WHERE id=? AND session_id=?',
+                                (row['review_id'], row['id'])).fetchone()
+            if review and review['revision'] == row['revision']:
+                if review['status'] == 'completed':
+                    try:
+                        result = json.loads(review['result'])
+                        if (result.get('status') == 'draft' and result.get('ref', '').startswith('sd_')
+                                and parse_expiry(result['expiresAt']) > time.time()):
+                            return 'draft_created'
+                    except (ValueError, TypeError, KeyError):
+                        pass
+                if review['status'] == 'awaiting' and review['expires'] > time.time():
+                    return 'awaiting_confirmation'
+        return self.preference_stage(prefs)
+
+    def preference_stage(self, prefs):
+        if self.complete(prefs):
+            return 'review_ready'
+        return 'collecting_preferences' if any(key != 'kind' for key in prefs) else 'guidance'
+
+    def financial_offer(self, message, history, prefs, stage, state):
+        if (state.anyFinancialOfferShown or state.shownOfferIds or state.financialOffersDeclined
+                or not financial_context(message, history)['objections']):
             return None
-        try:
-            offers = unwrap(match(
-                prefs['kind'], prefs['planMonths'], message=message, history=history,
-                step='review_ready', offer_state={})).get('offers')
-        except GatewayUnavailable:
+        if self.gateway.mode == 'live' and os.getenv('LAUNCHO_ENABLE_FINANCIAL_OFFERS') != '1':
             return None
-        if not isinstance(offers, list):
-            return None
-        for offer in offers:
-            if not isinstance(offer, dict) or offer.get('type') not in {'payment_option', 'discount'}:
+        # Canonical offers stay out of model context. The core owns their display and state.
+        for name in ('match_price_offers', 'match_checkout_offers'):
+            match = getattr(self.gateway, name, None)
+            if match is None:
                 continue
-            line = offer.get('displayText')
-            if not isinstance(line, str) or not line.strip() or len(line) > 160 or re.search(r'https?://|www\.', line, re.I):
+            try:
+                raw = unwrap(match(prefs['kind'], prefs.get('planMonths'), message=message,
+                                   history=history, step=stage, offer_state=state.model_dump()))
+                offers = validated_offers(raw, kind=prefs['kind'], stage=stage,
+                                          plan_months=prefs.get('planMonths'),
+                                          allow_simulation=self.gateway.mode == 'local_mock',
+                                          state=state.model_dump())['offers']
+            except (GatewayUnavailable, ValueError, TypeError):
                 continue
-            expires = offer.get('expiresAt')
-            if expires is not None:
-                try:
-                    if parse_expiry(expires) <= time.time():
-                        continue
-                except ValueError:
-                    continue
-            return redact(line.strip())
+            if offers:
+                return offers[0]
         return None
 
     @staticmethod
