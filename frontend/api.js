@@ -33,7 +33,15 @@ async function post(url, body, token, timeout = 45000, method = body === undefin
     if (error.name === 'AbortError') throw new Error('دریافت پاسخ طول کشید. می‌توانی دوباره تلاش کنی.');
     if (error.message === 'invalid') throw new Error('پاسخ معتبری دریافت نشد. دوباره تلاش کن.');
     if (error.message === 'http') {
-      if (error.code === 'conversation_busy') {
+      if (['session_expired', 'session_not_found'].includes(error.code)) {
+        error.message = 'جلسهٔ گفتگو در دسترس نیست یا منقضی شده است.';
+      } else if (['review_expired', 'stale_confirmation'].includes(error.code)) {
+        error.message = 'خلاصهٔ قبلی معتبر نیست. اطلاعات را دوباره مرور کن.';
+      } else if (error.code === 'draft_expired') {
+        error.message = 'پیش‌نویس منقضی شده است. پیش از اقدام تازه، اطلاعات را دوباره مرور کن.';
+      } else if (error.code === 'invalid_preferences' || error.status === 422) {
+        error.message = 'اطلاعات واردشده معتبر نیست. انتخاب‌ها را بررسی و اصلاح کن.';
+      } else if (error.code === 'conversation_busy') {
         error.message = 'پاسخ پیام قبلی هنوز در حال آماده‌شدن است. چند لحظه بعد دوباره تلاش کن.';
       } else if (error.code === 'model_rate_limited' || error.status === 429) {
         error.message = 'سرویس پاسخ‌گویی به محدودیت مصرف رسیده. کمی بعد دوباره تلاش کن.';

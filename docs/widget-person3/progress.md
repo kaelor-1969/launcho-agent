@@ -24,3 +24,11 @@ Stage 3 commit: 3c0e015.
 
 ## Stage 4
 Chrome session suite exit0 at1280/390 with CDP offline transport (no system network changes). Offline chat never reached HTTP fixture; reconnection alone did not resend in100ms observation; manual retry matched captured original postData and one user bubble. Confirm fixture flushed partial JSON then destroyed socket after recording accepted body; UI froze edits and manually retried identical confirmation. Source reviewer approved, no own execution. Fixture does not prove backend operation deduplication.
+
+Stage 4 commit: 145c0d8.
+
+## Resume audit
+Readonly Git/docs/code reconciliation found clean branch work/widget-person3-quality at145c0d8; stages1-4 match code. No cause of interruption was recorded in available messages/tool outputs. First unfinished task was stage5. No repeated catalog/network work.
+
+## Stage 5
+Safe Persian error/expiry messages; unknown confirmation says do not refresh and labels explicit same-request retry. Pending/resolved flags pass through existing authenticated loader channel (no credentials); host owns beforeunload because sandboxed iframe cannot show dialogs. Chrome1280/390 suite exit0: pending refresh warned and cancellation retained request; resolved refresh made empty memory-only session and never replayed confirm; review/draft/stale expiry invalidated old approval and required manual review. Signup six cases/recovery exit0; VM suite exit0 including missing session freezes replacement operations and adapter unavailable retains unresolved review. Independent reviewer raised adapter certainty: inspection showed availability can change on unknown review, so removed adapter-unavailable from definite-rejection list. Server source confirms stored idem/payload reused; backend effects not tested. beforeunload cannot guarantee mobile/browser termination protection. Durable unknown-result recovery remains blocked by retention/recovery contract.

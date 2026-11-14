@@ -12,6 +12,7 @@ const root = path.resolve(__dirname, '../frontend');
 const calls = [];
 let lost = true;
 let failSession = false, failReview = false;
+let confirmError;
 const sid = 'browser-session-id', token = 'browser-session-token';
 const server = http.createServer(async (req, res) => {
   const json = data => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); };
@@ -33,6 +34,7 @@ const server = http.createServer(async (req, res) => {
         template: 'classic', domain: {ownDomain: 'example.ir'}}});
     }
     if (req.url.endsWith('/confirm')) {
+      if (confirmError) { res.statusCode = 410; return json({detail:{code:confirmError, message:'private upstream detail'}}); }
       if (lost) {
         lost = false;
         // The server accepted the request, but the response connection breaks.
@@ -74,12 +76,16 @@ const server = http.createServer(async (req, res) => {
     socket = new WebSocket(targets.find(t => t.type === 'page').webSocketDebuggerUrl);
     await once(socket, 'open');
     let id = 0;
-    const pending = new Map(), errors = [], networkRequests = [];
+    const pending = new Map(), errors = [], networkRequests = [], dialogs = [];
     socket.addEventListener('message', event => {
       const data = JSON.parse(event.data);
       if (data.id) { const cb = pending.get(data.id); pending.delete(data.id); cb(data); }
       if (data.method === 'Runtime.exceptionThrown') errors.push(data.params.exceptionDetails.text);
       if (data.method === 'Network.requestWillBeSent' && data.params.request.url.endsWith('/api/chat')) networkRequests.push(data.params.request);
+      if (data.method === 'Page.javascriptDialogOpening') {
+        dialogs.push(data.params.type);
+        command('Page.handleJavaScriptDialog', {accept:false}).catch(error => errors.push(error.message));
+      }
     });
     const command = (method, params = {}) => new Promise((resolve, reject) => {
       const key = ++id;
@@ -120,6 +126,7 @@ const server = http.createServer(async (req, res) => {
       }
     };
     await command('Runtime.enable');
+    await command('Page.enable');
     await command('Network.enable');
     for (const width of [1280, 390]) {
       calls.length = 0; lost = true;
@@ -164,6 +171,14 @@ const server = http.createServer(async (req, res) => {
       await confirmWithKeyboard();
       await wait(`doc.querySelector('#error').hidden === false`);
       assert.equal(calls.length, 4, 'no automatic retry');
+      assert.match(await evaluate(`doc.querySelector('#error-text').textContent`), /تازه نکن/);
+      assert.equal(await evaluate(`doc.querySelector('#confirm').textContent`), 'بررسی نتیجهٔ همان درخواست');
+      const previousDialogs = dialogs.length;
+      await command('Page.reload');
+      for (let i=0; i<100 && dialogs.length === previousDialogs; i++) await sleep(50);
+      assert.equal(dialogs.length, previousDialogs + 1, 'unknown confirmation must warn before refresh');
+      assert.equal(dialogs.at(-1), 'beforeunload');
+      assert.equal(calls.length, 4, 'cancelled refresh must retain the current pending request');
       await evaluate(`doc.querySelector('#message').dispatchEvent(new doc.defaultView.Event('input', {bubbles:true}))`);
       assert.equal(await evaluate(`doc.querySelector('#error').hidden`), false, 'typing must preserve unknown-outcome guidance');
       await confirmWithDoubleClick();
@@ -183,6 +198,18 @@ const server = http.createServer(async (req, res) => {
         assert.equal(JSON.stringify(call.body).includes(token), false);
       }
       assert.equal(await evaluate(`doc.body.textContent.includes('browser-session-token') || doc.body.textContent.includes('browser-confirmation-token')`), false);
+      await evaluate('window.reloadMarker = true');
+      await command('Page.reload');
+      await wait('!!window.LaunchoWidget && !window.reloadMarker');
+      await evaluate('LaunchoWidget.open()');
+      await wait(`document.querySelector('#launcho-widget').shadowRoot.querySelector('iframe')?.style.visibility === 'visible'`);
+      await evaluate(`window.frame = document.querySelector('#launcho-widget').shadowRoot.querySelector('iframe'); window.doc = frame.contentDocument`);
+      await wait(`!doc.querySelector('.primary-starter').disabled`);
+      assert.equal(calls.filter(call => call.url.endsWith('/confirm')).length, 2, 'refresh must never replay confirmation');
+      assert.equal(calls.filter(call => call.url === '/api/sessions').length, 2, 'refresh starts an empty memory-only session');
+      assert.equal(await evaluate(`doc.querySelector('#confirm').disabled && doc.querySelector('#session-review').hidden`), true);
+      assert.equal(await evaluate(`doc.defaultView.localStorage.length + doc.defaultView.sessionStorage.length`), 0);
+      assert.equal(dialogs.length, previousDialogs + 1, 'resolved confirmation must not warn on refresh');
       console.log(`PASS: Chromium ${width}px offline transport, exact chat retry, broken confirmation socket, native double-click, iframe origin, memory-only credentials`);
 
       // A separate page lifecycle checks failure recovery and invalidated reviews.
@@ -214,6 +241,18 @@ const server = http.createServer(async (req, res) => {
       failReview = false;
       await evaluate(`doc.querySelector('#review-button').click()`);
       await wait(`doc.querySelector('#confirm').disabled === false`);
+      for (const code of ['review_expired', 'draft_expired', 'stale_confirmation']) {
+        confirmError = code;
+        const confirmsBefore = calls.filter(call => call.url.endsWith('/confirm')).length;
+        await confirmWithKeyboard();
+        await wait(`!doc.querySelector('#error').hidden && doc.querySelector('#session-review').hidden`);
+        assert.equal(calls.filter(call => call.url.endsWith('/confirm')).length, confirmsBefore + 1);
+        assert.match(await evaluate(`doc.querySelector('#error-text').textContent`), /دوباره مرور کن/);
+        assert.equal(await evaluate(`doc.body.textContent.includes('private upstream detail')`), false);
+        confirmError = null;
+        await evaluate(`doc.querySelector('#review-button').click()`);
+        await wait(`!doc.querySelector('#confirm').disabled`);
+      }
       console.log(`PASS: Chrome ${width}px failed session retry, persistent error guidance, discarded stale review, manual review recovery`);
     }
     calls.length = 0;

@@ -48,6 +48,13 @@
   let askButton, templateHint, templateHintTimer;
   const systemTheme = matchMedia('(prefers-color-scheme: dark)');
   let loadTimer;
+  let confirmationPending = false;
+  // The sandboxed iframe cannot show unload dialogs; the authenticated channel
+  // conveys only a pending flag, never credentials or approval data.
+  window.addEventListener('beforeunload', event => {
+    if (!confirmationPending) return;
+    event.preventDefault(); event.returnValue = '';
+  });
   function post(type, payload = {}) {
     if (!frame || !ready) return;
     const data = { scope: 'launcho', channel, type, ...payload };
@@ -125,6 +132,8 @@
     const data = event.data;
     if (!frame || event.source !== frame.contentWindow || event.origin !== widgetOrigin || !data || data.scope !== 'launcho' || data.channel !== channel) return;
     if (data.type === 'ready') { ready = true; post('configure'); }
+    else if (data.type === 'confirmation-pending' && ready) confirmationPending = true;
+    else if (data.type === 'confirmation-resolved' && ready) confirmationPending = false;
     else if (data.type === 'configured' && ready) {
       clearTimeout(loadTimer);
       feedback.hidden = true;

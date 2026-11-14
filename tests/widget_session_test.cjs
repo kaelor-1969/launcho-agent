@@ -83,7 +83,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
           data = {status: 'paid'};
         } else if (url.endsWith('/confirm')) {
           if (rejectConfirm) return {ok: false, status: 410,
-            json: async () => ({detail: {code: 'review_expired', message: 'private-detail'}})};
+            json: async () => ({detail: {code: rejectConfirm, message: 'private-detail'}})};
           if (failConfirm) throw new TypeError('response lost');
           if (releaseConfirm) await new Promise(resolve => { releaseConfirm.resolve = resolve; });
           data = {status: 'draft', ref: 'sd_testdraft',
@@ -126,7 +126,7 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
     failReview: () => { failReview = true; },
     recoverSession: () => { failSession = false; },
     failConfirmation: () => { failConfirm = true; },
-    rejectConfirmation: () => { rejectConfirm = true; },
+    rejectConfirmation: (code = 'review_expired') => { rejectConfirm = code; },
     holdConfirmation: () => { failConfirm = false; releaseConfirm = {}; },
     releaseConfirmation: () => releaseConfirm.resolve(),
     async send(message = 'create a draft now') {
@@ -256,6 +256,22 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   assert.equal(stale.get('session-review').hidden, true);
   await stale.send('correct preferences');
   assert.equal(stale.calls.at(-1).url, '/api/chat', 'expired review must allow recovery');
+
+  const ended = await widget();
+  await ended.send(); await ended.get('review-button').emit('click');
+  ended.rejectConfirmation('session_expired'); await ended.get('confirm').emit('click');
+  assert.match(ended.get('error-text').textContent, /پشتیبانی لانچو/);
+  assert.equal(ended.get('edit-signup').disabled, true);
+  const countBefore = ended.calls.length;
+  await ended.send('start over'); await ended.get('review-button').emit('click');
+  assert.equal(ended.calls.length, countBefore, 'missing confirmation session cannot silently start a replacement');
+  let warned = false;
+  ended.windowListeners.beforeunload({preventDefault() { warned = true; }});
+  assert.equal(warned, true);
+  w.windowListeners.beforeunload({preventDefault() { assert.fail('resolved request must not warn'); }});
+  ended.rejectConfirmation('draft_adapter_unavailable'); await ended.get('confirm').emit('click');
+  assert.equal(ended.get('edit-signup').disabled, true, 'adapter availability may change after an unknown outcome');
+  assert.equal(ended.get('session-review').hidden, false, 'an unavailable adapter must not replace an unresolved review');
 
   const embedded = await widget({embedded: true});
   assert.equal(embedded.calls.length, 0);

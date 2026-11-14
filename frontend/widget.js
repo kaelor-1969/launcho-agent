@@ -1,4 +1,4 @@
-import { createSessionApi, relativeUrl } from './api.js?v=6';
+import { createSessionApi, relativeUrl } from './api.js?v=7';
 import { setupConnectedWorkspace } from './widget-workspace.js';
 import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js?v=3';
 
@@ -18,6 +18,12 @@ let sessionReady = false;
 let sessionStarting = false;
 let review = null;
 let confirmationPending = false;
+// Pending credentials remain memory-only. Warn before losing the only exact retry.
+window.addEventListener('beforeunload', event => {
+  if (!confirmationPending) return;
+  event.preventDefault();
+  event.returnValue = '';
+});
 let configured = window.parent === window;
 let pending = false;
 let failed = null;
@@ -517,6 +523,7 @@ async function requestReview() {
         ? (signupAvailable ? 'ساخت پیش‌نویس آزمایشی فقط با تأیید شما انجام می‌شود؛ فروشگاه واقعی ایجاد نمی‌شود.' : 'با تأیید شما پیش‌نویس ساخته می‌شود. موبایل و پرداخت فقط در فرم رسمی لانچو تکمیل می‌شوند.')
         : 'اتصال ساخت پیش‌نویس فعلاً آماده نیست؛ از فرم رسمی لانچو استفاده کن.';
       $('confirm').hidden = false;
+      $('confirm').textContent = 'تأیید و ساخت پیش‌نویس';
       $('session-review').hidden = false;
     }
     $('review-button').hidden = true;
@@ -536,22 +543,33 @@ $('confirm').addEventListener('click', async (event) => {
   if (pending || failed || !review?.canConfirm) return;
   pending = true;
   confirmationPending = true;
+  notify('confirmation-pending');
   showError('');
   updateInput();
   try {
     showDraft(await sessionApi.confirm(review));
     confirmationPending = false;
+    notify('confirmation-resolved');
     review = null;
     $('review-button').hidden = true;
   } catch (error) {
     // Preserve this exact review after a timeout. Only another click retries it.
-    if (['stale_confirmation', 'review_expired', 'draft_expired', 'review_rejected', 'draft_rejected', 'draft_adapter_unavailable'].includes(error.code)) {
+    if (['stale_confirmation', 'review_expired', 'draft_expired', 'review_rejected', 'draft_rejected'].includes(error.code)) {
       confirmationPending = false;
+      notify('confirmation-resolved');
       review = null;
       $('session-review').hidden = true;
       $('review-button').hidden = false;
-      showError('تأیید انجام نشد. اطلاعات را بررسی و خلاصه را دوباره مرور کن.');
-    } else showError('نتیجه تأیید دریافت نشد. برای بررسی همان درخواست، دوباره دکمه تأیید را بزن.');
+      showError(error.code === 'review_expired' || error.code === 'stale_confirmation'
+        ? 'خلاصهٔ قبلی معتبر نیست. اطلاعات را دوباره مرور کن.'
+        : error.code === 'draft_expired' ? 'پیش‌نویس منقضی شده است. اطلاعات را دوباره مرور کن.'
+        : 'تأیید انجام نشد. اطلاعات را بررسی و خلاصه را دوباره مرور کن.');
+    } else {
+      $('confirm').textContent = 'بررسی نتیجهٔ همان درخواست';
+      showError(['session_expired', 'session_not_found'].includes(error.code)
+        ? 'جلسهٔ تأیید در دسترس نیست. نتیجهٔ درخواست قبلی مشخص نیست؛ پیش از ساخت دوباره، از پشتیبانی لانچو پیگیری کن.'
+        : 'نتیجهٔ تأیید مشخص نیست. این صفحه را تازه نکن؛ برای بررسی همان درخواست، دوباره دکمهٔ بررسی نتیجه را بزن.');
+    }
   } finally {
     pending = false;
     updateInput();
