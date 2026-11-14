@@ -1,0 +1,14 @@
+{
+  "service_url": "https://ag.launchox.ir",
+  "host_url": "https://launchox.ir/",
+  "loader_url": "https://ag.launchox.ir/widget/loader.js",
+  "label": "external-host",
+  "interval": 60,
+  "timeout": 15,
+  "failure_threshold": 3,
+  "recovery_threshold": 2,
+  "delivery_attempts": 2,
+  "state_file": "artifacts/monitoring/development-state.json",
+  "browser_channel": "chrome",
+  "screenshot_dir": ""
+}
