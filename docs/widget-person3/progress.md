@@ -14,3 +14,8 @@ Stage 1 commit: a72b5ea.
 
 ## Stage 2
 23 shop fixture templates match the 23 public visible rows with links. Public evidence has 26 rows: 25 visible, 1 hidden; khodro and danesh have no link. Website has one local sample, no preview. All 23 HTTP URLs reachable; all 23 Chrome rendering smoke checks passed. Full signup suite with every preview binding and every category recommendation passed. Source-only independent review approved. HTTP/rendering does not verify full asset loading, visual equivalence or registration availability. Reports: catalog-audit.json, public-preview-browser.json.
+
+Stage 2 commit: ce48fd7.
+
+## Stage 3
+Chrome session suite PASS at1280/390: real pointer double-click plus extra Enter create only one in-flight request; exact review body retained. Synthetic activation rejected. Reviewer found a test race in immediate server-call counting; fixed by atomically asserting synthetic click never disables confirm. Rerun exit0; second review approved. No production change needed.

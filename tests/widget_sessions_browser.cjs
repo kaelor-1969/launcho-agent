@@ -104,6 +104,17 @@ const server = http.createServer(async (req, res) => {
       await command('Input.dispatchKeyEvent', {type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r'});
       await command('Input.dispatchKeyEvent', {type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13});
     };
+    const confirmWithDoubleClick = async () => {
+      const point = await evaluate(`(() => {
+        const button = doc.querySelector('#confirm'); button.scrollIntoView({block:'center'});
+        const rect = button.getBoundingClientRect(), host = frame.getBoundingClientRect();
+        return {x:host.left + rect.left + rect.width/2, y:host.top + rect.top + rect.height/2};
+      })()`);
+      for (const clickCount of [1, 2]) {
+        await command('Input.dispatchMouseEvent', {type:'mousePressed', button:'left', ...point, clickCount});
+        await command('Input.dispatchMouseEvent', {type:'mouseReleased', button:'left', ...point, clickCount});
+      }
+    };
     await command('Runtime.enable');
     for (const width of [1280, 390]) {
       calls.length = 0; lost = true;
@@ -131,14 +142,16 @@ const server = http.createServer(async (req, res) => {
       await evaluate(`doc.querySelector('#review-button').click()`);
       await wait(`doc.querySelector('#confirm').disabled === false`);
       assert.equal(calls.length, 3);
-      await evaluate(`doc.querySelector('#confirm').click()`);
+      assert.equal(await evaluate(`(() => { const button=doc.querySelector('#confirm'); button.click(); return button.disabled; })()`), false,
+        'a synthetic click must not enter the pending confirmation state');
       assert.equal(calls.length, 3, 'scripted clicks cannot authorize confirmation');
       await confirmWithKeyboard();
       await wait(`doc.querySelector('#error').hidden === false`);
       assert.equal(calls.length, 4, 'no automatic retry');
       await evaluate(`doc.querySelector('#message').dispatchEvent(new doc.defaultView.Event('input', {bubbles:true}))`);
       assert.equal(await evaluate(`doc.querySelector('#error').hidden`), false, 'typing must preserve unknown-outcome guidance');
-      await confirmWithKeyboard();
+      await confirmWithDoubleClick();
+      assert.equal(await evaluate(`doc.querySelector('#confirm').disabled && doc.querySelector('#send').disabled && doc.querySelector('#review-button').disabled`), true);
       await confirmWithKeyboard();
       await wait(`doc.querySelector('#confirm').hidden === true`);
       assert.equal(calls.length, 5);
