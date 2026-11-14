@@ -149,6 +149,33 @@ let socket;
     await chat(`document.querySelector('#confirm').click()`);
     assert.equal(calls.filter(url=>url.endsWith('/confirm')).length,0);
     if (reviewOnly) assert.equal(calls.filter(url=>url.endsWith('/api/chat')).length,0);
+    if (process.env.WIDGET_TAB_RECOVERY === '1') {
+      const sessionsBefore = calls.filter(url => url.endsWith('/api/sessions')).length;
+      const reviewsBefore = calls.filter(url => url.endsWith('/review')).length;
+      const preferencesBefore = calls.filter(url => url.endsWith('/preferences')).length;
+      const readsBefore = calls.filter(url => /\/api\/sessions\/[^/]+$/.test(url)).length;
+      const originalSessionUrl = calls.findLast(url => url.endsWith('/preferences')).replace(/\/preferences$/, '');
+      await evaluate('window.beforeRecoveryReload=true');
+      await command('Page.reload');await wait(()=>evaluate('!window.beforeRecoveryReload && !!window.LaunchoWidget'));
+      await evaluate('LaunchoWidget.open()');
+      await wait(()=>evaluate(`document.querySelector('#launcho-widget').shadowRoot.querySelector('iframe')?.style.visibility==='visible'`));
+      const refreshedTree=await command('Page.getFrameTree');
+      const refreshedChild=refreshedTree.frameTree.childFrames.find(item=>item.frame.url.includes('/widget/widget.html'));
+      const refreshedWorld=await command('Page.createIsolatedWorld',{frameId:refreshedChild.frame.id,worldName:'recovered-widget-check'});
+      const recovered=expression=>evaluate(expression,refreshedWorld.executionContextId);
+      await wait(()=>recovered(`document.querySelector('[name=businessName]').value==='نام ویرایش‌شده' && !document.querySelector('#signup-save').disabled`));
+      assert.equal(await recovered(`document.querySelector('[name=kind]').value`),'website');
+      assert.equal(await recovered(`document.querySelector('[name=ownDomain]').value`),'owner.example.ir');
+      assert.equal(await recovered(`document.querySelector('#confirm').disabled`),true);
+      assert.equal(calls.filter(url=>url.endsWith('/api/sessions')).length,sessionsBefore);
+      assert.equal(calls.filter(url=>url.endsWith('/review')).length,reviewsBefore);
+      assert.equal(calls.filter(url=>url.endsWith('/preferences')).length,preferencesBefore);
+      assert.equal(calls.filter(url=>/\/api\/sessions\/[^/]+$/.test(url)).length,readsBefore+1);
+      assert.equal(calls.findLast(url=>/\/api\/sessions\/[^/]+$/.test(url)),originalSessionUrl,'recovery GET targets the original owner session');
+      const recoveredShot=await command('Page.captureScreenshot',{format:'png'});
+      fs.writeFileSync(path.join(output,`${width}-actual-recovery.png`),Buffer.from(recoveredShot.data,'base64'));
+      console.log(`PASS: actual cross-origin tab recovery ${width}px, authoritative preferences, one GET and zero mutation replays`);
+    }
     console.log(`PASS: running host ${host}, ${width}px, ${reviewOnly ? 'review-only/no chat API' : 'real chat'}, shop/website preferences, own domain, edits, Persian review, retained history, no confirmation`);
   }
   assert.deepEqual(errors,[]);

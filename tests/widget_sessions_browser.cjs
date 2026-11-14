@@ -237,7 +237,7 @@ const server = http.createServer(async (req, res) => {
       assert.equal(statusCallCount(), 1);
       assert.match(await evaluate(`doc.querySelector('#review-notice').textContent`), /فعلاً در دسترس نیست/);
       statusFailure = false;
-      for (const [status, text] of [['draft','پیش‌نویس آماده'],['opened','شمارهٔ موبایل'],['mobile_verified','ثبت‌نام را'],['invoiced','فاکتور'],['paid','پرداخت ثبت'],['active','فروشگاه فعال'],['unexpected','وضعیت ثبت‌نام دریافت نشد'],['expired','منقضی']]) {
+      for (const [status, text] of [['draft','پیش‌نویس آماده'],['opened','شمارهٔ موبایل'],['mobile_verified','ثبت‌نام را'],['invoiced','فاکتور'],['paid','پرداخت ثبت'],['active','فروشگاه فعال'],['unexpected','پیگیری وضعیت فعلاً در دسترس نیست'],['expired','منقضی']]) {
         currentDraftStatus = status;
         await evaluate(`doc.querySelector('#review-summary button').click()`);
         await wait(`!doc.querySelector('#review-summary button').disabled`);

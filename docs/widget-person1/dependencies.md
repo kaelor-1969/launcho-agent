@@ -1,0 +1,19 @@
+# External dependencies
+
+1. Production choices/questions: current GET /api/local-signup-options?kind=shop is local_mock only. Dina must supply and approve the production endpoint and authoritative labels/IDs. Frontend must not fabricate prices or silently import test catalog data.
+2. Unknown confirmation across forced refresh: GET /api/sessions/{id} returns {draftState:"unknown"} or "creating" but not confirmationToken. The existing safe retry requires POST confirm with {revision,reviewId,confirmationToken,confirmed:true}. Without persisting that token, frontend can only GET and lock edits. Dina must deliver owner-authenticated operation reconciliation or an approved retention policy. A response such as {draftState:"completed",draft:{ref,confirmUrl,expiresAt,status:"draft"}} is already readable. No new endpoint is assumed.
+3. Production adapter/idempotency guarantees and durable backend storage remain backend-owned. Browser locks do not guarantee exactly-once server execution.
+4. Exact visual reference: current loader is source of truth for workspace 67vw/85dvh and legacy 380x450, with viewport clamps; older README has conflicting historical sizes. No independently approved current Launcho dimensions supplied.
+5. Opt-in tab recovery stores only the necessary session owner capability in widget-origin sessionStorage, scoped to embedding origin. Production retention/security approval and physical-device third-party storage behavior remain external. No localStorage, host credential access, or confirmation-token storage is planned.
+
+## Actionable handoff to Dina (2026-11-14)
+
+| Item | Current observed source behavior | Required delivery / evidence |
+| --- | --- | --- |
+| Production choices | GET `/api/local-signup-options?kind=shop` is guarded to local_mock in routes.py; test catalog only | Approved production source/endpoint and IDs/labels for shop/website, empty/error behavior, contract tests. Existing example local response: `{businessCategories:[{id,label}],templates:[{id,label,available}],periods:[3,6,12],suffixes:["ir"]}`. These are shape examples, not commercial claims. |
+| Unknown-operation reconciliation | Owner GET `/api/sessions/{id}` may return `{sessionId,revision,expiresAt,preferences,history,draftState:"unknown"}`; does not advance gateway recovery or return confirmationToken | Owner-authenticated reconciliation contract that can determine completed/rejected/expired outcome without creating a new operation, or approved pending-token retention policy. Expected existing terminal shape: `{draftState:"completed",draft:{ref,confirmUrl,expiresAt,status:"draft"}}`. Until then UI locks and issues GET only; evidence chrome/edge-recovery.json. |
+| Exact retry after forced refresh | Existing POST confirm requires `{revision,reviewId,confirmationToken,confirmed:true}`. Frontend deliberately does not persist confirmationToken. | Specify how authorized same-operation retry survives refresh. Do not suggest generating a new review/key to resolve unknown. Existing same-body retry inside a live iframe remains available. |
+| Server durability/idempotency | Browser double-activation locks and exact identities tested with controlled responses; local service recovery tested with temporary SQLite | Verify official adapter's same-key/payload result and durable production storage/restart behavior; browser evidence is not that guarantee. |
+| Product acceptance | Current source reference only; Chrome/Edge emulation passes | Supply approved dimensions/design and physical-device/keyboard/third-party-storage matrix. Firefox/Safari and complete contrast audit remain unexecuted. |
+
+No backend files were modified. No requests to production or real models were sent to obtain this evidence. The local integration is real FastAPI plus mock/test-only data, not a production adapter test.

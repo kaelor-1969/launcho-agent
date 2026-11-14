@@ -6,7 +6,7 @@
   // Keep the previous UI available without changing API/session behavior.
   const workspace = script.dataset.interface !== 'legacy' && script.dataset.demo !== 'true';
   const widgetUrl = new URL(workspace ? '/widget/widget.html' : '/widget/widget-legacy.html', script.src);
-  widgetUrl.searchParams.set('v', new URL(script.src).searchParams.get('v') || (workspace ? 'workspace-20261114-3' : 'legacy-20261114-3'));
+  widgetUrl.searchParams.set('v', new URL(script.src).searchParams.get('v') || (workspace ? 'workspace-20261114-4' : 'legacy-20261114-4'));
   const widgetOrigin = widgetUrl.origin;
   const channel = crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint32Array(4))).join('-');
   const options = {
@@ -14,6 +14,7 @@
     position: script.dataset.position === 'left' ? 'left' : 'right',
     apiUrl: '/api/chat',
     demo: script.dataset.demo === 'true',
+    sessionRecovery: script.dataset.sessionRecovery === 'tab' ? 'tab' : 'memory',
     workflowUrl: null,
     offset: 24,
     mobileOffset: 16,
@@ -203,7 +204,7 @@
         :host([data-interface=workspace]){--frame-width:1px;--radius:22px}
         :host([data-interface=workspace]) .panel{width:var(--panel-width,67vw);height:var(--panel-height,85dvh)}
         :host([data-interface=workspace]) .panel[data-expanded=true]{width:calc(100vw - var(--offset) - var(--offset));height:calc(var(--viewport-height) - var(--offset) - var(--offset) - var(--size) - var(--gap))}
-        @media(max-width:600px){
+        @media(max-width:600px),(max-width:960px) and (max-height:480px){
           :host([data-interface=workspace]) .panel,:host([data-interface=workspace]) .panel[data-expanded=true]{top:0;bottom:auto;right:0;left:0;width:100vw;max-width:none;height:var(--viewport-height);max-height:none;border-radius:0;padding:0}
           :host([data-interface=workspace]) iframe{border-radius:0}
           :host([data-interface=workspace]) .launcher[data-open=true],:host([data-interface=workspace]) .resize{display:none}
