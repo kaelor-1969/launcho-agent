@@ -125,14 +125,15 @@ class CoreTests(unittest.TestCase):
             self.assertEqual(self.core.draft_status(self.sid, self.token), {'status':'paid'})
         read.assert_called_once_with('sd_mockreference')
         with patch.object(gateway, 'match_checkout_offers', return_value={'offers':[
-            {'type':'discount','line':'پیشنهاد منقضی','expiresAt':'2000-01-01T00:00:00Z'},
-            {'type':'payment_option','line':'پرداخت قسطی در فرم'},
+            {'type':'discount','displayText':'پیشنهاد منقضی','expiresAt':'2000-01-01T00:00:00Z'},
+            {'type':'payment_option','displayText':'پرداخت قسطی در فرم'},
         ]}) as match:
             self.assertIsNone(self.core.checkout_offer('هزینه بالاست', [], {'kind':'shop'}))
             match.assert_not_called()
             self.assertEqual(self.core.checkout_offer('هزینه بالاست', [], {'kind':'shop', **CHOICES}),
                              'پرداخت قسطی در فرم')
-        match.assert_called_once_with('shop', 3)
+        match.assert_called_once_with('shop', 3, message='هزینه بالاست', history=[],
+                                      step='review_ready', offer_state={})
 
     def test_chat_retry_replays_saved_answer(self):
         calls = []
@@ -404,7 +405,7 @@ class PrivacyAndModelTests(unittest.TestCase):
         cases = (
             ('ثبت‌نام https://launcho.ir/start?otp=QA_TEST و https://example.invalid/start',
              'پیوند تأییدنشده'),
-            ('لطفاً ارسال بفرمایید\nکد تأیید حساب را.', 'https://launcho.ir/start'),
+            ('لطفاً ارسال بفرمایید\nکد تأیید حساب را.', ai_service._FORM_REPLY),
             ('ثبت‌نام شما با موفقیت انجام شد.', 'https://launcho.ir/start'),
         )
         for answer, expected in cases:
@@ -437,17 +438,17 @@ class PrivacyAndModelTests(unittest.TestCase):
     def test_mock_offer_endpoint_only_matches_supported_objections(self):
         from app.mock_launcho import OfferRequest, offers, widget_host
 
-        request = OfferRequest(kind='shop', step=4, objections=['price'],
+        request = OfferRequest(kind='shop', step='review_ready', objections=['price'],
                                needs=['low_upfront'], discountAlreadyShown=False)
         token = 'Bearer local-simulation'
         matched = offers(request, token)
-        self.assertEqual(matched['data']['offers'][0]['id'], 'demo_campaign')
+        self.assertEqual(matched['data']['offers'][0]['offerId'], 'demo_campaign')
         request.discountAlreadyShown = True
         self.assertEqual(offers(request, token)['data']['offers'], [])
         self.assertIn('/widget/loader.js', widget_host())
 
     def test_demo_campaign_is_labeled_and_not_repeated(self):
-        options = {'demoOffers': [{'id': 'demo_campaign', 'line': 'جشنوارهٔ نمونه'}]}
+        options = {'demoOffers': [{'offerId': 'demo_campaign', 'displayText': 'جشنوارهٔ نمونه'}]}
         message = 'هزینه برام زیاده'
         with patch.object(ai_service.client.chat.completions, 'create') as call:
             reply, _ = ai_service.generate_turn(message, options=options)
@@ -546,7 +547,7 @@ class PrivacyAndModelTests(unittest.TestCase):
     def test_guidance_replaces_unsupported_price_and_sensitive_request(self):
         for text, link in (
             ('اشتراک ۲۴۰٬۰۰۰ تومان است.', 'https://launcho.ir/pricing'),
-            ('کد تأیید خود را همین‌جا بفرستید.', 'https://launcho.ir/start'),
+            ('کد تأیید خود را همین‌جا بفرستید.', ai_service._FORM_REPLY),
         ):
             with self.subTest(text=text):
                 response = NS(choices=[NS(message=NS(content=text, tool_calls=[]))])

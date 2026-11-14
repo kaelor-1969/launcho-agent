@@ -1,0 +1,742 @@
+{
+  "contractVersion": "local-mock-v1.1.0",
+  "status": "documented-current-behavior",
+  "generatedFrom": "FastAPI TestClient against app.mock_launcho; no external requests",
+  "cases": [
+    {
+      "name": "pricing-all",
+      "request": {
+        "method": "GET",
+        "path": "/pricing",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "currency": "toman",
+            "setupFees": {
+              "shop": 15000000,
+              "website": 5000000
+            },
+            "defaultSignupPlanMonths": 3,
+            "plans": [
+              {
+                "months": 3,
+                "title": "اشتراک ۳ ماهه",
+                "price": 2400000,
+                "listPrice": 2400000,
+                "featured": false,
+                "giftMonthly": 50000
+              },
+              {
+                "months": 6,
+                "title": "اشتراک ۶ ماهه",
+                "price": 4000000,
+                "listPrice": 4800000,
+                "featured": false,
+                "giftMonthly": 50000
+              },
+              {
+                "months": 12,
+                "title": "اشتراک یک‌ساله",
+                "price": 8000000,
+                "listPrice": 9600000,
+                "featured": true,
+                "giftMonthly": 50000
+              }
+            ],
+            "domains": [
+              {
+                "tld": "ir",
+                "includedInSetup": true,
+                "annualFee": 0
+              },
+              {
+                "tld": "com",
+                "includedInSetup": false,
+                "annualFee": 4200000
+              }
+            ],
+            "giftUsage": {
+              "renewsMonthly": true,
+              "rollover": false,
+              "uses": [
+                "هوش مصنوعی",
+                "پیامک از خط اشتراکی"
+              ]
+            },
+            "serviceDetails": {
+              "shop": {
+                "setupIncludes": [
+                  "ثبت دامنهٔ ir",
+                  "ساخت فروشگاه و تنظیم قالب",
+                  "آموزش کار با پنل",
+                  "پیگیری اداری درگاه پرداخت و اینماد",
+                  "ثبت‌نام مالیاتی و ثبت‌نام در ترب",
+                  "اتصال گوگل آنالیتیکس"
+                ],
+                "planIncludes": [
+                  "فروشگاه با قالب‌های آماده، کاتالوگ، سبد خرید و مدیریت سفارش",
+                  "ابزارهای هوش مصنوعی با مصرف اعتبار",
+                  "میزبانی، SSL، پشتیبان‌گیری، پشتیبانی فنی و به‌روزرسانی"
+                ],
+                "installment": {
+                  "count": 4,
+                  "monthlyPart": 3750000,
+                  "scope": "setup_only",
+                  "line": "فقط هزینهٔ راه‌اندازی فروشگاه در چهار قسط پرداخت می‌شود؛ اشتراک و هزینهٔ دامنه در پرداخت اول کامل تسویه می‌شوند. شرایط فعلی را در صفحهٔ رسمی اقساط بررسی کنید."
+                }
+              },
+              "website": {
+                "setupIncludes": [
+                  "ثبت دامنهٔ ir",
+                  "راه‌اندازی سایت با قالب‌های آماده"
+                ],
+                "planIncludes": [
+                  "سایت بدون کاتالوگ، سبد خرید و درگاه؛ با قالب آماده و صفحه‌ساز بلوکی",
+                  "میزبانی، SSL و پشتیبان‌گیری"
+                ],
+                "installment": {
+                  "count": 4,
+                  "monthlyPart": 1250000,
+                  "scope": "setup_only",
+                  "line": "فقط هزینهٔ راه‌اندازی سایت در چهار قسط پرداخت می‌شود؛ اشتراک و هزینهٔ دامنه در پرداخت اول کامل تسویه می‌شوند. شرایط فعلی را در صفحهٔ رسمی اقساط بررسی کنید."
+                }
+              }
+            }
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "pricing-shop",
+      "request": {
+        "method": "GET",
+        "path": "/pricing?kind=shop",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "currency": "toman",
+            "setupFees": {
+              "shop": 15000000,
+              "website": 5000000
+            },
+            "defaultSignupPlanMonths": 3,
+            "plans": [
+              {
+                "months": 3,
+                "title": "اشتراک ۳ ماهه",
+                "price": 2400000,
+                "listPrice": 2400000,
+                "featured": false,
+                "giftMonthly": 50000
+              },
+              {
+                "months": 6,
+                "title": "اشتراک ۶ ماهه",
+                "price": 4000000,
+                "listPrice": 4800000,
+                "featured": false,
+                "giftMonthly": 50000
+              },
+              {
+                "months": 12,
+                "title": "اشتراک یک‌ساله",
+                "price": 8000000,
+                "listPrice": 9600000,
+                "featured": true,
+                "giftMonthly": 50000
+              }
+            ],
+            "domains": [
+              {
+                "tld": "ir",
+                "includedInSetup": true,
+                "annualFee": 0
+              },
+              {
+                "tld": "com",
+                "includedInSetup": false,
+                "annualFee": 4200000
+              }
+            ],
+            "giftUsage": {
+              "renewsMonthly": true,
+              "rollover": false,
+              "uses": [
+                "هوش مصنوعی",
+                "پیامک از خط اشتراکی"
+              ]
+            },
+            "kind": "shop",
+            "setupIncludes": [
+              "ثبت دامنهٔ ir",
+              "ساخت فروشگاه و تنظیم قالب",
+              "آموزش کار با پنل",
+              "پیگیری اداری درگاه پرداخت و اینماد",
+              "ثبت‌نام مالیاتی و ثبت‌نام در ترب",
+              "اتصال گوگل آنالیتیکس"
+            ],
+            "planIncludes": [
+              "فروشگاه با قالب‌های آماده، کاتالوگ، سبد خرید و مدیریت سفارش",
+              "ابزارهای هوش مصنوعی با مصرف اعتبار",
+              "میزبانی، SSL، پشتیبان‌گیری، پشتیبانی فنی و به‌روزرسانی"
+            ],
+            "installment": {
+              "count": 4,
+              "monthlyPart": 3750000,
+              "scope": "setup_only",
+              "line": "فقط هزینهٔ راه‌اندازی فروشگاه در چهار قسط پرداخت می‌شود؛ اشتراک و هزینهٔ دامنه در پرداخت اول کامل تسویه می‌شوند. شرایط فعلی را در صفحهٔ رسمی اقساط بررسی کنید."
+            }
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "options-shop",
+      "request": {
+        "method": "GET",
+        "path": "/signup-options?kind=shop",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "kind": "shop",
+            "availability": "unavailable",
+            "notice": "گزینه‌های قابل ثبت تا دریافت دادهٔ مورد تأیید خالی‌اند؛ این فهرست نمایندهٔ گزینه‌های سایت واقعی نیست.",
+            "steps": [],
+            "businessCategories": [],
+            "templateCategories": [],
+            "templates": []
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "pricing-website",
+      "request": {
+        "method": "GET",
+        "path": "/pricing?kind=website",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "currency": "toman",
+            "setupFees": {
+              "shop": 15000000,
+              "website": 5000000
+            },
+            "defaultSignupPlanMonths": 3,
+            "plans": [
+              {
+                "months": 3,
+                "title": "اشتراک ۳ ماهه",
+                "price": 2400000,
+                "listPrice": 2400000,
+                "featured": false,
+                "giftMonthly": 50000
+              },
+              {
+                "months": 6,
+                "title": "اشتراک ۶ ماهه",
+                "price": 4000000,
+                "listPrice": 4800000,
+                "featured": false,
+                "giftMonthly": 50000
+              },
+              {
+                "months": 12,
+                "title": "اشتراک یک‌ساله",
+                "price": 8000000,
+                "listPrice": 9600000,
+                "featured": true,
+                "giftMonthly": 50000
+              }
+            ],
+            "domains": [
+              {
+                "tld": "ir",
+                "includedInSetup": true,
+                "annualFee": 0
+              },
+              {
+                "tld": "com",
+                "includedInSetup": false,
+                "annualFee": 4200000
+              }
+            ],
+            "giftUsage": {
+              "renewsMonthly": true,
+              "rollover": false,
+              "uses": [
+                "هوش مصنوعی",
+                "پیامک از خط اشتراکی"
+              ]
+            },
+            "kind": "website",
+            "setupIncludes": [
+              "ثبت دامنهٔ ir",
+              "راه‌اندازی سایت با قالب‌های آماده"
+            ],
+            "planIncludes": [
+              "سایت بدون کاتالوگ، سبد خرید و درگاه؛ با قالب آماده و صفحه‌ساز بلوکی",
+              "میزبانی، SSL و پشتیبان‌گیری"
+            ],
+            "installment": {
+              "count": 4,
+              "monthlyPart": 1250000,
+              "scope": "setup_only",
+              "line": "فقط هزینهٔ راه‌اندازی سایت در چهار قسط پرداخت می‌شود؛ اشتراک و هزینهٔ دامنه در پرداخت اول کامل تسویه می‌شوند. شرایط فعلی را در صفحهٔ رسمی اقساط بررسی کنید."
+            }
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "options-website",
+      "request": {
+        "method": "GET",
+        "path": "/signup-options?kind=website",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "kind": "website",
+            "availability": "unavailable",
+            "notice": "گزینه‌های قابل ثبت تا دریافت دادهٔ مورد تأیید خالی‌اند؛ این فهرست نمایندهٔ گزینه‌های سایت واقعی نیست.",
+            "steps": [],
+            "businessCategories": [],
+            "templateCategories": [],
+            "templates": []
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "service-info",
+      "request": {
+        "method": "GET",
+        "path": "/service-info",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "contactUrl": "https://launcho.ir/contact",
+            "useCases": [
+              "معرفی محصولات فروشگاه حضوری در یک نشانی مستقل",
+              "ساخت کاتالوگ آنلاین برای کسب‌وکارهای فعال در شبکه‌های اجتماعی"
+            ],
+            "overview": "لانچو سایت‌ساز و فروشگاه‌ساز ایرانی است. برای راه‌اندازی فروشگاه، کارشناس در تنظیم قالب، آموزش پنل و پیگیری کارهای اداری همراهی می‌کند.",
+            "featureSummary": [
+              "قالب آماده و مدیریت موجودی رنگ و سایز",
+              "کوپن و حراج زمان‌دار",
+              "کمک هوش مصنوعی برای توضیح و تصویر محصول"
+            ]
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "offer-eligible",
+      "request": {
+        "method": "POST",
+        "path": "/offers/match",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        },
+        "json": {
+          "kind": "shop",
+          "planMonths": 3,
+          "step": 4,
+          "objections": [
+            "price"
+          ],
+          "needs": [
+            "low_upfront"
+          ],
+          "discountAlreadyShown": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "offers": [
+              {
+                "id": "demo_campaign",
+                "type": "discount",
+                "title": "جشنوارهٔ آزمایشی",
+                "line": "این جشنواره صرفاً آزمایشی است و برای خرید اعتبار ندارد؛ هیچ تخفیفی اعمال نمی‌شود.",
+                "expiresAt": null
+              }
+            ]
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "offer-already-shown",
+      "request": {
+        "method": "POST",
+        "path": "/offers/match",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        },
+        "json": {
+          "kind": "shop",
+          "planMonths": 3,
+          "step": 4,
+          "objections": [
+            "price"
+          ],
+          "needs": [
+            "low_upfront"
+          ],
+          "discountAlreadyShown": true
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "offers": []
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "unauthorized",
+      "request": {
+        "method": "GET",
+        "path": "/pricing",
+        "headers": {}
+      },
+      "response": {
+        "status": 401,
+        "json": {
+          "detail": "Unauthorized"
+        }
+      }
+    },
+    {
+      "name": "draft-not-implemented",
+      "request": {
+        "method": "POST",
+        "path": "/signup-drafts",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        },
+        "json": {}
+      },
+      "response": {
+        "status": 404,
+        "json": {
+          "detail": "Not Found"
+        }
+      }
+    },
+    {
+      "name": "pricing-invalid-kind",
+      "request": {
+        "method": "GET",
+        "path": "/pricing?kind=other",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        }
+      },
+      "comparison": "subset",
+      "response": {
+        "status": 422,
+        "json": {
+          "detail": [
+            {
+              "type": "literal_error",
+              "loc": [
+                "query",
+                "kind"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "options-missing-kind",
+      "request": {
+        "method": "GET",
+        "path": "/signup-options",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        }
+      },
+      "comparison": "subset",
+      "response": {
+        "status": 422,
+        "json": {
+          "detail": [
+            {
+              "type": "missing",
+              "loc": [
+                "query",
+                "kind"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "options-invalid-kind",
+      "request": {
+        "method": "GET",
+        "path": "/signup-options?kind=other",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        }
+      },
+      "comparison": "subset",
+      "response": {
+        "status": 422,
+        "json": {
+          "detail": [
+            {
+              "type": "literal_error",
+              "loc": [
+                "query",
+                "kind"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "offer-invalid-period",
+      "request": {
+        "method": "POST",
+        "path": "/offers/match",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        },
+        "json": {
+          "kind": "shop",
+          "planMonths": 5,
+          "step": 4,
+          "objections": [
+            "price"
+          ],
+          "needs": [
+            "low_upfront"
+          ],
+          "discountAlreadyShown": false
+        }
+      },
+      "comparison": "subset",
+      "response": {
+        "status": 422,
+        "json": {
+          "detail": [
+            {
+              "type": "literal_error",
+              "loc": [
+                "body",
+                "planMonths"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "offer-extra-field",
+      "request": {
+        "method": "POST",
+        "path": "/offers/match",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        },
+        "json": {
+          "kind": "shop",
+          "planMonths": 3,
+          "step": 4,
+          "objections": [
+            "price"
+          ],
+          "needs": [
+            "low_upfront"
+          ],
+          "discountAlreadyShown": false,
+          "unexpected": true
+        }
+      },
+      "comparison": "subset",
+      "response": {
+        "status": 422,
+        "json": {
+          "detail": [
+            {
+              "type": "extra_forbidden",
+              "loc": [
+                "body",
+                "unexpected"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "offer-missing-field",
+      "request": {
+        "method": "POST",
+        "path": "/offers/match",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        },
+        "json": {
+          "kind": "shop",
+          "planMonths": 3,
+          "step": 4,
+          "objections": [
+            "price"
+          ],
+          "discountAlreadyShown": false
+        }
+      },
+      "comparison": "subset",
+      "response": {
+        "status": 422,
+        "json": {
+          "detail": [
+            {
+              "type": "missing",
+              "loc": [
+                "body",
+                "needs"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "offer-invalid-need",
+      "request": {
+        "method": "POST",
+        "path": "/offers/match",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        },
+        "json": {
+          "kind": "shop",
+          "planMonths": 3,
+          "step": 4,
+          "objections": [
+            "price"
+          ],
+          "needs": [
+            "invented"
+          ],
+          "discountAlreadyShown": false
+        }
+      },
+      "comparison": "subset",
+      "response": {
+        "status": 422,
+        "json": {
+          "detail": [
+            {
+              "type": "literal_error",
+              "loc": [
+                "body",
+                "needs",
+                0
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "pricing-wrong-method",
+      "request": {
+        "method": "POST",
+        "path": "/pricing",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        },
+        "json": {}
+      },
+      "response": {
+        "status": 405,
+        "json": {
+          "detail": "Method Not Allowed"
+        }
+      }
+    },
+    {
+      "name": "status-not-implemented",
+      "request": {
+        "method": "GET",
+        "path": "/signup-drafts/sd_contract_test",
+        "headers": {
+          "Authorization": "Bearer local-simulation"
+        }
+      },
+      "response": {
+        "status": 404,
+        "json": {
+          "detail": "Not Found"
+        }
+      }
+    }
+  ]
+}

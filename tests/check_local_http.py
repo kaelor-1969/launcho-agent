@@ -99,7 +99,7 @@ def main():
         record('mock idempotency and conflict', 'same key; same and changed period',
                {'first':first.status_code,'repeat':repeat.status_code,'conflict':conflict.json()},
                first.json() == repeat.json() and conflict.status_code == 409 and
-               conflict.json()['detail']['code'] == 'idempotency_conflict')
+               conflict.json()['error']['code'] == 'idempotency_conflict')
         persistent_key = 'restart-' + str(uuid4())
         persistent = mock.post('/signup-drafts',headers={**h,'Idempotency-Key':persistent_key},json=prefs)
         (ROOT/'artifacts/review/restart-probe.json').write_text(json.dumps({
@@ -107,8 +107,8 @@ def main():
         ref = first.json()['data']['ref']
         # Change only this disposable test draft to exercise the real HTTP expiry paths.
         with sqlite3.connect(ROOT/'data/mock-drafts.sqlite3') as db:
-            db.execute('UPDATE drafts SET expires_at=? WHERE ref=?',
-                       ((datetime.now(timezone.utc)-timedelta(seconds=1)).isoformat(), ref))
+            db.execute('UPDATE mock_drafts SET expires=? WHERE ref=?',
+                       ((datetime.now(timezone.utc)-timedelta(seconds=1)).timestamp(), ref))
         expired = mock.get('/signup-drafts/'+ref, headers=h)
         preview = mock.get('/signup-drafts/'+ref+'/preview')
         repeat = mock.post('/signup-drafts',headers=h,json=prefs)

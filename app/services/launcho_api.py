@@ -1,4 +1,5 @@
-import uuid
+"""Legacy read-only facade. Sample registration options are no longer selectable."""
+from app.services.catalog import documented_catalog
 
 def get_pricing():
     return {
@@ -8,16 +9,7 @@ def get_pricing():
     }
 
 def get_signup_options(kind="shop"):
-    return {
-        "kind": kind,
-        "businessCategories": [{"id": "fashion", "label": "پوشاک و مد"}],
-        "templates": [{"id": "example-row", "title": "قالب نمونه", "available": True}]
-    }
+    return documented_catalog(kind)
 
 def create_signup_draft(business_name, category, plan_months, template_id):
-    draft_ref = "sd_" + str(uuid.uuid4())[:8]
-    return {
-        "ref": draft_ref,
-        "confirmUrl": f"https://launcho.ir/start?signup={draft_ref}",
-        "quote": {"total": 17400000, "isFinal": False}
-    }
+    raise RuntimeError('Legacy draft creation is disabled; use the contract adapter or explicit mock API.')

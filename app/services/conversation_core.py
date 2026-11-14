@@ -170,7 +170,8 @@ class ConversationCore:
                 try:
                     offers = unwrap(match_offers(
                         prefs['kind'], prefs.get('planMonths'),
-                        step=sum(bool(prefs.get(key)) for key in ('businessName', 'category', 'template', 'domain')),
+                        message=safe, history=history, offer_state={},
+                        step='review_ready' if self.complete(prefs) else 'collecting_preferences',
                     )).get('offers')
                     if isinstance(offers, list):
                         options = {**options, 'demoOffers': offers}
@@ -225,7 +226,9 @@ class ConversationCore:
                 or any(turn['role'] == 'assistant' and CHECKOUT_OFFER_LABEL in turn['content'] for turn in history)):
             return None
         try:
-            offers = unwrap(match(prefs['kind'], prefs['planMonths'])).get('offers')
+            offers = unwrap(match(
+                prefs['kind'], prefs['planMonths'], message=message, history=history,
+                step='review_ready', offer_state={})).get('offers')
         except GatewayUnavailable:
             return None
         if not isinstance(offers, list):
@@ -233,7 +236,7 @@ class ConversationCore:
         for offer in offers:
             if not isinstance(offer, dict) or offer.get('type') not in {'payment_option', 'discount'}:
                 continue
-            line = offer.get('line')
+            line = offer.get('displayText')
             if not isinstance(line, str) or not line.strip() or len(line) > 160 or re.search(r'https?://|www\.', line, re.I):
                 continue
             expires = offer.get('expiresAt')

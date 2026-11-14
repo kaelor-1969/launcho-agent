@@ -1,0 +1,84 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "enum": [
+        "shop",
+        "website"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "planMonths": {
+      "anyOf": [
+        {
+          "enum": [
+            3,
+            6,
+            12
+          ],
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Planmonths"
+    },
+    "step": {
+      "enum": [
+        "guidance",
+        "collecting_preferences",
+        "review_ready",
+        "awaiting_confirmation",
+        "draft_created"
+      ],
+      "title": "Step",
+      "type": "string"
+    },
+    "objections": {
+      "items": {
+        "enum": [
+          "price",
+          "trust",
+          "complexity",
+          "time",
+          "template",
+          "domain",
+          "other"
+        ],
+        "type": "string"
+      },
+      "title": "Objections",
+      "type": "array"
+    },
+    "needs": {
+      "items": {
+        "enum": [
+          "low_upfront",
+          "fast_launch",
+          "own_domain",
+          "support",
+          "other"
+        ],
+        "type": "string"
+      },
+      "title": "Needs",
+      "type": "array"
+    },
+    "discountAlreadyShown": {
+      "title": "Discountalreadyshown",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "kind",
+    "step",
+    "objections",
+    "needs",
+    "discountAlreadyShown"
+  ],
+  "title": "OfferRequest",
+  "type": "object"
+}

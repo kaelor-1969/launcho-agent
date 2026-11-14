@@ -1,54 +1,26 @@
 """Local-only Launcho contract simulation and a separate widget host."""
 import json
 import os
-import sqlite3
-from contextlib import closing, contextmanager
-from urllib.parse import urlsplit
-from datetime import datetime, timedelta, timezone
-from hashlib import sha256
 from pathlib import Path
-from secrets import token_urlsafe
-from typing import Annotated, Literal
+import sqlite3
+from threading import Lock
+from typing import Literal
+from urllib.parse import urlsplit
 
-from fastapi import FastAPI, Header, HTTPException, Path as PathParam
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel, ConfigDict
 
-from app.models.schemas import DomainChoice, Preferences
+from app.mock_draft_store import MockDraftError, MockDraftStore
+from app.services.launcho_contract import DraftRequest
+from app.services.catalog import selectable_catalog
+from app.services.offer_contract import OfferStage, FinancialOffer
 
 content = Path(__file__).resolve().parents[1] / 'content'
 fixture = json.loads((content / 'launcho-mock.json').read_text(encoding='utf-8'))
 public = json.loads((content / 'launcho-public.json').read_text(encoding='utf-8'))
-app = FastAPI(title='Launcho local simulation')
 ServiceKind = Literal['shop', 'website']
-DraftRef = Annotated[str, PathParam(pattern=r'^sd_[A-Za-z0-9_-]{4,128}$')]
-DRAFT_TTL = timedelta(minutes=30)
-DRAFT_DB = Path(os.getenv('LAUNCHO_MOCK_DRAFT_DB', str(content.parent / 'data' / 'mock-drafts.sqlite3')))
-
-@contextmanager
-def draft_db():
-    DRAFT_DB.parent.mkdir(parents=True, exist_ok=True)
-    with closing(sqlite3.connect(DRAFT_DB, timeout=10)) as db, db:
-        db.execute('''CREATE TABLE IF NOT EXISTS drafts (
-            request_key TEXT PRIMARY KEY, fingerprint BLOB NOT NULL,
-            ref TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL
-        )''')
-        db.execute('BEGIN IMMEDIATE')
-        yield db
-
-
-def draft_data(ref, expires_at):
-    return {'ref': ref, 'status': 'expired' if datetime.now(timezone.utc) >= expires_at else 'draft',
-            'expiresAt': expires_at.isoformat(), 'confirmUrl': f'/signup-drafts/{ref}/preview'}
-
-
-class DraftRequest(Preferences):
-    kind: ServiceKind
-    businessName: str = Field(min_length=1, max_length=80)
-    category: str = Field(min_length=1, max_length=100)
-    planMonths: int = Field(strict=True, ge=1, le=120)
-    template: str = Field(min_length=1, max_length=100)
-    domain: DomainChoice
 
 
 class OfferRequest(BaseModel):
@@ -57,23 +29,18 @@ class OfferRequest(BaseModel):
     kind: ServiceKind
     # Optional in the demo; it validates a supported period, not campaign eligibility.
     planMonths: Literal[3, 6, 12] | None = None
-    step: int = Field(ge=0, le=4)
+    step: OfferStage
     objections: list[Literal['price', 'trust', 'complexity', 'time', 'template', 'domain', 'other']]
     needs: list[Literal['low_upfront', 'fast_launch', 'own_domain', 'support', 'other']]
     discountAlreadyShown: bool
 
 
-def require_local_token(authorization):
+def response(data, authorization):
     if authorization != 'Bearer local-simulation':
         raise HTTPException(status_code=401)
-
-
-def response(data, authorization):
-    require_local_token(authorization)
     return {'ok': True, 'data': data, 'simulation': True, 'notice': fixture['simulationNotice']}
 
 
-@app.get('/pricing')
 def pricing(authorization: str = Header(default=''), kind: ServiceKind | None = None):
     data = fixture['pricing']
     if kind is not None:
@@ -82,12 +49,10 @@ def pricing(authorization: str = Header(default=''), kind: ServiceKind | None = 
     return response(data, authorization)
 
 
-@app.get('/signup-options')
 def signup_options(kind: ServiceKind, authorization: str = Header(default='')):
-    return response(fixture['signupOptions'][kind], authorization)
+    return response(selectable_catalog(fixture['signupOptions'][kind], kind), authorization)
 
 
-@app.get('/service-info')
 def service_info(authorization: str = Header(default='')):
     return response({
         **fixture['serviceInfo'],
@@ -96,82 +61,20 @@ def service_info(authorization: str = Header(default='')):
     }, authorization)
 
 
-@app.post('/offers/match')
 def offers(request: OfferRequest, authorization: str = Header(default='')):
-    eligible = (request.kind == 'shop' and 'price' in request.objections
+    eligible = (request.kind == 'shop' and request.step == 'review_ready' and 'price' in request.objections
                 and 'low_upfront' in request.needs and not request.discountAlreadyShown)
-    return response({'offers': fixture['offers'] if eligible else []}, authorization)
+    offers = []
+    if eligible:
+        for item in fixture['offers']:
+            offer = FinancialOffer(offerId=item['id'], type=item['type'], kind='shop',
+                displayText=item['line'], expiresAt='2099-01-01T00:00:00Z',
+                source={'type': 'internal_fixture', 'reference': 'content/launcho-mock.json'},
+                simulation=True, eligibleStages=['review_ready'], planMonths=[3, 6, 12])
+            offers.append(offer.model_dump(mode='json'))
+    return response({'offers': offers}, authorization)
 
 
-@app.post('/signup-drafts', status_code=201)
-def create_signup_draft(
-    request: DraftRequest,
-    idempotency_key: Annotated[str, Header(pattern=r'^[A-Za-z0-9_-]{1,128}$')],
-    authorization: str = Header(default=''),
-):
-    require_local_token(authorization)
-    fingerprint = sha256(request.model_dump_json().encode('utf-8')).digest()
-    with draft_db() as db:
-        cutoff = datetime.now(timezone.utc) - timedelta(days=1)
-        db.execute('DELETE FROM drafts WHERE expires_at < ?', (cutoff.isoformat(),))
-        previous = db.execute('SELECT fingerprint, ref, expires_at FROM drafts WHERE request_key = ?',
-                              (idempotency_key,)).fetchone()
-        if previous is not None:
-            previous_fingerprint, ref, expires_at = previous
-            if previous_fingerprint != fingerprint:
-                raise HTTPException(status_code=409, detail={'code': 'idempotency_conflict'})
-            draft = draft_data(ref, datetime.fromisoformat(expires_at))
-            if draft['status'] == 'expired':
-                raise HTTPException(status_code=410, detail={'code': 'draft_expired'})
-            return response(draft, authorization)
-
-        options = fixture['signupOptions'][request.kind]
-        catalog = options['templates']
-        templates = {item['id'] for item in catalog if item.get('available')}
-        if request.category not in {item['id'] for item in options['businessCategories']}:
-            raise HTTPException(status_code=422, detail={'code': 'invalid_category'})
-        if request.template not in templates:
-            raise HTTPException(status_code=422, detail={'code': 'invalid_template'})
-        if request.planMonths not in {item['months'] for item in fixture['pricing']['plans']}:
-            raise HTTPException(status_code=422, detail={'code': 'invalid_plan'})
-        if request.domain.tld and request.domain.tld not in {item['tld'] for item in fixture['pricing']['domains']}:
-            raise HTTPException(status_code=422, detail={'code': 'invalid_domain'})
-
-        ref = 'sd_' + token_urlsafe(24)
-        expires_at = datetime.now(timezone.utc) + DRAFT_TTL
-        db.execute('INSERT INTO drafts VALUES (?, ?, ?, ?)',
-                   (idempotency_key, fingerprint, ref, expires_at.isoformat()))
-    return response(draft_data(ref, expires_at), authorization)
-
-
-def find_draft(ref):
-    with draft_db() as db:
-        record = db.execute('SELECT expires_at FROM drafts WHERE ref = ?', (ref,)).fetchone()
-    if record is None:
-        raise HTTPException(status_code=404, detail={'code': 'draft_not_found'})
-    return draft_data(ref, datetime.fromisoformat(record[0]))
-
-
-@app.get('/signup-drafts/{ref}')
-def signup_draft_status(ref: DraftRef, authorization: str = Header(default='')):
-    require_local_token(authorization)
-    return response(find_draft(ref), authorization)
-
-
-@app.get('/signup-drafts/{ref}/preview', response_class=HTMLResponse)
-def signup_draft_preview(ref: DraftRef):
-    expired = find_draft(ref)['status'] == 'expired'
-    title = 'پیش‌نویس آزمایشی منقضی شده' if expired else 'پیش‌نویس آزمایشی آماده است'
-    return HTMLResponse(
-        f'<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8">'
-        f'<title>{title}</title><h1>{title}</h1>'
-        '<p>این صفحه برای توسعهٔ محلی است. حساب، فروشگاه یا پرداختی ایجاد نشده است.</p></html>',
-        status_code=410 if expired else 200,
-        headers={'Cache-Control': 'no-store'},
-    )
-
-
-@app.get('/', response_class=HTMLResponse)
 def widget_host():
     origin = urlsplit(os.getenv('LAUNCHO_WIDGET_ORIGIN', 'http://127.0.0.1:8000'))
     if (origin.scheme != 'http' or origin.hostname not in {'127.0.0.1', 'localhost', '::1'}
@@ -195,5 +98,135 @@ p { max-width: 56ch }
 <p>دستیار را از پایین صفحه باز کنید. برای شروع بپرسید «برای فروش کیف و کفش از کجا شروع کنم؟» و بعد «هزینه برام زیاده، چه گزینه‌ای دارم؟».</p>
 <p>این صفحه برای تست نصب ویجت است. تعرفه و جشنوارهٔ آزمایشی برای خرید معتبر نیستند.</p>
 </main>
-<script defer src="__LOCAL_WIDGET_LOADER__" data-theme="light"></script>
-</html>""".replace('__LOCAL_WIDGET_LOADER__', loader)
+<script defer src="__WIDGET_LOADER__" data-theme="light"></script>
+</html>""".replace("__WIDGET_LOADER__", loader)
+
+
+def create_mock_app(*, store=None, db_path=None, catalog_profile=None, ttl=None,
+                    retention=None, preview_origin=None):
+    """Each test uses its own store/path; normal imports perform no database writes."""
+    application = FastAPI(title='Launcho local simulation')
+    profile = catalog_profile or os.getenv('LAUNCHO_MOCK_DRAFT_CATALOG', 'unavailable')
+    if profile not in {'unavailable', 'test', 'widget'}:
+        raise ValueError('LAUNCHO_MOCK_DRAFT_CATALOG must be unavailable, test, or widget.')
+    catalog = fixture['signupOptions']
+    if profile == 'test':
+        catalog = json.loads((content / 'launcho-draft-test-catalog.json').read_text(encoding='utf-8'))['signupOptions']
+    if profile == 'widget':
+        catalog = json.loads((content / 'launcho-widget-catalog.json').read_text(encoding='utf-8'))['signupOptions']
+    if store is not None:
+        catalog = store.catalog
+    draft_ttl = int(os.getenv('LAUNCHO_MOCK_DRAFT_TTL_SECONDS', '86400')) if ttl is None else ttl
+    key_retention = int(os.getenv('LAUNCHO_MOCK_KEY_RETENTION_SECONDS', '604800')) if retention is None else retention
+    if type(draft_ttl) is not int or type(key_retention) is not int or draft_ttl <= 0 or key_retention < draft_ttl:
+        raise ValueError('Mock retention must be >= positive draft TTL.')
+    path = db_path or os.getenv('LAUNCHO_MOCK_DB') or os.getenv('LAUNCHO_MOCK_DRAFT_DB') or content.parent / 'data' / 'mock-drafts.sqlite3'
+    origin = preview_origin or os.getenv('LAUNCHO_MOCK_PREVIEW_ORIGIN', 'http://127.0.0.1:8001')
+    MockDraftStore.validate_origin(origin)
+    application.state.draft_store = store
+    initialization = Lock()
+
+    def get_store():
+        with initialization:
+            if application.state.draft_store is None:
+                application.state.draft_store = MockDraftStore(
+                    path, catalog, fixture['pricing'], ttl=draft_ttl, retention=key_retention,
+                    preview_origin=origin)
+            return application.state.draft_store
+
+    def draft_error(status, code, message):
+        return JSONResponse(status_code=status, content={
+            'ok': False, 'error': {'code': code, 'message': message},
+            'simulation': True, 'notice': fixture['simulationNotice']},
+            headers={'Cache-Control': 'no-store'})
+
+    @application.exception_handler(MockDraftError)
+    async def handle_draft_error(request, error):
+        return draft_error(error.status, error.code, error.message)
+
+    @application.exception_handler(sqlite3.Error)
+    @application.exception_handler(OSError)
+    async def handle_storage_error(request, error):
+        # A commit failure can have an uncertain outcome: retry the same key, never claim rejection.
+        return draft_error(503, 'draft_outcome_unknown', 'ذخیره یا نتیجهٔ پیش‌نویس نامطمئن است؛ همان درخواست را با همان کلید تکرار کنید.')
+
+    @application.exception_handler(RequestValidationError)
+    async def handle_validation(request, error):
+        if request.url.path == '/signup-drafts' or request.url.path.startswith('/signup-drafts/'):
+            return draft_error(422, 'invalid_request', 'اطلاعات پیش‌نویس معتبر نیست.')
+        from fastapi.exception_handlers import request_validation_exception_handler
+        return await request_validation_exception_handler(request, error)
+
+    def authenticated(authorization):
+        if authorization != 'Bearer local-simulation':
+            raise MockDraftError(401, 'unauthorized', 'دسترسی به mock مجاز نیست.')
+
+    # Inline $defs so the standalone JSON Schema also resolves inside OpenAPI.
+    schema = DraftRequest.model_json_schema()
+    definitions = schema.pop('$defs', {})
+
+    def inline_schema(value):
+        if isinstance(value, list):
+            return [inline_schema(item) for item in value]
+        if isinstance(value, dict):
+            if '$ref' in value and value['$ref'].startswith('#/$defs/'):
+                target = definitions[value['$ref'].split('/')[-1]]
+                return inline_schema({**target, **{k: v for k, v in value.items() if k != '$ref'}})
+            return {key: inline_schema(item) for key, item in value.items()}
+        return value
+
+    @application.post('/signup-drafts', openapi_extra={'requestBody': {
+        'required': True, 'content': {'application/json': {'schema': inline_schema(schema)}}}})
+    async def create_draft(request: Request, authorization: str = Header(default=''),
+                           idempotency_key: str = Header(default='')):
+        authenticated(authorization)
+        MockDraftStore.validate_key(idempotency_key)
+        try:
+            payload = await request.json()
+        except (ValueError, UnicodeDecodeError):
+            raise MockDraftError(422, 'invalid_request', 'بدنهٔ JSON معتبر نیست.') from None
+        if not isinstance(payload, dict):
+            raise MockDraftError(422, 'invalid_request', 'بدنه باید یک شیء JSON باشد.')
+        # Keep SQLite waits off the event loop, including concurrent requests.
+        from starlette.concurrency import run_in_threadpool
+        data = await run_in_threadpool(lambda: get_store().create(payload, idempotency_key))
+        return JSONResponse(response(data, authorization), headers={'Cache-Control': 'no-store'})
+
+    @application.get('/signup-drafts/{ref}')
+    def read_draft(ref: str, authorization: str = Header(default='')):
+        authenticated(authorization)
+        return JSONResponse(response(get_store().get(ref), authorization), headers={'Cache-Control': 'no-store'})
+
+    @application.get('/signup-drafts/{ref}/preview', response_class=HTMLResponse)
+    @application.get('/mock-drafts/{ref}', response_class=HTMLResponse)
+    def preview_draft(ref: str):
+        # Public mock-only capability link. Never render the stored payload or business name.
+        data = get_store().get(ref)
+        expired = data['status'] == 'expired'
+        status = 'این پیش‌نویس آزمایشی منقضی شده است.' if expired else 'پیش‌نویس فقط در mock ذخیره شده است.'
+        html = ('<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8">'
+                '<meta name="viewport" content="width=device-width,initial-scale=1">'
+                '<title>پیش‌نویس آزمایشی لانچو</title><main>'
+                '<h1>پیش‌نویس آزمایشی — برای خرید معتبر نیست</h1><p>' + status + '</p>'
+                '<p>هیچ پرداخت، ثبت‌نام واقعی، ساخت فروشگاه یا انتشاری انجام نشده است.</p></main></html>')
+        return HTMLResponse(html, status_code=410 if expired else 200, headers={
+            'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer',
+            'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'"})
+
+    @application.get('/signup-options')
+    def options(kind: ServiceKind, authorization: str = Header(default='')):
+        authenticated(authorization)
+        try:
+            data = selectable_catalog(catalog[kind], kind, allow_test=profile in {'test', 'widget'} or store is not None)
+        except (ValueError, KeyError, TypeError):
+            raise MockDraftError(503, 'catalog_unavailable', 'کاتالوگ معتبر فعلاً در دسترس نیست.') from None
+        return response(data, authorization)
+
+    application.get('/pricing')(pricing)
+    application.get('/service-info')(service_info)
+    application.post('/offers/match')(offers)
+    application.get('/', response_class=HTMLResponse)(widget_host)
+    return application
+
+
+app = create_mock_app(catalog_profile=os.getenv('LAUNCHO_MOCK_DRAFT_CATALOG', 'widget'))

@@ -8,6 +8,10 @@ import httpx
 
 from app.core.config import settings
 from app.services import launcho_api
+from app.services.launcho_contract import normalize_draft
+from app.services.catalog import selectable_catalog
+from app.services.financial_context import financial_context
+from app.services.offer_contract import OFFER_STAGES, OfferState, validated_offers
 
 
 class GatewayUnavailable(Exception):
@@ -66,7 +70,7 @@ class LaunchoReadOnlyGateway:
         key = (endpoint, tuple((params or {}).items()))
         with self.lock:
             entry = self.cache.get(key)
-            if entry and monotonic() < entry[0]:
+            if ttl and entry and monotonic() < entry[0]:
                 return entry[1]
             try:
                 request_options = dict(headers={'Authorization': f'Bearer {self.token}'},
@@ -84,6 +88,8 @@ class LaunchoReadOnlyGateway:
             if self.mode == 'local_mock' and payload.get('simulation') is not True:
                 raise GatewayUnavailable('Expected a simulated response.')
             data = unwrap(payload)
+            if self.mode == 'live' and payload.get('simulation') is True:
+                raise GatewayUnavailable('Simulated data cannot be used as live Launcho data.')
             if ttl:
                 self.cache[key] = (monotonic() + ttl, data)
             return data
@@ -94,7 +100,18 @@ class LaunchoReadOnlyGateway:
     def get_signup_options(self, kind):
         if kind not in {'shop', 'website'}:
             raise GatewayUnavailable('Invalid Launcho service kind.')
-        return self.read('/signup-options', 0 if self.mode == 'local_mock' else 600, {'kind': kind})
+        # Until the official contract defines revision/revocation semantics, do not cache selectable IDs.
+        data = self.read('/signup-options', 0, {'kind': kind})
+        if self.mode == 'live' and (data.get('approvalStatus') == 'test_only'
+                or data.get('availability') == 'test_only'
+                or any(isinstance(entry, dict) and entry.get('approvalStatus') == 'test_only'
+                       for key in ('businessCategories', 'templates')
+                       for entry in (data.get(key) if isinstance(data.get(key), list) else []))):
+            raise GatewayUnavailable('Test catalog cannot be used as live registration options.')
+        try:
+            return selectable_catalog(data, kind, allow_test=self.mode == 'local_mock')
+        except (ValueError, TypeError):
+            raise GatewayUnavailable('Catalog provenance or structure is invalid.') from None
 
     def get_service_info(self):
         return self.read('/service-info', 60)
@@ -120,7 +137,16 @@ class LocalMockGateway(LaunchoReadOnlyGateway):
             envelope = result.json()
             if not isinstance(envelope, dict) or envelope.get('simulation') is not True:
                 raise GatewayUnavailable('Expected a simulated draft.')
-            return unwrap(envelope)
+            draft = unwrap(envelope)
+            ref = draft.get('ref')
+            url = draft.get('confirmUrl')
+            if isinstance(ref, str) and isinstance(url, str):
+                preview = urlsplit(url)
+                if (preview.scheme == 'http' and preview.hostname in {'127.0.0.1', '::1'}
+                        and not (preview.username or preview.password or preview.query or preview.fragment)
+                        and preview.path == f'/mock-drafts/{ref}'):
+                    draft = {**draft, 'confirmUrl': f'/signup-drafts/{ref}/preview'}
+            return draft
         except httpx.HTTPStatusError as error:
             status = error.response.status_code
             if status in {400, 401, 403, 404, 409, 410, 422, 429}:
@@ -132,17 +158,47 @@ class LocalMockGateway(LaunchoReadOnlyGateway):
     def get_draft_status(self, ref):
         return self.read(f'/signup-drafts/{ref}', 0)
 
-    def match_price_offers(self, kind, plan_months=None, *, step=0):
-        return self.read('/offers/match', 0, payload={
-            'kind': kind, 'planMonths': plan_months, 'step': step, 'objections': ['price'],
-            'needs': ['low_upfront'], 'discountAlreadyShown': False,
-        })
+    def match_price_offers(self, kind, plan_months=None, *, message=None, history=None, step=None, offer_state=None):
+        return self._match_financial_offers(kind, message=message, history=history, step=step,
+                                            plan_months=plan_months, offer_state=offer_state)
+
+    def _match_financial_offers(self, kind, *, message=None, history=None, step=None, plan_months=None, offer_state=None):
+        # Old core calls have no user context: fail closed rather than invent eligibility.
+        context = financial_context(message or '', history)
+        try:
+            state = OfferState.model_validate(offer_state) if offer_state is not None else None
+        except ValueError:
+            raise GatewayUnavailable('Invalid persisted offer state.') from None
+        if (state is None or state.anyFinancialOfferShown or state.shownOfferIds
+                or state.financialOffersDeclined or kind not in {'shop', 'website'} or not isinstance(step, str) or step not in OFFER_STAGES
+                or not context['objections'] or context['rejected'] or context['discountAlreadyShown']):
+            return {'offers': []}
+        if plan_months is not None and (type(plan_months) is not int or plan_months not in {3, 6, 12}):
+            return {'offers': []}
+        payload = {'kind': kind, 'step': step, **{key: context[key] for key in
+                   ('objections', 'needs', 'discountAlreadyShown')}}
+        if plan_months is not None:
+            payload['planMonths'] = plan_months
+        try:
+            data = self.read('/offers/match', 0, payload=payload)
+            return validated_offers(data, kind=kind, stage=step, plan_months=plan_months,
+                                    allow_simulation=self.mode == 'local_mock', state=state.model_dump())
+        except (ValueError, TypeError):
+            raise GatewayUnavailable('Invalid financial offer response.') from None
 
 
 class LaunchoDraftGateway(LaunchoReadOnlyGateway):
     can_create = True
 
     def create_signup_draft(self, payload, idempotency_key):
+        import re
+        # Validate before transport; do not replace the core's persisted idempotency key.
+        if not isinstance(idempotency_key, str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,128}', idempotency_key):
+            raise GatewayRejected(422, 'invalid_idempotency_key')
+        try:
+            payload = normalize_draft(payload)
+        except (ValueError, TypeError):
+            raise GatewayRejected(422, 'invalid_request') from None
         try:
             response = httpx.post(
                 self.base_url + '/signup-drafts', json=payload,
@@ -162,11 +218,9 @@ class LaunchoDraftGateway(LaunchoReadOnlyGateway):
     def get_draft_status(self, ref):
         return self.read(f'/signup-drafts/{ref}', 0)
 
-    def match_checkout_offers(self, kind, plan_months):
-        return self.read('/offers/match', 0, payload={
-            'kind': kind, 'planMonths': plan_months, 'step': 4,
-            'objections': ['price'], 'needs': ['low_upfront'], 'discountAlreadyShown': False,
-        })
+    def match_checkout_offers(self, kind, plan_months, *, message=None, history=None, step=None, offer_state=None):
+        return LocalMockGateway._match_financial_offers(
+            self, kind, message=message, history=history, step=step, plan_months=plan_months, offer_state=offer_state)
 
 
 def build_gateway() -> DraftGateway:

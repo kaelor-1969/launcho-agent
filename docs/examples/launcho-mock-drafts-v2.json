@@ -1,0 +1,281 @@
+{
+  "contractVersion": "local-mock-v2.0.0",
+  "generatedFrom": "TestClient with isolated SQLite and a fixed clock",
+  "clock": 1800000000.0,
+  "ttlSeconds": 10,
+  "retentionSeconds": 30,
+  "cases": [
+    {
+      "name": "create",
+      "offsetSeconds": 0,
+      "request": {
+        "method": "POST",
+        "path": "/signup-drafts",
+        "headers": {
+          "Authorization": "Bearer local-simulation",
+          "Idempotency-Key": "mock_example_request_01"
+        },
+        "json": {
+          "kind": "shop",
+          "businessName": "Mock business",
+          "category": "test-category",
+          "planMonths": 3,
+          "template": "test-template",
+          "domain": {
+            "label": "example",
+            "tld": "ir"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "ref": "sd_mock_example01",
+            "status": "draft",
+            "createdAt": "2027-01-15T08:00:00+00:00",
+            "expiresAt": "2027-01-15T08:00:10+00:00",
+            "retainUntil": "2027-01-15T08:00:30+00:00",
+            "confirmUrl": "http://127.0.0.1:8001/mock-drafts/sd_mock_example01",
+            "quote": {
+              "currency": "toman",
+              "total": 17400000,
+              "isFinal": false
+            }
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "replay",
+      "offsetSeconds": 1,
+      "request": {
+        "method": "POST",
+        "path": "/signup-drafts",
+        "headers": {
+          "Authorization": "Bearer local-simulation",
+          "Idempotency-Key": "mock_example_request_01"
+        },
+        "json": {
+          "kind": "shop",
+          "businessName": "Mock business",
+          "category": "test-category",
+          "planMonths": 3,
+          "template": "test-template",
+          "domain": {
+            "label": "example",
+            "tld": "ir"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "ref": "sd_mock_example01",
+            "status": "draft",
+            "createdAt": "2027-01-15T08:00:00+00:00",
+            "expiresAt": "2027-01-15T08:00:10+00:00",
+            "retainUntil": "2027-01-15T08:00:30+00:00",
+            "confirmUrl": "http://127.0.0.1:8001/mock-drafts/sd_mock_example01",
+            "quote": {
+              "currency": "toman",
+              "total": 17400000,
+              "isFinal": false
+            }
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "conflict",
+      "offsetSeconds": 2,
+      "request": {
+        "method": "POST",
+        "path": "/signup-drafts",
+        "headers": {
+          "Authorization": "Bearer local-simulation",
+          "Idempotency-Key": "mock_example_request_01"
+        },
+        "json": {
+          "kind": "shop",
+          "businessName": "Another business",
+          "category": "test-category",
+          "planMonths": 3,
+          "template": "test-template",
+          "domain": {
+            "label": "example",
+            "tld": "ir"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "json": {
+          "ok": false,
+          "error": {
+            "code": "idempotency_conflict",
+            "message": "این کلید قبلاً برای اطلاعات دیگری استفاده شده است."
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "status-draft",
+      "offsetSeconds": 3,
+      "request": {
+        "method": "GET",
+        "path": "/signup-drafts/sd_mock_example01",
+        "headers": {
+          "Authorization": "Bearer local-simulation",
+          "Idempotency-Key": "mock_example_request_01"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "ref": "sd_mock_example01",
+            "status": "draft",
+            "createdAt": "2027-01-15T08:00:00+00:00",
+            "expiresAt": "2027-01-15T08:00:10+00:00",
+            "retainUntil": "2027-01-15T08:00:30+00:00",
+            "confirmUrl": "http://127.0.0.1:8001/mock-drafts/sd_mock_example01",
+            "quote": {
+              "currency": "toman",
+              "total": 17400000,
+              "isFinal": false
+            }
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "replay-expired",
+      "offsetSeconds": 10,
+      "request": {
+        "method": "POST",
+        "path": "/signup-drafts",
+        "headers": {
+          "Authorization": "Bearer local-simulation",
+          "Idempotency-Key": "mock_example_request_01"
+        },
+        "json": {
+          "kind": "shop",
+          "businessName": "Mock business",
+          "category": "test-category",
+          "planMonths": 3,
+          "template": "test-template",
+          "domain": {
+            "label": "example",
+            "tld": "ir"
+          }
+        }
+      },
+      "response": {
+        "status": 410,
+        "json": {
+          "ok": false,
+          "error": {
+            "code": "draft_expired",
+            "message": "پیش‌نویس آزمایشی منقضی شده است."
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "status-expired",
+      "offsetSeconds": 10,
+      "request": {
+        "method": "GET",
+        "path": "/signup-drafts/sd_mock_example01",
+        "headers": {
+          "Authorization": "Bearer local-simulation",
+          "Idempotency-Key": "mock_example_request_01"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "ok": true,
+          "data": {
+            "ref": "sd_mock_example01",
+            "status": "expired",
+            "createdAt": "2027-01-15T08:00:00+00:00",
+            "expiresAt": "2027-01-15T08:00:10+00:00",
+            "retainUntil": "2027-01-15T08:00:30+00:00",
+            "confirmUrl": "http://127.0.0.1:8001/mock-drafts/sd_mock_example01",
+            "quote": {
+              "currency": "toman",
+              "total": 17400000,
+              "isFinal": false
+            }
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "status-purged",
+      "offsetSeconds": 30,
+      "request": {
+        "method": "GET",
+        "path": "/signup-drafts/sd_mock_example01",
+        "headers": {
+          "Authorization": "Bearer local-simulation",
+          "Idempotency-Key": "mock_example_request_01"
+        }
+      },
+      "response": {
+        "status": 404,
+        "json": {
+          "ok": false,
+          "error": {
+            "code": "draft_not_found",
+            "message": "پیش‌نویس آزمایشی پیدا نشد."
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    },
+    {
+      "name": "invalid-reference",
+      "offsetSeconds": 30,
+      "request": {
+        "method": "GET",
+        "path": "/signup-drafts/invalid",
+        "headers": {
+          "Authorization": "Bearer local-simulation",
+          "Idempotency-Key": "mock_example_request_01"
+        }
+      },
+      "response": {
+        "status": 422,
+        "json": {
+          "ok": false,
+          "error": {
+            "code": "invalid_reference",
+            "message": "شناسهٔ پیش‌نویس معتبر نیست."
+          },
+          "simulation": true,
+          "notice": "داده‌های این API آزمایشی‌اند. قیمت‌های نمونه نباید به مشتری نمایش داده شوند و جشنواره برای خرید معتبر نیست."
+        }
+      }
+    }
+  ]
+}

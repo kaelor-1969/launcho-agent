@@ -77,11 +77,11 @@ def check_demo(client, host):
     first = chat(client, session, PRICE_QUESTION, request_id)
     retry = chat(client, session, PRICE_QUESTION, request_id)
     later = chat(client, session, PRICE_QUESTION)
-    if DEMO_OFFER not in first or "https://launcho.ir/pricing" not in first:
-        raise RuntimeError("The first price answer did not show the labeled mock offer and official link.")
+    if DEMO_OFFER in first or "https://launcho.ir/pricing" not in first:
+        raise RuntimeError("The first price answer must show the official link without an early offer.")
     if retry != first or DEMO_OFFER in later:
         raise RuntimeError("Chat retry or offer repetition behaved unexpectedly.")
-    print("PASS: widget assets, local mock drafts, labeled offer, and retry")
+    print("PASS: widget assets, local mock adapter, pricing guidance, and retry")
     return session
 
 

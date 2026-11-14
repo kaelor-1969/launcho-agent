@@ -4,7 +4,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 rows = json.loads((root/'artifacts/review/public-templates.json').read_text(encoding='utf8'))
-path = root/'content/launcho-mock.json'
+path = root/'content/launcho-widget-catalog.json'
 fixture = json.loads(path.read_text(encoding='utf8'))
 shop = fixture['signupOptions']['shop']
 recommendations = {
@@ -23,9 +23,9 @@ for row in rows:
     if row.get('hidden') or not row.get('demoHref'):
         continue
     templates.append(dict(id='mock-'+row['id'], label=row['title'], available=True,
-                          previewUrl=row['demoHref'], publicSample=True,
-                          registrationAvailability='unverified',
-                          sourceUrl='https://launcho.ir/#templates', reviewedAt='2026-11-12',
+                          previewUrl=row['demoHref'], title=row['title'], kind='shop',
+                          approvalStatus='test_only', source=shop['source'],
+                          reviewedAt=shop['reviewedAt'], compatibleCategoryIds=None,
                           recommendedFor=recommendations.get(row['id'], [])))
 classic = next(t for t in templates if t['id']=='mock-classic')
 classic['generalFallback'] = True

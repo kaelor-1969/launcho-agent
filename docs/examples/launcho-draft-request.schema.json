@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "DomainChoice": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "tld": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tld"
+        },
+        "ownDomain": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owndomain"
+        }
+      },
+      "title": "DomainChoice",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "default": "shop",
+      "enum": [
+        "shop",
+        "website"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "businessName": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Businessname",
+      "type": "string"
+    },
+    "category": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Category",
+      "type": "string"
+    },
+    "planMonths": {
+      "enum": [
+        3,
+        6,
+        12
+      ],
+      "title": "Planmonths",
+      "type": "integer"
+    },
+    "template": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Template",
+      "type": "string"
+    },
+    "domain": {
+      "$ref": "#/$defs/DomainChoice"
+    }
+  },
+  "required": [
+    "businessName",
+    "category",
+    "planMonths",
+    "template",
+    "domain"
+  ],
+  "title": "DraftRequest",
+  "type": "object"
+}

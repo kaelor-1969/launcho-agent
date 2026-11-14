@@ -5,8 +5,9 @@ from openai import OpenAI, APIError
 from pydantic import ValidationError
 from app.core.config import PROJECT_ROOT, settings
 from app.core.privacy import has_visible_text, redact
-from app.models.schemas import PreferenceUpdate
+from app.models.schemas import PreferenceUpdate, Preferences
 from app.prompts.system_prompts import get_system_prompt
+from app.services.financial_context import financial_context
 
 logger = logging.getLogger(__name__)
 # Gateway configuration and transport remain unchanged.
@@ -56,6 +57,8 @@ def is_financial_objection(message):
 _PRICE_CLAIM = re.compile(
     r'\d[\d ,٬٫.\s]*(?:هزار\s*|میلیون\s*|میلیارد\s*)?(?:تومان|تومن|ریال|دلار|درصد|[%٪])'
     r'|(?:هزار|میلیون|میلیارد)\s*(?:تومان|تومن|ریال|دلار)|رایگان|بدون\s*هزینه'
+    r'|(?:قیمت|هزینه).{0,45}(?:هزار|میلیون|میلیارد)'
+    r'|(?:تخفیف|جشنواره).{0,20}فعال\s*(?:داریم|است)'
 )
 _SENSITIVE_FIELD = r'(?:شماره\s*(?:موبایل|تلفن|همراه)|موبایل|نام\s*مالک|رمز(?:\s*عبور)?|گذرواژه|کد\s*(?:تأیید|تایید|ورود|یک[ -]بار[ -]مصرف)|\botp\b|password)'
 _REQUEST_VERB = r'(?:بفرست|وارد\s*کن|بنویس|بده|اعلام\s*کن|ارسال\s*(?:کن|بفرما)|ثبت\s*کن|نیاز\s*دارم|ارائه\s*(?:کن|ده)|send|share|provide)'
@@ -69,8 +72,9 @@ _ATTACHMENT_REQUEST = re.compile(
     rf'{_ATTACHMENT}[^.!؟?]{{0,70}}{_UPLOAD_VERB}|{_UPLOAD_VERB}[^.!؟?]{{0,70}}{_ATTACHMENT}',
     re.I,
 )
-_MODEL_URL = re.compile(r'(?:https?://|www\.)[^\s<>"\x27\]\)*`]+', re.I)
+_MODEL_URL = re.compile(r'(?:https?://|www\.|javascript:|data:|(?<!:)//)[^\s<>"\x27\]\)*`]+', re.I)
 _OFFICIAL_URLS = {'https://launcho.ir', 'https://launcho.ir/', 'https://launcho.ir/start',
+                  'https://launcho.ir/start?kind=website',
                   'https://launcho.ir/pricing', 'https://launcho.ir/contact',
                   'https://launcho.ir/features', 'https://launcho.ir/#templates',
                   'https://launcho.ir/store-setup', 'https://launcho.ir/installments'}
@@ -80,7 +84,7 @@ _PRICE_REPLY = (
 )
 _DEMO_OFFER_LABEL = 'پیشنهاد آزمایشی'
 CHECKOUT_OFFER_LABEL = 'پیشنهاد لانچو'
-_FORM_REPLY = 'اطلاعات ورود و تأیید را فقط در فرم رسمی لانچو وارد کنید: https://launcho.ir/start'
+_FORM_REPLY = 'لطفاً اطلاعات ورود و تأیید را فقط در فرم رسمی سایت لانچو وارد کنید: https://launcho.ir'
 _STORE_START_REPLY = 'چه محصولی می‌خواهید آنلاین بفروشید؟'
 _STORE_DOMAIN_QUESTION = 'اسم برندتان چیست تا یک دامنه پیشنهاد بدهم؟'
 _SIGNUP_REQUEST = re.compile(r'\b(?:مراحل )?ثبت نام(?: رو| را)?(?: برام| برای من)? (?:انجام بده|شروع کن)\b')
@@ -116,21 +120,26 @@ def is_price_question(message):
     if re.search(r'پنل|مشتری(?:ان|‌ها)?|روی محصولات', message):
         # Selling with promotions is a product feature, independent of buying Launcho.
         return bool(_PRICE_QUERY.search(re.sub(r'جشنواره|تخفیف', '', message)))
-    return bool(_PRICE_QUERY.search(message)) or is_financial_objection(message)
+    return (bool(_PRICE_QUERY.search(message)) or is_financial_objection(message)
+            or bool(financial_context(message)['objections']))
 
 
 def price_guidance(message, options, history):
-    offer = (options or {}).get('checkoutOffer')
-    if offer:
-        return f'{CHECKOUT_OFFER_LABEL} — {offer}\nشرایط نهایی در فرم رسمی مشخص می‌شود. https://launcho.ir/pricing'
+    # The core currently supplies only a string, without source or eligibility evidence.
+    # Do not turn that string into a verified live offer.
+    context = financial_context(message, history)
     reply = _PRICE_REPLY
     if re.search(r'جشنواره|تخفیف', message):
         reply = 'جشنواره یا کد تخفیف فعالی برای تأیید در دسترسم نیست. ' + reply
-    if any(turn['role'] == 'assistant' and _DEMO_OFFER_LABEL in turn['content'] for turn in history or []):
+    if re.search(r'اقساط|قسط|پیش[\s‌]*پرداخت', message) and not context['rejected']:
+        reply = 'شرایط فعلی اقساط راه‌اندازی را در صفحهٔ رسمی بررسی کنید؛ مبلغ یا تأیید صلاحیت پرداخت در دسترسم نیست. https://launcho.ir/installments'
+    elif context['objections']:
+        reply = 'می‌فهمم هزینه برایتان مهم است. ' + reply
+    if (context['discountAlreadyShown'] or context['rejected'] or not context['objections']):
         return reply
     for offer in (options or {}).get('demoOffers', []):
-        if isinstance(offer, dict) and offer.get('id') == 'demo_campaign':
-            line = offer.get('line')
+        if isinstance(offer, dict) and offer.get('offerId') == 'demo_campaign':
+            line = offer.get('displayText')
             if isinstance(line, str) and line.strip() and not _PRICE_CLAIM.search(line):
                 return f'{_DEMO_OFFER_LABEL} — {line.strip()}\n{_PRICE_REPLY}'
     return reply
@@ -144,9 +153,20 @@ def empty_guidance_reply(message, history):
     return 'کدام بخش راه‌اندازی فروشگاه را می‌خواهید بررسی کنیم؟'
 _ACTION_CLAIM = re.compile(
     r'(?:ثبت\s*نام|حساب|پیش\s*نویس|پرداخت).{0,45}با\s*موفقیت.{0,25}(?:شد|کردم)'
-    r'|(?:برایتان|برای\s*شما).{0,35}(?:حساب|پیش\s*نویس).{0,20}(?:ساختم|ایجاد کردم)',
+    r'|(?:برایتان|برای\s*شما).{0,35}(?:حساب|پیش\s*نویس).{0,20}(?:ساختم|ایجاد کردم)'
+    # Model prose has no authoritative operation result or live availability evidence.
+    r'|(?:فروشگاه|حساب|پیش\s*نویس).{0,35}(?:ساخته شد|ایجاد شد|ایجاد کردم|ساختم)'
+    r'|پرداخت.{0,30}(?:انجام شد|موفق بود|انجام دادم)'
+    r'|قوانین.{0,35}(?:پذیرفتم|قبول کردم|پذیرفته شد)'
+    r'|کد\s*(?:تایید|تأیید|ورود).{0,25}ارسال شد', re.S)
+_UNVERIFIED_CLAIM = re.compile(
+    r'تضمین\s*می\s*کنیم.{0,50}(?:فروش|درآمد)'
+    r'|دامنه.{0,80}آزاد\s*(?:است|هست)'
+    r'|قالب.{0,50}موجود\s*(?:است|هست)'
+    r'|(?:فروشگاه|سایت).{0,40}(?:\d+|یک|دو|سه|چهار|پنج|شش|هفت)\s*(?:روز|ساعت).{0,25}آماده',
     re.S,
 )
+
 _UNRELATED_CREATIVE_REQUEST = re.compile(
     r'(?:شعر|لطیفه|جوک|داستان|ترانه).{0,100}(?:بگو|بنویس|بساز|بخون)'
     r'|(?:بگو|بنویس|بساز|بخون).{0,30}(?:شعر|لطیفه|جوک|داستان|ترانه)'
@@ -266,7 +286,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
     clauses = [part.strip() for part in re.split(r'[؟?؛\n]+|\s+و\s+', message) if part.strip()]
     price_query = is_price_question(message)
     price_reply = price_guidance(message, options, history) if price_query else _PRICE_REPLY
-    if price_query and all(_PRICE_QUERY.search(part) for part in clauses):
+    if price_query and all(is_price_question(part) for part in clauses):
         return price_reply, {}
     if not settings.AI_API_KEY or not settings.AI_MODEL_NAME:
         return ('برای تنظیم اطلاعات فروشگاه، از فرم ساخت پیش‌نویس در ویجت استفاده کن.', {})
@@ -325,6 +345,9 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
             update = PreferenceUpdate.model_validate_json(calls[0].function.arguments)
             selections = update.model_dump(exclude_unset=True, mode='json')
             merged = {**(preferences or {}), **selections}
+            # PreferenceUpdate lacks the sensitive-value validators of Preferences.
+            # Validate the merged candidate before returning any selection to the core.
+            Preferences.model_validate(merged)
             if not merged.get('businessName'):
                 return 'اسم کسب‌وکارت چیست؟', selections
             if not merged.get('category'):
@@ -352,6 +375,8 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         return 'برای انجام ثبت‌نام و بررسی وضعیت آن، فرم رسمی لانچو را باز کنید: https://launcho.ir/start', {}
     if _PRICE_CLAIM.search(normalized):
         return price_reply, {}
+    if _UNVERIFIED_CLAIM.search(normalized):
+        return 'لطفاً برای تأیید موجودی دامنهٔ درخواستی، زمان راه‌اندازی یا شرایط خدمات، از پشتیبانی لانچو کمک بگیرید: https://launcho.ir/contact', {}
     text = _MODEL_URL.sub(
         lambda match: match[0] if match[0].rstrip('.,،؛') in _OFFICIAL_URLS else '[پیوند تأییدنشده حذف شد]',
         text,

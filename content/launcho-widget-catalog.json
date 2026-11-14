@@ -1,0 +1,883 @@
+{
+  "signupOptions": {
+    "shop": {
+      "kind": "shop",
+      "availability": "test_only",
+      "notice": "این فهرست نمایندهٔ گزینه‌های سایت واقعی نیست. انتخاب‌ها فقط برای mock محلی‌اند. نمونهٔ عمومی، تأیید گزینهٔ ثبت واقعی نیست. پیشنهاد صنف صرفاً راهنمای توسعه است؛ کلاسیک مسیر عمومی همهٔ اصناف است.",
+      "steps": [
+        "businessName",
+        "category",
+        "domain",
+        "template",
+        "planMonths",
+        "review"
+      ],
+      "businessCategories": [
+        {
+          "id": "mock-fashion",
+          "label": "پوشاک و مد",
+          "kind": "shop",
+          "title": "پوشاک و مد",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-bags-shoes",
+          "label": "کیف و کفش",
+          "kind": "shop",
+          "title": "کیف و کفش",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-jewelry",
+          "label": "طلا، نقره و بدلیجات",
+          "kind": "shop",
+          "title": "طلا، نقره و بدلیجات",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-accessories",
+          "label": "اکسسوری و بدلیجات",
+          "kind": "shop",
+          "title": "اکسسوری و بدلیجات",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-beauty",
+          "label": "آرایشی و بهداشتی",
+          "kind": "shop",
+          "title": "آرایشی و بهداشتی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-digital",
+          "label": "کالای دیجیتال",
+          "kind": "shop",
+          "title": "کالای دیجیتال",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-home-appliances",
+          "label": "لوازم خانگی",
+          "kind": "shop",
+          "title": "لوازم خانگی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-home-decor",
+          "label": "دکوراسیون و لوازم منزل",
+          "kind": "shop",
+          "title": "دکوراسیون و لوازم منزل",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-groceries",
+          "label": "مواد غذایی و خواربار",
+          "kind": "shop",
+          "title": "مواد غذایی و خواربار",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-supermarket",
+          "label": "سوپرمارکت آنلاین",
+          "kind": "shop",
+          "title": "سوپرمارکت آنلاین",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-herbal",
+          "label": "عطاری و گیاهان دارویی",
+          "kind": "shop",
+          "title": "عطاری و گیاهان دارویی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-sports",
+          "label": "ورزش و تناسب اندام",
+          "kind": "shop",
+          "title": "ورزش و تناسب اندام",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-toys",
+          "label": "اسباب‌بازی و سرگرمی",
+          "kind": "shop",
+          "title": "اسباب‌بازی و سرگرمی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-mother-baby",
+          "label": "مادر و کودک",
+          "kind": "shop",
+          "title": "مادر و کودک",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-books-stationery-art",
+          "label": "کتاب، لوازم‌التحریر و هنر",
+          "kind": "shop",
+          "title": "کتاب، لوازم‌التحریر و هنر",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-handicrafts",
+          "label": "صنایع دستی",
+          "kind": "shop",
+          "title": "صنایع دستی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-carpets",
+          "label": "فرش و موکت",
+          "kind": "shop",
+          "title": "فرش و موکت",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-automotive",
+          "label": "خودرو و لوازم یدکی",
+          "kind": "shop",
+          "title": "خودرو و لوازم یدکی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-tools",
+          "label": "ابزار و یراق‌آلات",
+          "kind": "shop",
+          "title": "ابزار و یراق‌آلات",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-construction",
+          "label": "مصالح ساختمانی",
+          "kind": "shop",
+          "title": "مصالح ساختمانی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-pets",
+          "label": "حیوانات خانگی",
+          "kind": "shop",
+          "title": "حیوانات خانگی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-flowers-plants",
+          "label": "گل و گیاه",
+          "kind": "shop",
+          "title": "گل و گیاه",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-medical",
+          "label": "تجهیزات پزشکی و سلامت",
+          "kind": "shop",
+          "title": "تجهیزات پزشکی و سلامت",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-industrial",
+          "label": "صنعتی و تجهیزات کارگاهی",
+          "kind": "shop",
+          "title": "صنعتی و تجهیزات کارگاهی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-academic-services",
+          "label": "خدمات پژوهشی و دانشگاهی",
+          "kind": "shop",
+          "title": "خدمات پژوهشی و دانشگاهی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-services-education",
+          "label": "خدمات و آموزش",
+          "kind": "shop",
+          "title": "خدمات و آموزش",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-other",
+          "label": "سایر",
+          "kind": "shop",
+          "title": "سایر",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        }
+      ],
+      "templateCategories": [
+        {
+          "id": "mock-general",
+          "label": "عمومی"
+        }
+      ],
+      "templates": [
+        {
+          "id": "mock-classic",
+          "label": "کلاسیک",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=classic",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-herbal",
+            "mock-sports",
+            "mock-toys",
+            "mock-mother-baby",
+            "mock-books-stationery-art",
+            "mock-construction",
+            "mock-flowers-plants",
+            "mock-academic-services",
+            "mock-services-education",
+            "mock-other"
+          ],
+          "generalFallback": true,
+          "kind": "shop",
+          "title": "کلاسیک",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-moda",
+          "label": "مدا",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=moda",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-fashion",
+            "mock-bags-shoes"
+          ],
+          "kind": "shop",
+          "title": "مدا",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-digikala",
+          "label": "دیجی‌کالا",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=digikala",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-digital",
+            "mock-supermarket",
+            "mock-groceries"
+          ],
+          "kind": "shop",
+          "title": "دیجی‌کالا",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-shaparak",
+          "label": "شاپرک",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=shaparak",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [],
+          "kind": "shop",
+          "title": "شاپرک",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-bazar",
+          "label": "بازار",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=bazar",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-fashion",
+            "mock-bags-shoes"
+          ],
+          "kind": "shop",
+          "title": "بازار",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-parand",
+          "label": "پرند",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=parand",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-fashion",
+            "mock-handicrafts",
+            "mock-carpets"
+          ],
+          "kind": "shop",
+          "title": "پرند",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-techno",
+          "label": "تکنو",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=techno",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-digital",
+            "mock-tools",
+            "mock-industrial"
+          ],
+          "kind": "shop",
+          "title": "تکنو",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-Rayan",
+          "label": "رایان",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=rayan",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [],
+          "kind": "shop",
+          "title": "رایان",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-zarin",
+          "label": "زرین",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=zarin",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-jewelry",
+            "mock-accessories"
+          ],
+          "kind": "shop",
+          "title": "زرین",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-kashane",
+          "label": "کاشانه",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=kashane",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-home-appliances",
+            "mock-home-decor"
+          ],
+          "kind": "shop",
+          "title": "کاشانه",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-negin",
+          "label": "نگین",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=negin",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [],
+          "kind": "shop",
+          "title": "نگین",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-saniye",
+          "label": "ثانیه",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=saniye",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [],
+          "kind": "shop",
+          "title": "ثانیه",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-astar",
+          "label": "آستر",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=astar",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [],
+          "kind": "shop",
+          "title": "آستر",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-yas",
+          "label": "یاس",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=yas",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-beauty"
+          ],
+          "kind": "shop",
+          "title": "یاس",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-bina",
+          "label": "بینا",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=bina",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [],
+          "kind": "shop",
+          "title": "بینا",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-almas",
+          "label": "الماس",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=almas",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [],
+          "kind": "shop",
+          "title": "الماس",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-gold",
+          "label": "گلد",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=gold",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [],
+          "kind": "shop",
+          "title": "گلد",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-sofre",
+          "label": "سفره",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=sofre",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [],
+          "kind": "shop",
+          "title": "سفره",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-hamdam",
+          "label": "همدم",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=hamdam",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-pets"
+          ],
+          "kind": "shop",
+          "title": "همدم",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-golbarg",
+          "label": "گلبرگ",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=golbarg",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-jewelry"
+          ],
+          "kind": "shop",
+          "title": "گلبرگ",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-yadak",
+          "label": "یدکی",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=yadak",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-automotive"
+          ],
+          "kind": "shop",
+          "title": "یدکی",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-lakchery",
+          "label": "لاکچری",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=lakchery",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [],
+          "kind": "shop",
+          "title": "لاکچری",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        },
+        {
+          "id": "mock-negah",
+          "label": "نگاه",
+          "available": true,
+          "previewUrl": "https://demo.launcho.ir/?template=negah",
+          "reviewedAt": "2026-11-12",
+          "recommendedFor": [
+            "mock-accessories",
+            "mock-medical"
+          ],
+          "kind": "shop",
+          "title": "نگاه",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "compatibleCategoryIds": null
+        }
+      ],
+      "catalogVersion": "1.0.0",
+      "approvalStatus": "test_only",
+      "source": {
+        "type": "internal_fixture",
+        "reference": "content/launcho-widget-catalog.json"
+      },
+      "reviewedAt": "2026-11-12"
+    },
+    "website": {
+      "kind": "website",
+      "availability": "test_only",
+      "notice": "این فهرست نمایندهٔ گزینه‌های سایت واقعی نیست و فقط برای پیش‌نویس آزمایشی است.",
+      "steps": [
+        "businessName",
+        "category",
+        "domain",
+        "template",
+        "planMonths",
+        "review"
+      ],
+      "businessCategories": [
+        {
+          "id": "mock-website-company",
+          "label": "شرکتی",
+          "kind": "website",
+          "title": "شرکتی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-website-services",
+          "label": "خدماتی",
+          "kind": "website",
+          "title": "خدماتی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        },
+        {
+          "id": "mock-website-personal",
+          "label": "شخصی",
+          "kind": "website",
+          "title": "شخصی",
+          "available": true,
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12"
+        }
+      ],
+      "templateCategories": [
+        {
+          "id": "mock-website-general",
+          "label": "عمومی"
+        }
+      ],
+      "templates": [
+        {
+          "id": "mock-website-classic",
+          "label": "کلاسیک سایت‌ساز (نمونهٔ محلی)",
+          "available": true,
+          "kind": "website",
+          "title": "کلاسیک سایت‌ساز (نمونهٔ محلی)",
+          "source": {
+            "type": "internal_fixture",
+            "reference": "content/launcho-widget-catalog.json"
+          },
+          "approvalStatus": "test_only",
+          "reviewedAt": "2026-11-12",
+          "compatibleCategoryIds": null
+        }
+      ],
+      "catalogVersion": "1.0.0",
+      "approvalStatus": "test_only",
+      "source": {
+        "type": "internal_fixture",
+        "reference": "content/launcho-widget-catalog.json"
+      },
+      "reviewedAt": "2026-11-12"
+    }
+  }
+}

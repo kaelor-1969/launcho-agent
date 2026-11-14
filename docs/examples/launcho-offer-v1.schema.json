@@ -1,0 +1,126 @@
+{
+  "$defs": {
+    "OfferSource": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "internal_fixture",
+            "official_api"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "reference": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Reference",
+          "type": "string"
+        },
+        "approvalEvidence": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approvalevidence"
+        }
+      },
+      "required": [
+        "type",
+        "reference"
+      ],
+      "title": "OfferSource",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "offerId": {
+      "pattern": "^[A-Za-z0-9_-]{1,100}$",
+      "title": "Offerid",
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "payment_option",
+        "discount"
+      ],
+      "title": "Type",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "shop",
+        "website"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "displayText": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Displaytext",
+      "type": "string"
+    },
+    "expiresAt": {
+      "format": "date-time",
+      "title": "Expiresat",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/OfferSource"
+    },
+    "simulation": {
+      "title": "Simulation",
+      "type": "boolean"
+    },
+    "eligibleStages": {
+      "items": {
+        "enum": [
+          "guidance",
+          "collecting_preferences",
+          "review_ready",
+          "awaiting_confirmation",
+          "draft_created"
+        ],
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Eligiblestages",
+      "type": "array"
+    },
+    "planMonths": {
+      "items": {
+        "enum": [
+          3,
+          6,
+          12
+        ],
+        "type": "integer"
+      },
+      "minItems": 1,
+      "title": "Planmonths",
+      "type": "array"
+    }
+  },
+  "required": [
+    "offerId",
+    "type",
+    "kind",
+    "displayText",
+    "expiresAt",
+    "source",
+    "simulation",
+    "eligibleStages",
+    "planMonths"
+  ],
+  "title": "FinancialOffer",
+  "type": "object"
+}
