@@ -60,6 +60,7 @@
 .connected-workspace #messages { gap:24px; direction:rtl; }
 .connected-workspace .waiting { display:flex; direction:rtl; gap:10px; margin:0; padding:0; }
 .connected-workspace .typing-avatar,.connected-workspace .typing-avatar img { width:34px; height:34px; }
+.connected-workspace .typing-avatar img { transform:scaleX(-1); }
 .connected-workspace .typing-bubble { background:var(--assistant); }
 .connected-workspace .composer { padding:10px 14px 14px 12px; border:0; background:var(--surface); }
 .connected-workspace .suggestion-slot { min-height:0; }
