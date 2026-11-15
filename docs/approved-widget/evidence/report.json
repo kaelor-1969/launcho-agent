@@ -742,10 +742,10 @@
     ],
     "DPR": 1,
     "zoom": 1,
+    "browser": "157.0.8103.51",
     "source": "https://launcho.ir",
     "api": "intercepted mock",
-    "status": "passed",
-    "browser": "157.0.8103.51"
+    "status": "passed"
   },
   {
     "reference": "mobile",
@@ -755,9 +755,9 @@
     ],
     "DPR": 1,
     "zoom": 1,
+    "browser": "157.0.8103.51",
     "source": "https://launcho.ir",
     "api": "intercepted mock",
-    "status": "passed",
-    "browser": "157.0.8103.51"
+    "status": "passed"
   }
 ]
