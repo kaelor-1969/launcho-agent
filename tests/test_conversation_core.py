@@ -342,13 +342,31 @@ class PrivacyAndModelTests(unittest.TestCase):
         import re
 
         html = (Path(__file__).resolve().parents[1] / 'frontend' / 'widget.html').read_text(encoding='utf-8')
-        starters = re.findall(r'data-question="([^"]+)"', html)
-        self.assertEqual(len(starters), 3)
+        starters = dict((label, question) for question, label in
+                        re.findall(r'data-question="([^"]+)"[^>]*>([^<]+)</button>', html))
+        self.assertEqual(set(starters), {'معرفی لانچو', 'ساخت فروشگاه', 'ساخت سایت',
+                                        'امکانات', 'قالب‌ها', 'تعرفه‌ها', 'دامنه'})
         with patch.object(ai_service.client.chat.completions, 'create') as call:
-            replies = [ai_service.generate_turn(question)[0] for question in starters]
+            replies = {label: ai_service.generate_turn(question)[0] for label, question in starters.items()}
         call.assert_not_called()
-        self.assertIn('https://launcho.ir/features', replies[1])
-        self.assertIn('https://launcho.ir/pricing', replies[2])
+        self.assertIn('https://launcho.ir/features', replies['امکانات'])
+        self.assertIn('https://launcho.ir/pricing', replies['تعرفه‌ها'])
+        for label, reply in replies.items():
+            with self.subTest(label=label):
+                self.assertTrue(reply.strip())
+        public = ai_service.get_public_knowledge()
+        self.assertEqual(replies['معرفی لانچو'], public['overview'])
+        self.assertIn('https://launcho.ir/site-builder', replies['ساخت سایت'])
+        self.assertIn('https://launcho.ir/#templates', replies['قالب‌ها'])
+        self.assertIn('https://launcho.ir/contact', replies['دامنه'])
+        # These informational shortcuts remain read-only during an active signup.
+        with patch.object(ai_service.client.chat.completions, 'create') as call:
+            for label in ('معرفی لانچو', 'ساخت سایت', 'قالب‌ها', 'دامنه'):
+                reply, update = ai_service.generate_turn(starters[label],
+                    preferences={'kind':'shop', 'businessName':'آزمون'}, allow_preferences=True)
+                self.assertEqual(reply, replies[label])
+                self.assertEqual(update, {})
+        call.assert_not_called()
 
     def test_store_starter_guides_before_referring_to_pricing(self):
         with patch.object(ai_service.client.chat.completions, 'create') as call:

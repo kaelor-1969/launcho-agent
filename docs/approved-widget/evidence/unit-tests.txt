@@ -1,0 +1,403 @@
+.venv/Scripts/python.exe : test_approved_link_punctuation_and_markdown 
+(test_assistant_safety.AssistantSafetyTests.test_approved_link_punctuation_and_markdown) ... ok
+At line:4 char:32
++ ... NG='utf-8'; .venv/Scripts/python.exe -m unittest discover -s tests -v ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_approved_l...arkdown) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+test_bad_multiple_and_sensitive_tools_do_not_return_updates 
+(test_assistant_safety.AssistantSafetyTests.test_bad_multiple_and_sensitive_tools_do_not_return_updates) ... ok
+test_direct_action_claims_do_not_escape 
+(test_assistant_safety.AssistantSafetyTests.test_direct_action_claims_do_not_escape) ... ok
+test_empty_output_in_both_modes_has_no_update 
+(test_assistant_safety.AssistantSafetyTests.test_empty_output_in_both_modes_has_no_update) ... ok
+test_malicious_context_cannot_expose_forbidden_operation 
+(test_assistant_safety.AssistantSafetyTests.test_malicious_context_cannot_expose_forbidden_operation) ... ok
+test_outage_modes_no_fabricated_updates 
+(test_assistant_safety.AssistantSafetyTests.test_outage_modes_no_fabricated_updates) ... Using Launcho guidance during 
+model failure: APIConnectionError
+AI gateway error: APIConnectionError
+Using Launcho guidance during model failure: APITimeoutError
+AI gateway error: APITimeoutError
+Using Launcho guidance during model failure: InternalServerError
+AI gateway error: InternalServerError
+ok
+test_sensitive_output_is_redirected_and_echo_is_redacted 
+(test_assistant_safety.AssistantSafetyTests.test_sensitive_output_is_redirected_and_echo_is_redacted) ... ok
+test_session_preserves_preferences_and_recovers_after_model_failure 
+(test_assistant_safety.AssistantSafetyTests.test_session_preserves_preferences_and_recovers_after_model_failure) ... ok
+test_spelled_price_and_active_campaign_are_not_verified 
+(test_assistant_safety.AssistantSafetyTests.test_spelled_price_and_active_campaign_are_not_verified) ... ok
+test_unapproved_urls_and_markdown_targets 
+(test_assistant_safety.AssistantSafetyTests.test_unapproved_urls_and_markdown_targets) ... ok
+test_unverified_guarantees_domain_and_timeline 
+(test_assistant_safety.AssistantSafetyTests.test_unverified_guarantees_domain_and_timeline) ... ok
+test_valid_selection_uses_existing_preferences 
+(test_assistant_safety.AssistantSafetyTests.test_valid_selection_uses_existing_preferences) ... ok
+test_headers_body_limit_rate_and_readiness_failure 
+(test_backend_operations.OperationalEndpoints.test_headers_body_limit_rate_and_readiness_failure) ... ok
+test_legacy_embed_paths_redirect_before_static_mount 
+(test_backend_operations.OperationalEndpoints.test_legacy_embed_paths_redirect_before_static_mount) ... ok
+test_occupied_port_fails_without_stopping_listener 
+(test_backend_operations.StorageOperations.test_occupied_port_fails_without_stopping_listener) ... ok
+test_online_backup_restore_and_cascading_retention 
+(test_backend_operations.StorageOperations.test_online_backup_restore_and_cascading_retention) ... ok
+test_production_rejects_mock_and_missing_configuration 
+(test_backend_operations.StorageOperations.test_production_rejects_mock_and_missing_configuration) ... ok
+test_rate_window_and_origin_validation 
+(test_backend_operations.StorageOperations.test_rate_window_and_origin_validation) ... ok
+test_startup_failure_preserves_diagnostic_log 
+(test_backend_operations.StorageOperations.test_startup_failure_preserves_diagnostic_log) ... ok
+test_every_registry_has_valid_metadata_and_matches_published_schema 
+(test_catalog.CatalogTests.test_every_registry_has_valid_metadata_and_matches_published_schema) ... ok
+test_invalid_metadata_ids_kinds_and_relations_fail_closed 
+(test_catalog.CatalogTests.test_invalid_metadata_ids_kinds_and_relations_fail_closed) ... ok
+test_legacy_path_has_no_selectable_samples_and_cannot_fabricate_draft 
+(test_catalog.CatalogTests.test_legacy_path_has_no_selectable_samples_and_cannot_fabricate_draft) ... ok
+test_live_adapter_rejects_simulation_unproven_and_test_catalogs 
+(test_catalog.CatalogTests.test_live_adapter_rejects_simulation_unproven_and_test_catalogs) ... ok
+test_live_catalog_has_no_stale_fallback_on_outage_or_deletion 
+(test_catalog.CatalogTests.test_live_catalog_has_no_stale_fallback_on_outage_or_deletion) ... ok
+test_missing_or_corrupt_catalog_is_distinct_from_invalid_selected_id 
+(test_catalog.CatalogTests.test_missing_or_corrupt_catalog_is_distinct_from_invalid_selected_id) ... ok
+test_mock_rejects_wrong_category_deleted_inactive_and_pending_options 
+(test_catalog.CatalogTests.test_mock_rejects_wrong_category_deleted_inactive_and_pending_options) ... ok
+test_pending_inactive_unavailable_and_test_options_are_not_live_choices 
+(test_catalog.CatalogTests.test_pending_inactive_unavailable_and_test_options_are_not_live_choices) ... ok
+test_public_reference_names_are_not_registration_options 
+(test_catalog.CatalogTests.test_public_reference_names_are_not_registration_options) ... ok
+test_existing_nonroot_execution_preserves_identity 
+(test_container_entrypoint.EntrypointTests.test_existing_nonroot_execution_preserves_identity) ... ok
+test_root_prepares_volume_before_dropping_privileges_and_exec 
+(test_container_entrypoint.EntrypointTests.test_root_prepares_volume_before_dropping_privileges_and_exec) ... ok
+test_symlink_volume_is_rejected_before_chown 
+(test_container_entrypoint.EntrypointTests.test_symlink_volume_is_rejected_before_chown) ... ok
+test_busy_chat_blocks_confirmation_and_edits 
+(test_conversation_core.CoreTests.test_busy_chat_blocks_confirmation_and_edits) ... ok
+test_button_confirmation_and_duplicate_return_same_result 
+(test_conversation_core.CoreTests.test_button_confirmation_and_duplicate_return_same_result) ... ok
+test_chat_retry_replays_saved_answer (test_conversation_core.CoreTests.test_chat_retry_replays_saved_answer) ... ok
+test_concurrent_click_calls_gateway_once (test_conversation_core.CoreTests.test_concurrent_click_calls_gateway_once) 
+... ok
+test_definitive_rejection_does_not_retry (test_conversation_core.CoreTests.test_definitive_rejection_does_not_retry) 
+... ok
+test_edit_invalidates_confirmation (test_conversation_core.CoreTests.test_edit_invalidates_confirmation) ... ok
+test_existing_history_is_scrubbed_on_access 
+(test_conversation_core.CoreTests.test_existing_history_is_scrubbed_on_access) ... ok
+test_existing_mock_cannot_claim_real_draft 
+(test_conversation_core.CoreTests.test_existing_mock_cannot_claim_real_draft) ... ok
+test_fallback_is_encoded_and_never_includes_domain 
+(test_conversation_core.CoreTests.test_fallback_is_encoded_and_never_includes_domain) ... ok
+test_false_confirmation (test_conversation_core.CoreTests.test_false_confirmation) ... ok
+test_invalid_model_update_preserves_state (test_conversation_core.CoreTests.test_invalid_model_update_preserves_state) 
+... ok
+test_live_draft_transport_preserves_key_and_status_is_session_owned 
+(test_conversation_core.CoreTests.test_live_draft_transport_preserves_key_and_status_is_session_owned) ... ok
+test_live_estimate_uses_api_data_only (test_conversation_core.CoreTests.test_live_estimate_uses_api_data_only) ... ok
+test_model_failure_releases_chat_lock (test_conversation_core.CoreTests.test_model_failure_releases_chat_lock) ... ok
+test_no_review_with_missing_fields (test_conversation_core.CoreTests.test_no_review_with_missing_fields) ... ok
+test_owner_token_and_storage_restart (test_conversation_core.CoreTests.test_owner_token_and_storage_restart) ... ok
+test_redaction_before_model_and_history (test_conversation_core.CoreTests.test_redaction_before_model_and_history) ... 
+ok
+test_resume_requires_owner_capability (test_conversation_core.CoreTests.test_resume_requires_owner_capability) ... ok
+test_review_and_session_expiry (test_conversation_core.CoreTests.test_review_and_session_expiry) ... ok
+test_review_refresh_invalidates_old_token (test_conversation_core.CoreTests.test_review_refresh_invalidates_old_token) 
+... ok
+test_safe_model_update_is_saved (test_conversation_core.CoreTests.test_safe_model_update_is_saved) ... ok
+test_tampered_and_cross_session_confirmation 
+(test_conversation_core.CoreTests.test_tampered_and_cross_session_confirmation) ... ok
+test_text_yes_never_creates_draft (test_conversation_core.CoreTests.test_text_yes_never_creates_draft) ... ok
+test_timeout_reuses_same_upstream_key_and_payload 
+(test_conversation_core.CoreTests.test_timeout_reuses_same_upstream_key_and_payload) ... ok
+test_unavailable_option_and_stale_edit (test_conversation_core.CoreTests.test_unavailable_option_and_stale_edit) ... ok
+test_unknown_outcome_survives_core_restart_with_same_key 
+(test_conversation_core.CoreTests.test_unknown_outcome_survives_core_restart_with_same_key) ... ok
+test_untrusted_upstream_url_never_shows_success 
+(test_conversation_core.CoreTests.test_untrusted_upstream_url_never_shows_success) ... ok
+test_complete_endpoint_flow (test_conversation_core.EndpointTests.test_complete_endpoint_flow) ... ok
+test_invalid_chat_body_does_not_echo_rejected_input 
+(test_conversation_core.EndpointTests.test_invalid_chat_body_does_not_echo_rejected_input) ... ok
+test_invisible_chat_is_rejected_and_persian_joiner_survives 
+(test_conversation_core.EndpointTests.test_invisible_chat_is_rejected_and_persian_joiner_survives) ... Executing <Task 
+finished name='Task-29' coro=<EndpointTests.asyncSetUp() done, defined at 
+C:\Users\smous\OneDrive\Desktop\LAUNCHO\launchy\launcho-agent\tests\test_conversation_core.py:601> result=None created 
+at C:\Users\smous\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:101> took 0.105 seconds
+ok
+test_legacy_chat_preserved (test_conversation_core.EndpointTests.test_legacy_chat_preserved) ... Executing <Task 
+finished name='Task-34' coro=<EndpointTests.asyncSetUp() done, defined at 
+C:\Users\smous\OneDrive\Desktop\LAUNCHO\launchy\launcho-agent\tests\test_conversation_core.py:601> result=None created 
+at C:\Users\smous\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:101> took 0.513 seconds
+ok
+test_sensitive_or_extra_structured_fields_rejected 
+(test_conversation_core.EndpointTests.test_sensitive_or_extra_structured_fields_rejected) ... Executing <Task finished 
+name='Task-39' coro=<EndpointTests.asyncSetUp() done, defined at 
+C:\Users\smous\OneDrive\Desktop\LAUNCHO\launchy\launcho-agent\tests\test_conversation_core.py:601> result=None created 
+at C:\Users\smous\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:101> took 0.132 seconds
+ok
+test_session_chat_reports_model_rate_limit 
+(test_conversation_core.EndpointTests.test_session_chat_reports_model_rate_limit) ... chat_gateway_failure 
+type=RateLimitError
+ok
+test_bold_official_url_survives_and_impostor_is_removed 
+(test_conversation_core.PrivacyAndModelTests.test_bold_official_url_survives_and_impostor_is_removed) ... ok
+test_business_types_get_one_direct_next_step 
+(test_conversation_core.PrivacyAndModelTests.test_business_types_get_one_direct_next_step) ... ok
+test_chat_guides_signup_and_hands_off_after_user_is_ready 
+(test_conversation_core.PrivacyAndModelTests.test_chat_guides_signup_and_hands_off_after_user_is_ready) ... ok
+test_demo_campaign_is_labeled_and_not_repeated 
+(test_conversation_core.PrivacyAndModelTests.test_demo_campaign_is_labeled_and_not_repeated) ... ok
+test_explicit_interest_offers_signup_directly 
+(test_conversation_core.PrivacyAndModelTests.test_explicit_interest_offers_signup_directly) ... ok
+test_features_use_mock_service_info_without_follow_up 
+(test_conversation_core.PrivacyAndModelTests.test_features_use_mock_service_info_without_follow_up) ... ok
+test_guidance_replaces_unsupported_price_and_sensitive_request 
+(test_conversation_core.PrivacyAndModelTests.test_guidance_replaces_unsupported_price_and_sensitive_request) ... ok
+test_long_model_reply_is_shortened_at_sentence_boundary 
+(test_conversation_core.PrivacyAndModelTests.test_long_model_reply_is_shortened_at_sentence_boundary) ... ok
+test_masks_common_sensitive_values_and_preserves_prices 
+(test_conversation_core.PrivacyAndModelTests.test_masks_common_sensitive_values_and_preserves_prices) ... ok
+test_mixed_question_keeps_answer_and_adds_pricing_referral 
+(test_conversation_core.PrivacyAndModelTests.test_mixed_question_keeps_answer_and_adds_pricing_referral) ... ok
+test_mock_history_and_arguments_are_not_instructions 
+(test_conversation_core.PrivacyAndModelTests.test_mock_history_and_arguments_are_not_instructions) ... ok
+test_mock_offer_endpoint_only_matches_supported_objections 
+(test_conversation_core.PrivacyAndModelTests.test_mock_offer_endpoint_only_matches_supported_objections) ... ok
+test_model_cannot_return_unapproved_link_or_ask_for_otp_first 
+(test_conversation_core.PrivacyAndModelTests.test_model_cannot_return_unapproved_link_or_ask_for_otp_first) ... ok
+test_model_never_receives_writing_tool 
+(test_conversation_core.PrivacyAndModelTests.test_model_never_receives_writing_tool) ... ok
+test_model_rate_limit_answers_explicit_inventory_question 
+(test_conversation_core.PrivacyAndModelTests.test_model_rate_limit_answers_explicit_inventory_question) ... Using 
+Launcho guidance during model failure: RateLimitError
+ok
+test_price_question_uses_official_referral_without_calling_model 
+(test_conversation_core.PrivacyAndModelTests.test_price_question_uses_official_referral_without_calling_model) ... ok
+test_redaction_is_idempotent_and_preserves_normal_guidance 
+(test_conversation_core.PrivacyAndModelTests.test_redaction_is_idempotent_and_preserves_normal_guidance) ... ok
+test_store_campaign_question_uses_product_knowledge 
+(test_conversation_core.PrivacyAndModelTests.test_store_campaign_question_uses_product_knowledge) ... ok
+test_store_conversation_continues_when_model_reply_is_empty 
+(test_conversation_core.PrivacyAndModelTests.test_store_conversation_continues_when_model_reply_is_empty) ... ok
+test_store_starter_guides_before_referring_to_pricing 
+(test_conversation_core.PrivacyAndModelTests.test_store_starter_guides_before_referring_to_pricing) ... ok
+test_text_only_widget_redirects_attachment_requests 
+(test_conversation_core.PrivacyAndModelTests.test_text_only_widget_redirects_attachment_requests) ... ok
+test_unrelated_creative_request_is_redirected 
+(test_conversation_core.PrivacyAndModelTests.test_unrelated_creative_request_is_redirected) ... ok
+test_widget_starters_work_without_model 
+(test_conversation_core.PrivacyAndModelTests.test_widget_starters_work_without_model) ... ok
+test_bad_expired_wrong_kind_and_duplicate_offers_never_commit 
+(test_core_financial_offers.FinancialCoreTests.test_bad_expired_wrong_kind_and_duplicate_offers_never_commit) ... ok
+test_cleanup_cascades_durable_responses_and_state_survives_backup 
+(test_core_financial_offers.FinancialCoreTests.test_cleanup_cascades_durable_responses_and_state_survives_backup) ... 
+ok
+test_concurrent_chat_can_commit_only_one_offer 
+(test_core_financial_offers.FinancialCoreTests.test_concurrent_chat_can_commit_only_one_offer) ... ok
+test_context_is_redacted_current_message_separate_and_metadata_survives (test_core_financial_offers.FinancialCoreTests.
+test_context_is_redacted_current_message_separate_and_metadata_survives) ... ok
+test_decline_persists_after_history_rolloff_and_restart 
+(test_core_financial_offers.FinancialCoreTests.test_decline_persists_after_history_rolloff_and_restart) ... ok
+test_decline_records_displayed_id (test_core_financial_offers.FinancialCoreTests.test_decline_records_displayed_id) 
+... ok
+test_expired_review_is_rechecked_after_offer_transport 
+(test_core_financial_offers.FinancialCoreTests.test_expired_review_is_rechecked_after_offer_transport) ... ok
+test_expiry_rechecked_at_commit (test_core_financial_offers.FinancialCoreTests.test_expiry_rechecked_at_commit) ... ok
+test_guidance_and_collecting_preferences 
+(test_core_financial_offers.FinancialCoreTests.test_guidance_and_collecting_preferences) ... ok
+test_history_rolloff_restart_exact_retry_and_session_isolation 
+(test_core_financial_offers.FinancialCoreTests.test_history_rolloff_restart_exact_retry_and_session_isolation) ... ok
+test_legacy_decline_history_is_preserved 
+(test_core_financial_offers.FinancialCoreTests.test_legacy_decline_history_is_preserved) ... ok
+test_legacy_schema_display_marker_is_migrated 
+(test_core_financial_offers.FinancialCoreTests.test_legacy_schema_display_marker_is_migrated) ... ok
+test_lifecycle_uses_review_revision_expiry_and_success 
+(test_core_financial_offers.FinancialCoreTests.test_lifecycle_uses_review_revision_expiry_and_success) ... ok
+test_live_canonical_checkout_and_http_replay 
+(test_core_financial_offers.FinancialCoreTests.test_live_canonical_checkout_and_http_replay) ... ok
+test_live_display_requires_explicit_enable_and_rejects_simulation 
+(test_core_financial_offers.FinancialCoreTests.test_live_display_requires_explicit_enable_and_rejects_simulation) ... 
+ok
+test_model_failure_and_database_failure_do_not_mark_shown 
+(test_core_financial_offers.FinancialCoreTests.test_model_failure_and_database_failure_do_not_mark_shown) ... ok
+test_budget_objection_without_model (test_financial_context.FinancialTests.test_budget_objection_without_model) ... ok
+test_contextless_core_calls_never_invent_eligibility 
+(test_financial_context.FinancialTests.test_contextless_core_calls_never_invent_eligibility) ... ok
+test_explicit_installment_and_service_kind_payload 
+(test_financial_context.FinancialTests.test_explicit_installment_and_service_kind_payload) ... ok
+test_installment_guidance_no_unverified_offer 
+(test_financial_context.FinancialTests.test_installment_guidance_no_unverified_offer) ... ok
+test_outage_does_not_become_empty_success 
+(test_financial_context.FinancialTests.test_outage_does_not_become_empty_success) ... ok
+test_question_is_not_objection_or_low_upfront 
+(test_financial_context.FinancialTests.test_question_is_not_objection_or_low_upfront) ... ok
+test_shown_rejected_and_changed_mind (test_financial_context.FinancialTests.test_shown_rejected_and_changed_mind) ... 
+ok
+test_temperature_optional (test_gateway_tools.ToolTests.test_temperature_optional) ... ok
+test_unexpected_tool_has_no_side_effect (test_gateway_tools.ToolTests.test_unexpected_tool_has_no_side_effect) ... ok
+test_writing_tool_removed (test_gateway_tools.ToolTests.test_writing_tool_removed) ... ok
+test_documented_requests_match_http (test_launcho_contract.ContractExamples.test_documented_requests_match_http) ... ok
+test_invalid_payload_and_key_never_reach_transport 
+(test_launcho_contract.ContractExamples.test_invalid_payload_and_key_never_reach_transport) ... ok
+test_normalization_is_stable_and_rejects_ambiguous_payloads 
+(test_launcho_contract.ContractExamples.test_normalization_is_stable_and_rejects_ambiguous_payloads) ... ok
+test_proposed_draft_example_matches_main_core_and_fixture_total 
+(test_launcho_contract.ContractExamples.test_proposed_draft_example_matches_main_core_and_fixture_total) ... ok
+test_schema_is_published_from_the_adapter_model 
+(test_launcho_contract.ContractExamples.test_schema_is_published_from_the_adapter_model) ... ok
+test_conflict_stays_unknown_and_does_not_mint_a_new_operation 
+(test_launcho_contract.CoreAdapterContract.test_conflict_stays_unknown_and_does_not_mint_a_new_operation) ... ok
+test_local_url_never_passes_the_existing_core 
+(test_launcho_contract.CoreAdapterContract.test_local_url_never_passes_the_existing_core) ... ok
+test_main_http_flow_and_replay_preserve_core_payload_and_key 
+(test_launcho_contract.CoreAdapterContract.test_main_http_flow_and_replay_preserve_core_payload_and_key) ... ok
+test_missing_domain_is_rejected_by_the_existing_core_before_transport 
+(test_launcho_contract.CoreAdapterContract.test_missing_domain_is_rejected_by_the_existing_core_before_transport) ... 
+ok
+test_timeout_retries_same_key_and_payload_through_main_http 
+(test_launcho_contract.CoreAdapterContract.test_timeout_retries_same_key_and_payload_through_main_http) ... ok
+test_auth_input_and_unknown_ids_have_explicit_errors 
+(test_mock_drafts.MockDraftTests.test_auth_input_and_unknown_ids_have_explicit_errors) ... ok
+test_bad_lifetimes_and_uncontrolled_preview_origins_are_rejected 
+(test_mock_drafts.MockDraftTests.test_bad_lifetimes_and_uncontrolled_preview_origins_are_rejected) ... ok
+test_concurrent_different_payloads_have_one_winner 
+(test_mock_drafts.MockDraftTests.test_concurrent_different_payloads_have_one_winner) ... ok
+test_concurrent_requests_from_independent_app_instances_create_once 
+(test_mock_drafts.MockDraftTests.test_concurrent_requests_from_independent_app_instances_create_once) ... ok
+test_conflict_cannot_modify_existing_record 
+(test_mock_drafts.MockDraftTests.test_conflict_cannot_modify_existing_record) ... ok
+test_create_read_quote_and_controlled_preview 
+(test_mock_drafts.MockDraftTests.test_create_read_quote_and_controlled_preview) ... ok
+test_default_catalog_stays_unavailable_and_test_db_is_isolated 
+(test_mock_drafts.MockDraftTests.test_default_catalog_stays_unavailable_and_test_db_is_isolated) ... ok
+test_existing_main_database_preserves_draft_and_replay 
+(test_mock_drafts.MockDraftTests.test_existing_main_database_preserves_draft_and_replay) ... ok
+test_expiry_boundary_replay_conflict_and_status 
+(test_mock_drafts.MockDraftTests.test_expiry_boundary_replay_conflict_and_status) ... ok
+test_invalid_preview_configuration_fails_before_database_access 
+(test_mock_drafts.MockDraftTests.test_invalid_preview_configuration_fails_before_database_access) ... ok
+test_lost_http_response_after_commit_replays_saved_result 
+(test_mock_drafts.MockDraftTests.test_lost_http_response_after_commit_replays_saved_result) ... ok
+test_openapi_exposes_resolvable_draft_body_schema 
+(test_mock_drafts.MockDraftTests.test_openapi_exposes_resolvable_draft_body_schema) ... ok
+test_published_draft_examples_match_the_api 
+(test_mock_drafts.MockDraftTests.test_published_draft_examples_match_the_api) ... ok
+test_replay_canonicalization_and_frozen_expiry 
+(test_mock_drafts.MockDraftTests.test_replay_canonicalization_and_frozen_expiry) ... ok
+test_restart_preserves_key_payload_result_and_deadlines 
+(test_mock_drafts.MockDraftTests.test_restart_preserves_key_payload_result_and_deadlines) ... ok
+test_retention_boundary_cleanup_and_key_reuse 
+(test_mock_drafts.MockDraftTests.test_retention_boundary_cleanup_and_key_reuse) ... ok
+test_separate_process_can_replay_after_restart 
+(test_mock_drafts.MockDraftTests.test_separate_process_can_replay_after_restart) ... ok
+test_unusable_database_directory_has_safe_retryable_error 
+(test_mock_drafts.MockDraftTests.test_unusable_database_directory_has_safe_retryable_error) ... ok
+test_website_and_unknown_existing_domain_cost 
+(test_mock_drafts.MockDraftTests.test_website_and_unknown_existing_domain_cost) ... ok
+test_write_failure_rolls_back_and_never_returns_success 
+(test_mock_drafts.MockDraftTests.test_write_failure_rolls_back_and_never_returns_success) ... ok
+test_demo_signup_options_do_not_claim_real_catalog_availability 
+(test_mock_launcho.MockDemoTests.test_demo_signup_options_do_not_claim_real_catalog_availability) ... ok
+test_financial_intent_normalizes_persian_variants 
+(test_mock_launcho.MockDemoTests.test_financial_intent_normalizes_persian_variants) ... ok
+test_legacy_stateless_chat_has_no_sample_prices_or_demo_offer 
+(test_mock_launcho.MockDemoTests.test_legacy_stateless_chat_has_no_sample_prices_or_demo_offer) ... ok
+test_mock_contract_is_explicitly_simulated_and_authenticated 
+(test_mock_launcho.MockDemoTests.test_mock_contract_is_explicitly_simulated_and_authenticated) ... ok
+test_offer_period_only_accepts_supported_plans 
+(test_mock_launcho.MockDemoTests.test_offer_period_only_accepts_supported_plans) ... ok
+test_offer_text_cannot_bypass_sample_price_guard 
+(test_mock_launcho.MockDemoTests.test_offer_text_cannot_bypass_sample_price_guard) ... ok
+test_pricing_separates_website_and_shop_without_changing_shared_data 
+(test_mock_launcho.MockDemoTests.test_pricing_separates_website_and_shop_without_changing_shared_data) ... ok
+test_session_chat_uses_actual_mock_without_exposing_prices 
+(test_mock_launcho.MockDemoTests.test_session_chat_uses_actual_mock_without_exposing_prices) ... ok
+test_shop_categories_can_be_saved_without_forwarding_local_ids 
+(test_mock_launcho.MockDemoTests.test_shop_categories_can_be_saved_without_forwarding_local_ids) ... ok
+test_subscription_discount_is_distinct_from_campaign_or_coupon 
+(test_mock_launcho.MockDemoTests.test_subscription_discount_is_distinct_from_campaign_or_coupon) ... ok
+test_config_validation (test_monitor_availability.HealthTests.test_config_validation) ... ok
+test_configured_timeout_can_exceed_httpx_default 
+(test_monitor_availability.HealthTests.test_configured_timeout_can_exceed_httpx_default) ... ok
+test_deep_json_or_parser_recursion_cannot_stop_monitor 
+(test_monitor_availability.HealthTests.test_deep_json_or_parser_recursion_cannot_stop_monitor) ... ok
+test_live_and_ready_contracts (test_monitor_availability.HealthTests.test_live_and_ready_contracts) ... ok
+test_rejects_status_redirect_html_and_invalid_contract 
+(test_monitor_availability.HealthTests.test_rejects_status_redirect_html_and_invalid_contract) ... ok
+test_timeout_and_connection_refused_are_safe 
+(test_monitor_availability.HealthTests.test_timeout_and_connection_refused_are_safe) ... ok
+test_backup_preserves_session_authentication 
+(test_monitor_backend.MonitorTests.test_backup_preserves_session_authentication) ... ok
+test_health_failure_returns_failure_but_still_backs_up 
+(test_monitor_backend.MonitorTests.test_health_failure_returns_failure_but_still_backs_up) ... ok
+test_missing_source_is_not_created (test_monitor_backend.MonitorTests.test_missing_source_is_not_created) ... ok
+test_dry_run_never_sends_or_exposes_environment 
+(test_monitor_delivery.DeliveryTests.test_dry_run_never_sends_or_exposes_environment) ... ok
+test_failed_and_redirect_delivery_are_bounded 
+(test_monitor_delivery.DeliveryTests.test_failed_and_redirect_delivery_are_bounded) ... ok
+test_live_config_requires_url_https_and_safe_token 
+(test_monitor_delivery.DeliveryTests.test_live_config_requires_url_https_and_safe_token) ... ok
+test_payload_token_and_retry_keep_same_event_id 
+(test_monitor_delivery.DeliveryTests.test_payload_token_and_retry_keep_same_event_id) ... ok
+test_timeout_and_refused_connection_return_false 
+(test_monitor_delivery.DeliveryTests.test_timeout_and_refused_connection_return_false) ... ok
+test_exclusive_lock_rejects_second_instance 
+(test_monitor_incidents.IncidentTests.test_exclusive_lock_rejects_second_instance) ... ok
+test_persistence_failure_prevents_delivery 
+(test_monitor_incidents.IncidentTests.test_persistence_failure_prevents_delivery) ... ok
+test_target_change_and_corrupt_state_fail_closed 
+(test_monitor_incidents.IncidentTests.test_target_change_and_corrupt_state_fail_closed) ... ok
+test_transient_persistent_recovery_and_restart 
+(test_monitor_incidents.IncidentTests.test_transient_persistent_recovery_and_restart) ... ok
+test_widget_incident_is_independent_and_delivery_failure_does_not_replay 
+(test_monitor_incidents.IncidentTests.test_widget_incident_is_independent_and_delivery_failure_does_not_replay) ... ok
+test_adapter_needs_explicit_state_and_does_not_forward_message 
+(test_offer_contract.OfferContractTests.test_adapter_needs_explicit_state_and_does_not_forward_message) ... ok
+test_expiry_exact_boundary_kind_stage_and_period 
+(test_offer_contract.OfferContractTests.test_expiry_exact_boundary_kind_stage_and_period) ... ok
+test_legacy_positional_plan_and_numeric_stage_do_not_crash 
+(test_offer_contract.OfferContractTests.test_legacy_positional_plan_and_numeric_stage_do_not_crash) ... ok
+test_live_adapter_rejects_simulation_and_malformed_data 
+(test_offer_contract.OfferContractTests.test_live_adapter_rejects_simulation_and_malformed_data) ... ok
+test_malformed_provenance_text_ids_and_time_fail 
+(test_offer_contract.OfferContractTests.test_malformed_provenance_text_ids_and_time_fail) ... ok
+test_mock_result_is_structured_and_local_only 
+(test_offer_contract.OfferContractTests.test_mock_result_is_structured_and_local_only) ... ok
+test_named_stages_and_rejected_numeric_stage_over_http 
+(test_offer_contract.OfferContractTests.test_named_stages_and_rejected_numeric_stage_over_http) ... ok
+test_official_source_requires_evidence_and_exact_host 
+(test_offer_contract.OfferContractTests.test_official_source_requires_evidence_and_exact_host) ... ok
+test_persistent_state_suppresses_even_without_history 
+(test_offer_contract.OfferContractTests.test_persistent_state_suppresses_even_without_history) ... ok
+test_published_schemas_match_runtime_models 
+(test_offer_contract.OfferContractTests.test_published_schemas_match_runtime_models) ... ok
+test_chat (test_setup.EndpointTests.test_chat) ... ok
+test_cors (test_setup.EndpointTests.test_cors) ... ok
+test_health (test_setup.EndpointTests.test_health) ... ok
+test_invalid_messages (test_setup.EndpointTests.test_invalid_messages) ... ok
+test_api_errors_are_safe (test_setup.SetupTests.test_api_errors_are_safe) ... AI gateway error: PermissionDeniedError
+AI gateway error: APITimeoutError
+AI gateway error: AuthenticationError
+AI gateway error: RateLimitError
+ok
+test_blank_does_not_call_gateway (test_setup.SetupTests.test_blank_does_not_call_gateway) ... ok
+test_empty_responses (test_setup.SetupTests.test_empty_responses) ... ok
+test_reply_and_parameters (test_setup.SetupTests.test_reply_and_parameters) ... ok
+test_health_and_chat_preserved (test_widget_static.WidgetStaticTests.test_health_and_chat_preserved) ... ok
+test_legacy_static_mount_is_preserved (test_widget_static.WidgetStaticTests.test_legacy_static_mount_is_preserved) ... 
+ok
+test_length_is_checked_after_trimming (test_widget_static.WidgetStaticTests.test_length_is_checked_after_trimming) ... 
+ok
+test_static_is_independent_of_working_directory 
+(test_widget_static.WidgetStaticTests.test_static_is_independent_of_working_directory) ... ok
+test_unexpected_chat_failure_is_safe (test_widget_static.WidgetStaticTests.test_unexpected_chat_failure_is_safe) ... 
+core_failure type=RuntimeError
+ok
+test_unknown_files_and_traversal_are_not_exposed 
+(test_widget_static.WidgetStaticTests.test_unknown_files_and_traversal_are_not_exposed) ... ok
+test_widget_assets_and_content_types (test_widget_static.WidgetStaticTests.test_widget_assets_and_content_types) ... ok
+
+----------------------------------------------------------------------
+Ran 197 tests in 55.632s
+
+OK

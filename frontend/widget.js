@@ -1,5 +1,5 @@
 import { createSessionApi, relativeUrl } from './api.js?v=9';
-import { setupConnectedWorkspace } from './widget-workspace.js';
+import { setupConnectedWorkspace } from './widget-workspace.js?v=approved-1';
 import { configureWorkflow, startWorkflow, workflowActive, selectWorkflowTemplate } from './workflow.js?v=3';
 
 const $ = (id) => document.getElementById(id);
@@ -75,7 +75,6 @@ window.addEventListener('message', async (event) => {
     structured = demoMode;
     if (demoMode) await configureWorkflow(data, notify);
     applyTheme(data.theme);
-    if ($('expand-workspace') && typeof data.expanded === 'boolean') $('expand-workspace').setAttribute('aria-pressed', String(data.expanded));
     notify('configured');
     if (data.open && !demoMode) initializeSession();
     updateInput();
@@ -349,6 +348,7 @@ const officialChatUrls = new Set([
   'https://launcho.ir', 'https://launcho.ir/', 'https://launcho.ir/start',
   'https://launcho.ir/pricing', 'https://launcho.ir/contact', 'https://launcho.ir/features',
   'https://launcho.ir/#templates', 'https://launcho.ir/store-setup', 'https://launcho.ir/installments',
+  'https://launcho.ir/site-builder',
 ]);
 
 function appendReplyText(parent, text) {
@@ -388,7 +388,7 @@ function appendMessage(role, message) {
     icon.append(use);
   } else {
     icon = document.createElement('img');
-    icon.src = new URL('./assets/phoenix-avatar-left.png', import.meta.url).href;
+    icon.src = new URL(workspace ? './assets/phoenix-launcher-front.png' : './assets/phoenix-avatar-left.png', import.meta.url).href;
     icon.alt = '';
     icon.className = 'assistant-avatar';
     icon.width = 42;
@@ -662,8 +662,18 @@ $('confirm').addEventListener('click', async (event) => {
     if (confirmationPending && review && document.activeElement === document.body) $('confirm').focus({preventScroll: true});
   }
 });
+let starterCooldownUntil = 0;
 document.querySelectorAll('[data-question]').forEach((button) => {
-  button.addEventListener('click', () => {
+  // A burst of clicks must remain one turn even when a mock/cached reply is fast.
+  // This guard applies to the whole group, so adjacent chips cannot race either.
+  button.addEventListener('click', (event) => {
+    if (button.disabled || event.detail > 1 || performance.now() < starterCooldownUntil) return;
+    starterCooldownUntil = performance.now() + 650;
+    if (document.body.dataset.interface === 'workspace') {
+      document.querySelectorAll('[data-question]').forEach(chip => {
+        chip.setAttribute('aria-pressed', String(chip === button));
+      });
+    }
     if (button.classList.contains('primary-starter') && structured) startWorkflow();
     else submit(button.dataset.question);
   });
@@ -671,7 +681,7 @@ document.querySelectorAll('[data-question]').forEach((button) => {
 // Follow content resizing only while the reader is near the end of the chat.
 new ResizeObserver(() => scrollToBottom()).observe($('messages'));
 $('welcome').addEventListener('transitionend', () => scrollToBottom());
-setupConnectedWorkspace(notify);
+setupConnectedWorkspace();
 function updateConnectionStatus() {
   const offline = globalThis.navigator?.onLine === false;
   $('network-status').hidden = !offline;

@@ -1,0 +1,763 @@
+[
+  {
+    "case": "desktop",
+    "viewport": [
+      1440,
+      900
+    ],
+    "geometry": {
+      "width": 578,
+      "height": 578,
+      "bodyWidth": 578,
+      "scroll": {
+        "x": 160,
+        "y": 90,
+        "width": 418,
+        "height": 300,
+        "bottom": 390,
+        "right": 578
+      },
+      "composer": {
+        "x": 160,
+        "y": 390,
+        "width": 418,
+        "height": 188,
+        "bottom": 578,
+        "right": 578
+      },
+      "input": {
+        "x": 172,
+        "y": 510,
+        "width": 392,
+        "height": 54,
+        "bottom": 564,
+        "right": 564
+      },
+      "chips": [
+        {
+          "label": "معرفی لانچو",
+          "x": 472,
+          "y": 400,
+          "right": 564,
+          "bottom": 440
+        },
+        {
+          "label": "ساخت فروشگاه",
+          "x": 372,
+          "y": 400,
+          "right": 464,
+          "bottom": 440
+        },
+        {
+          "label": "ساخت سایت",
+          "x": 272,
+          "y": 400,
+          "right": 364,
+          "bottom": 440
+        },
+        {
+          "label": "امکانات",
+          "x": 172,
+          "y": 400,
+          "right": 264,
+          "bottom": 440
+        },
+        {
+          "label": "قالب‌ها",
+          "x": 438.671875,
+          "y": 448,
+          "right": 564,
+          "bottom": 488
+        },
+        {
+          "label": "تعرفه‌ها",
+          "x": 305.34375,
+          "y": 448,
+          "right": 430.671875,
+          "bottom": 488
+        },
+        {
+          "label": "دامنه",
+          "x": 172,
+          "y": 448,
+          "right": 297.34375,
+          "bottom": 488
+        }
+      ],
+      "sidebar": "flex"
+    },
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "case": "desktop-small",
+    "viewport": [
+      1280,
+      720
+    ],
+    "geometry": {
+      "width": 578,
+      "height": 578,
+      "bodyWidth": 578,
+      "scroll": {
+        "x": 160,
+        "y": 90,
+        "width": 418,
+        "height": 300,
+        "bottom": 390,
+        "right": 578
+      },
+      "composer": {
+        "x": 160,
+        "y": 390,
+        "width": 418,
+        "height": 188,
+        "bottom": 578,
+        "right": 578
+      },
+      "input": {
+        "x": 172,
+        "y": 510,
+        "width": 392,
+        "height": 54,
+        "bottom": 564,
+        "right": 564
+      },
+      "chips": [
+        {
+          "label": "معرفی لانچو",
+          "x": 472,
+          "y": 400,
+          "right": 564,
+          "bottom": 440
+        },
+        {
+          "label": "ساخت فروشگاه",
+          "x": 372,
+          "y": 400,
+          "right": 464,
+          "bottom": 440
+        },
+        {
+          "label": "ساخت سایت",
+          "x": 272,
+          "y": 400,
+          "right": 364,
+          "bottom": 440
+        },
+        {
+          "label": "امکانات",
+          "x": 172,
+          "y": 400,
+          "right": 264,
+          "bottom": 440
+        },
+        {
+          "label": "قالب‌ها",
+          "x": 438.671875,
+          "y": 448,
+          "right": 564,
+          "bottom": 488
+        },
+        {
+          "label": "تعرفه‌ها",
+          "x": 305.34375,
+          "y": 448,
+          "right": 430.671875,
+          "bottom": 488
+        },
+        {
+          "label": "دامنه",
+          "x": 172,
+          "y": 448,
+          "right": 297.34375,
+          "bottom": 488
+        }
+      ],
+      "sidebar": "flex"
+    },
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "case": "desktop-wide",
+    "viewport": [
+      1920,
+      1080
+    ],
+    "geometry": {
+      "width": 578,
+      "height": 578,
+      "bodyWidth": 578,
+      "scroll": {
+        "x": 160,
+        "y": 90,
+        "width": 418,
+        "height": 300,
+        "bottom": 390,
+        "right": 578
+      },
+      "composer": {
+        "x": 160,
+        "y": 390,
+        "width": 418,
+        "height": 188,
+        "bottom": 578,
+        "right": 578
+      },
+      "input": {
+        "x": 172,
+        "y": 510,
+        "width": 392,
+        "height": 54,
+        "bottom": 564,
+        "right": 564
+      },
+      "chips": [
+        {
+          "label": "معرفی لانچو",
+          "x": 472,
+          "y": 400,
+          "right": 564,
+          "bottom": 440
+        },
+        {
+          "label": "ساخت فروشگاه",
+          "x": 372,
+          "y": 400,
+          "right": 464,
+          "bottom": 440
+        },
+        {
+          "label": "ساخت سایت",
+          "x": 272,
+          "y": 400,
+          "right": 364,
+          "bottom": 440
+        },
+        {
+          "label": "امکانات",
+          "x": 172,
+          "y": 400,
+          "right": 264,
+          "bottom": 440
+        },
+        {
+          "label": "قالب‌ها",
+          "x": 438.671875,
+          "y": 448,
+          "right": 564,
+          "bottom": 488
+        },
+        {
+          "label": "تعرفه‌ها",
+          "x": 305.34375,
+          "y": 448,
+          "right": 430.671875,
+          "bottom": 488
+        },
+        {
+          "label": "دامنه",
+          "x": 172,
+          "y": 448,
+          "right": 297.34375,
+          "bottom": 488
+        }
+      ],
+      "sidebar": "flex"
+    },
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "case": "tablet",
+    "viewport": [
+      768,
+      1024
+    ],
+    "geometry": {
+      "width": 578,
+      "height": 578,
+      "bodyWidth": 578,
+      "scroll": {
+        "x": 160,
+        "y": 90,
+        "width": 418,
+        "height": 300,
+        "bottom": 390,
+        "right": 578
+      },
+      "composer": {
+        "x": 160,
+        "y": 390,
+        "width": 418,
+        "height": 188,
+        "bottom": 578,
+        "right": 578
+      },
+      "input": {
+        "x": 172,
+        "y": 510,
+        "width": 392,
+        "height": 54,
+        "bottom": 564,
+        "right": 564
+      },
+      "chips": [
+        {
+          "label": "معرفی لانچو",
+          "x": 472,
+          "y": 400,
+          "right": 564,
+          "bottom": 440
+        },
+        {
+          "label": "ساخت فروشگاه",
+          "x": 372,
+          "y": 400,
+          "right": 464,
+          "bottom": 440
+        },
+        {
+          "label": "ساخت سایت",
+          "x": 272,
+          "y": 400,
+          "right": 364,
+          "bottom": 440
+        },
+        {
+          "label": "امکانات",
+          "x": 172,
+          "y": 400,
+          "right": 264,
+          "bottom": 440
+        },
+        {
+          "label": "قالب‌ها",
+          "x": 438.671875,
+          "y": 448,
+          "right": 564,
+          "bottom": 488
+        },
+        {
+          "label": "تعرفه‌ها",
+          "x": 305.34375,
+          "y": 448,
+          "right": 430.671875,
+          "bottom": 488
+        },
+        {
+          "label": "دامنه",
+          "x": 172,
+          "y": 448,
+          "right": 297.34375,
+          "bottom": 488
+        }
+      ],
+      "sidebar": "flex"
+    },
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "case": "mobile",
+    "viewport": [
+      390,
+      844
+    ],
+    "geometry": {
+      "width": 390,
+      "height": 844,
+      "bodyWidth": 390,
+      "scroll": {
+        "x": 0,
+        "y": 142,
+        "width": 390,
+        "height": 437,
+        "bottom": 579,
+        "right": 390
+      },
+      "composer": {
+        "x": 0,
+        "y": 579,
+        "width": 390,
+        "height": 265,
+        "bottom": 844,
+        "right": 390
+      },
+      "input": {
+        "x": 18,
+        "y": 771,
+        "width": 354,
+        "height": 57,
+        "bottom": 828,
+        "right": 372
+      },
+      "chips": [
+        {
+          "label": "معرفی لانچو",
+          "x": 200,
+          "y": 591,
+          "right": 372,
+          "bottom": 635
+        },
+        {
+          "label": "ساخت فروشگاه",
+          "x": 18,
+          "y": 591,
+          "right": 190,
+          "bottom": 635
+        },
+        {
+          "label": "ساخت سایت",
+          "x": 200,
+          "y": 645,
+          "right": 372,
+          "bottom": 689
+        },
+        {
+          "label": "امکانات",
+          "x": 18,
+          "y": 645,
+          "right": 190,
+          "bottom": 689
+        },
+        {
+          "label": "قالب‌ها",
+          "x": 260.671875,
+          "y": 699,
+          "right": 372,
+          "bottom": 743
+        },
+        {
+          "label": "تعرفه‌ها",
+          "x": 139.34375,
+          "y": 699,
+          "right": 250.671875,
+          "bottom": 743
+        },
+        {
+          "label": "دامنه",
+          "x": 18,
+          "y": 699,
+          "right": 129.34375,
+          "bottom": 743
+        }
+      ],
+      "sidebar": "none"
+    },
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "case": "mobile-small",
+    "viewport": [
+      320,
+      568
+    ],
+    "geometry": {
+      "width": 320,
+      "height": 568,
+      "bodyWidth": 320,
+      "scroll": {
+        "x": 0,
+        "y": 108,
+        "width": 320,
+        "height": 273,
+        "bottom": 381,
+        "right": 320
+      },
+      "composer": {
+        "x": 0,
+        "y": 381,
+        "width": 320,
+        "height": 187,
+        "bottom": 568,
+        "right": 320
+      },
+      "input": {
+        "x": 18,
+        "y": 503,
+        "width": 284,
+        "height": 57,
+        "bottom": 560,
+        "right": 302
+      },
+      "chips": [
+        {
+          "label": "معرفی لانچو",
+          "x": 162.5,
+          "y": 387,
+          "right": 302,
+          "bottom": 419
+        },
+        {
+          "label": "ساخت فروشگاه",
+          "x": 18,
+          "y": 387,
+          "right": 157.5,
+          "bottom": 419
+        },
+        {
+          "label": "ساخت سایت",
+          "x": 162.5,
+          "y": 424,
+          "right": 302,
+          "bottom": 456
+        },
+        {
+          "label": "امکانات",
+          "x": 18,
+          "y": 424,
+          "right": 157.5,
+          "bottom": 456
+        },
+        {
+          "label": "قالب‌ها",
+          "x": 210.671875,
+          "y": 461,
+          "right": 302,
+          "bottom": 493
+        },
+        {
+          "label": "تعرفه‌ها",
+          "x": 114.34375,
+          "y": 461,
+          "right": 205.671875,
+          "bottom": 493
+        },
+        {
+          "label": "دامنه",
+          "x": 18,
+          "y": 461,
+          "right": 109.34375,
+          "bottom": 493
+        }
+      ],
+      "sidebar": "none"
+    },
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "case": "keyboard-height",
+    "viewport": [
+      390,
+      430
+    ],
+    "geometry": {
+      "width": 390,
+      "height": 430,
+      "bodyWidth": 390,
+      "scroll": {
+        "x": 0,
+        "y": 108,
+        "width": 390,
+        "height": 135,
+        "bottom": 243,
+        "right": 390
+      },
+      "composer": {
+        "x": 0,
+        "y": 243,
+        "width": 390,
+        "height": 187,
+        "bottom": 430,
+        "right": 390
+      },
+      "input": {
+        "x": 18,
+        "y": 365,
+        "width": 354,
+        "height": 57,
+        "bottom": 422,
+        "right": 372
+      },
+      "chips": [
+        {
+          "label": "معرفی لانچو",
+          "x": 197.515625,
+          "y": 249,
+          "right": 372,
+          "bottom": 281
+        },
+        {
+          "label": "ساخت فروشگاه",
+          "x": 18.015625,
+          "y": 249,
+          "right": 192.515625,
+          "bottom": 281
+        },
+        {
+          "label": "ساخت سایت",
+          "x": 197.515625,
+          "y": 286,
+          "right": 372,
+          "bottom": 318
+        },
+        {
+          "label": "امکانات",
+          "x": 18.015625,
+          "y": 286,
+          "right": 192.515625,
+          "bottom": 318
+        },
+        {
+          "label": "قالب‌ها",
+          "x": 257.34375,
+          "y": 323,
+          "right": 372,
+          "bottom": 355
+        },
+        {
+          "label": "تعرفه‌ها",
+          "x": 137.671875,
+          "y": 323,
+          "right": 252.34375,
+          "bottom": 355
+        },
+        {
+          "label": "دامنه",
+          "x": 18.015625,
+          "y": 323,
+          "right": 132.671875,
+          "bottom": 355
+        }
+      ],
+      "sidebar": "none"
+    },
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "case": "landscape",
+    "viewport": [
+      844,
+      390
+    ],
+    "geometry": {
+      "width": 844,
+      "height": 390,
+      "bodyWidth": 844,
+      "scroll": {
+        "x": 0,
+        "y": 108,
+        "width": 844,
+        "height": 95,
+        "bottom": 203,
+        "right": 844
+      },
+      "composer": {
+        "x": 0,
+        "y": 203,
+        "width": 844,
+        "height": 187,
+        "bottom": 390,
+        "right": 844
+      },
+      "input": {
+        "x": 18,
+        "y": 325,
+        "width": 808,
+        "height": 57,
+        "bottom": 382,
+        "right": 826
+      },
+      "chips": [
+        {
+          "label": "معرفی لانچو",
+          "x": 424.5,
+          "y": 209,
+          "right": 826,
+          "bottom": 241
+        },
+        {
+          "label": "ساخت فروشگاه",
+          "x": 18,
+          "y": 209,
+          "right": 419.5,
+          "bottom": 241
+        },
+        {
+          "label": "ساخت سایت",
+          "x": 424.5,
+          "y": 246,
+          "right": 826,
+          "bottom": 278
+        },
+        {
+          "label": "امکانات",
+          "x": 18,
+          "y": 246,
+          "right": 419.5,
+          "bottom": 278
+        },
+        {
+          "label": "قالب‌ها",
+          "x": 560,
+          "y": 283,
+          "right": 826,
+          "bottom": 315
+        },
+        {
+          "label": "تعرفه‌ها",
+          "x": 289,
+          "y": 283,
+          "right": 555,
+          "bottom": 315
+        },
+        {
+          "label": "دامنه",
+          "x": 18,
+          "y": 283,
+          "right": 284,
+          "bottom": 315
+        }
+      ],
+      "sidebar": "none"
+    },
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "case": "seven one-click questions; hostile metadata never confirms",
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "case": "slow and instant replies; rapid repeat and adjacent-chip clicks",
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "case": "failure locks starters; explicit retry retains request id; zero construction operations",
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "reference": "desktop",
+    "viewport": [
+      1440,
+      900
+    ],
+    "DPR": 1,
+    "zoom": 1,
+    "source": "https://launcho.ir",
+    "api": "intercepted mock",
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  },
+  {
+    "reference": "mobile",
+    "viewport": [
+      390,
+      844
+    ],
+    "DPR": 1,
+    "zoom": 1,
+    "source": "https://launcho.ir",
+    "api": "intercepted mock",
+    "status": "passed",
+    "browser": "157.0.8103.51"
+  }
+]
