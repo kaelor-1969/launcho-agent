@@ -32,6 +32,9 @@ def main():
     try:
         for volume in volumes:
             docker('volume', 'create', volume)
+            # Reproduce a freshly provisioned root-owned Runflare volume.
+            docker('run', '--rm', '--entrypoint', 'python', '-v', volume + ':/app/data',
+                   args.image, '-c', 'import os; os.chown("/app/data",0,0); os.chmod("/app/data",0o700)')
         # Sharing a network namespace preserves the adapter's loopback-only mock policy.
         docker('run', '-d', '--name', mock, '--no-healthcheck', '-p', '127.0.0.1::8000',
                '-v', volumes[1] + ':/app/data', '-e', 'LAUNCHO_MOCK_DRAFT_DB=/app/data/drafts.sqlite3',
@@ -77,7 +80,19 @@ def main():
             assert replay.json()['ref'] == created.json()['ref']
             assert replay.json()['replayed'] is True
             assert client.get(base + '/draft-status', headers=headers).json()['status'] == 'draft'
-            assert docker('exec', agent, 'id', '-u') != '0'
+            identity = docker('exec', '--user', '10001:10001', agent, 'python', '-c',
+                              'from pathlib import Path; print(next(x for x in Path("/proc/1/status").read_text().splitlines() if x.startswith("Uid:")))')
+            assert identity.split()[1:] == ['10001'] * 4, identity
+            docker('exec', '--user', '10001:10001', agent, 'python', 'scripts/monitor_backend.py',
+                   '--url', 'http://127.0.0.1:8000', '--db', '/app/data/sessions.sqlite3',
+                   '--backup-dir', '/app/data/backups', '--once')
+            docker('exec', '--user', '10001:10001', agent, 'python', '-c',
+                   'from pathlib import Path; import sqlite3; '
+                   'p=next(Path("/app/data/backups").glob("*.sqlite3")); '
+                   'a=sqlite3.connect(p); b=sqlite3.connect("/app/data/restored.sqlite3"); '
+                   'a.backup(b); assert b.execute("pragma integrity_check").fetchone()[0]=="ok"; '
+                   'assert b.execute("select count(*) from sessions").fetchone()[0]>0; '
+                   'assert b.execute("pragma foreign_key_check").fetchone() is None')
             print('PASS: both containers restarted, session and draft persisted, same confirmation replayed, non-root user and readiness')
     except Exception:
         for container in (agent, mock):
