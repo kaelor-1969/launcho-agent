@@ -262,9 +262,38 @@ def concise_reply(text, limit=280):
     return excerpt[:boundary.start()].rstrip() + '…'
 
 
+def starter_guidance(question):
+    """Exact informational shortcuts use the reviewed project content, never tools."""
+    topics = {
+        'برای ساخت سایت شرکتی، شخصی یا خدماتی با لانچو از کجا شروع کنم':
+            ('سایت شرکتی شخصی خدماتی بدون فروشگاه تفاوت بسته ارتقا', 'https://launcho.ir/site-builder'),
+        'قالب های لانچو را از کجا ببینم و چطور انتخاب کنم':
+            ('قالب فروشگاه کیف و کفش پوشاک دسته‌بندی و موجودی', 'https://launcho.ir/#templates'),
+        'ثبت دامنه یا اتصال دامنهٔ موجود در لانچو چطور انجام می شود':
+            ('مالکیت دامنه استخراج خروجی انتقال محصولات سفارش مشتریان', 'https://launcho.ir/contact'),
+    }
+    if question != 'لانچو چیست' and question not in topics:
+        return None
+    public = get_public_knowledge()
+    if question == 'لانچو چیست':
+        return public.get('overview') or None
+    topic, url = topics[question]
+    text = public.get('topics', {}).get(topic)
+    if not text:
+        return None
+    if question.startswith('ثبت دامنه'):
+        # Ownership is reviewed; live availability and connection instructions
+        # require the official form/support rather than invented setup steps.
+        text = text.split('.')[0] + '.'
+    return f'{concise_reply(text, limit=240)}\n{url}'
+
+
 def generate_turn(message, history=None, preferences=None, options=None, pricing=None, *, allow_preferences=False):
     message = redact(message.strip())
     question = ' '.join(message.replace('\u200c', ' ').rstrip('؟?!.').split())
+    starter = starter_guidance(question)
+    if starter:
+        return starter, {}
     if re.fullmatch(
         r'(?:من )?(?:از لانچو خوشم (?:اومده|آمده|اومد|آمد)|لانچو رو دوست دارم|لانچو را دوست دارم)',
         question,
