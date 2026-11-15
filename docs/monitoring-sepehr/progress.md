@@ -1,5 +1,29 @@
 # Progress
 
+## Independent follow-up, 2026-11-15 — task 1: local alert CLI
+
+Inspected current main and prior monitoring handoff; initial tree clean. Added
+`tests/test_monitor_cli.py`: real child CLI, synthetic configuration and token,
+ephemeral loopback HTTP receiver, temporary config/state paths, inherited application
+credentials excluded. Covers default dry-run/no request, one labelled successful
+test, bounded 503 retry with identical payload/failure exit, and invalid destination
+with sanitized error/exit 2. Every case checks absence of incident state/stale lock
+and URL/token in logs. No application changes or real channel configured.
+
+Double-check: reviewed diff and transport isolation (`trust_env=False`, redirects
+disabled), receiver loopback binding and finally cleanup. Four new CLI tests passed
+in 6.737s; monitoring discovery passed 23 tests in 46.719s (exit 0). Existing backend
+tests use only synthetic temporary SQLite/backups; no production storage accessed.
+Subagent had no filesystem/command tools: reviewed supplied design and exact
+transport/receiver excerpts only. Its proxy/cleanup questions were resolved by those
+excerpts; no open finding in that scope. No independent execution claimed.
+Seven real Chrome fixture scenarios also passed (native exit 0): healthy, loader,
+iframe, missing handshake, JavaScript error, optional assets and forbidden redirect;
+zero outgoing writes/forbidden-destination requests. Session remains unverified.
+
+Real alert destination/secret, Runflare scheduling and production acceptance remain
+unverified and dependent. No push, deployment or production DB/backup operation.
+
 ## Stage 1
 
 Read README, existing operations documentation, health routes, loader handshake,
