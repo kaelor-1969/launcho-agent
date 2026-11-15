@@ -17,7 +17,8 @@ COPY --chown=appuser:appuser . .
 RUN mkdir -p /app/data /app/static \
     && chown -R appuser:appuser /app/data /app/static
 
-USER appuser
+USER root
+ENTRYPOINT ["python", "/app/scripts/container_entrypoint.py"]
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
