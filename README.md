@@ -137,3 +137,11 @@ python tests/widget_workflow_browser.py --base-url http://127.0.0.1:8000
 مرجع تنظیمات: [مستندات رسمی Render](https://render.com/docs/blueprint-spec).
 
 وابستگی‌ها قفل نسخه ندارند؛ پیش از انتشار نهایی، نسخه‌های محیط آزموده‌شده را تثبیت کنید.
+# Backup verification status
+
+Provider-managed backup retention (4 daily / 1 weekly / 1 monthly) is **CLAIM
+ONLY**. Obtain expected filenames, storage location, creation timezone, retention
+and restore procedure from Runflare support. Compare actual backup timestamps
+and inventory with that policy, then restore one into an isolated database and
+run SQLite integrity and foreign-key checks. Never restore over production.
+See AGENTS.md for cron timezone, deployment status and redeploy checklist.
