@@ -24,6 +24,30 @@ zero outgoing writes/forbidden-destination requests. Session remains unverified.
 Real alert destination/secret, Runflare scheduling and production acceptance remain
 unverified and dependent. No push, deployment or production DB/backup operation.
 
+## Independent follow-up, 2026-11-15 — task 2: Runflare preparation
+
+Task 1 committed locally as `e463888` before beginning task 2. Git had no configured
+author identity; the commit used command-scoped identity matching recent repository
+commits, without changing global/repository config.
+
+Reviewed historical Parsa operations and current monitor semantics. Added
+`runflare-requirements.md` with an unsent support-question draft, owners, explicit
+dependent/unperformed statuses, required runtime/browser/state/network/secret/log
+settings, cron timezone confirmation assigned to Parsa, overlap/retry/exit policies
+and closure evidence. Linked dependencies/runbook/handoff. No provider capabilities,
+timezone, cron expression, costs or live configuration are asserted as verified.
+
+Double-check against CLI: dry-run default, explicit send opt-in, no `.env` load,
+same-state locking, UTC payloads, bounded per-attempt deadlines, non-global cycle
+deadline, health exit distinct from transport failure, no failed-send replay.
+Actual repeat of all four CLI/loopback tests passed in 7.071s (exit 0); this validates
+the documented local command behavior only. Provider scheduling, live channel and
+production acceptance cannot be validated with a local fixture and remain open.
+Subagent again reviewed supplied text only (no tools/independent execution).
+Its actionable recommendation was incorporated: ask support about forced-kill
+signals/grace, Chromium child cleanup and interrupted-job next-run behavior;
+stale locks still require operator inspection, never automatic deletion.
+
 ## Stage 1
 
 Read README, existing operations documentation, health routes, loader handshake,

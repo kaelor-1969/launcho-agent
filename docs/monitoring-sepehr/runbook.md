@@ -173,6 +173,11 @@ failures and cannot validate adapter/model work.
 
 ## Hosting preparation for Parsa
 
+Before selecting Runflare service supervision or cron, use the explicit
+[Runflare support/settings checklist](runflare-requirements.md). These capabilities
+have not been verified. If cron is used, Parsa must confirm its effective timezone
+and next-run examples; no timezone is inferred and no schedule is activated here.
+
 Run one monitor process on a host independent of the service being monitored. Use
 a private persistent state volume, fixed working directory and restricted environment
 and logs. Install browser OS dependencies on that host; use normal browser security

@@ -1,5 +1,12 @@
 # Remaining dependencies
 
+Current follow-up (2026-11-15): real alert connection is **dependent** until a
+destination is selected and its secrets are entered by an authorized account
+holder. Synthetic local delivery does not close this dependency. Scheduling is
+not activated. If Runflare cron is selected, timezone confirmation is assigned to
+**Parsa**; no timezone or cron expression is assumed. Exact support questions,
+settings and closure evidence: [Runflare requirements](runflare-requirements.md).
+
 - User confirmed development/mock environment: `https://launchox.ir/` host and
   `https://ag.launchox.ir` widget/API. Initial read-only HTTP and browser checks
   passed on 2026-11-14; no non-GET/HEAD browser requests were allowed through.
