@@ -1,5 +1,22 @@
 # Database backup operations
 
+## Production verification — 2026-11-15
+
+This section supersedes the earlier LOCAL ONLY and terminal-blocked notes below.
+PR #24 is merged (8fefba2); Runflare shows v34 and a replacement pod.
+The script exists in the deployed image. The pre-existing day-6.sqlite3 (45056
+bytes) survived that deployment; no pre-deployment hash was recorded, so byte
+identity is not claimed. The new command ran successfully through the entrypoint
+at 12:45:20 UTC, validating backup, checks, restore and appuser write/replace.
+The original daily cron survived deployment and was updated to the script command
+below, keeping `17 2 * * *`. Only this daily entry remained after probe cleanup.
+
+Container timezone is UTC. Scheduler timezone remains UNVERIFIED: a temporary
+`* 12 * * *` probe registered around 12:47 UTC produced no timestamp marker by
+12:50:18 UTC and was removed. This negative result is inconclusive; do not infer
+Tehran or UTC for the scheduler. Provider confirmation/execution logs are needed.
+External backup remains CLAIM ONLY. No webhook destination has been supplied.
+
 Never stop the production service, replace/delete the production database, or print
 credentials, session contents, environment values or private download URLs.
 
