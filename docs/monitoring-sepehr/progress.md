@@ -1,5 +1,69 @@
 # Progress
 
+## Requested double-check — 2026-11-15
+
+Rechecked local commits `e463888`/`d864e66`, code/documentation consistency and
+clean tree. Actual concurrent Chrome/unittest validation exposed two test failures;
+both are retained in [double-check evidence](double-check-2026-11-15.md). All seven
+browser cases passed. The unchanged serial monitoring suite passed 23 tests in
+41.167s; three further repetitions of each affected case passed six executions in
+31.907s. No timeouts/assertions were changed. Root cause and concurrent stability
+remain unverified; no claim that the failures were fixed.
+
+Subagent again lacked tools and reviewed supplied excerpts/results only. Its
+recommendation to repeat serially and preserve both failures was implemented.
+Operational dependencies are unchanged; no real channel or cron activated, no
+production storage touched, no push/deployment. This audit changes documentation
+only and is recorded in a local commit.
+
+## Independent follow-up, 2026-11-15 — task 1: local alert CLI
+
+Inspected current main and prior monitoring handoff; initial tree clean. Added
+`tests/test_monitor_cli.py`: real child CLI, synthetic configuration and token,
+ephemeral loopback HTTP receiver, temporary config/state paths, inherited application
+credentials excluded. Covers default dry-run/no request, one labelled successful
+test, bounded 503 retry with identical payload/failure exit, and invalid destination
+with sanitized error/exit 2. Every case checks absence of incident state/stale lock
+and URL/token in logs. No application changes or real channel configured.
+
+Double-check: reviewed diff and transport isolation (`trust_env=False`, redirects
+disabled), receiver loopback binding and finally cleanup. Four new CLI tests passed
+in 6.737s; monitoring discovery passed 23 tests in 46.719s (exit 0). Existing backend
+tests use only synthetic temporary SQLite/backups; no production storage accessed.
+Subagent had no filesystem/command tools: reviewed supplied design and exact
+transport/receiver excerpts only. Its proxy/cleanup questions were resolved by those
+excerpts; no open finding in that scope. No independent execution claimed.
+Seven real Chrome fixture scenarios also passed (native exit 0): healthy, loader,
+iframe, missing handshake, JavaScript error, optional assets and forbidden redirect;
+zero outgoing writes/forbidden-destination requests. Session remains unverified.
+
+Real alert destination/secret, Runflare scheduling and production acceptance remain
+unverified and dependent. No push, deployment or production DB/backup operation.
+
+## Independent follow-up, 2026-11-15 — task 2: Runflare preparation
+
+Task 1 committed locally as `e463888` before beginning task 2. Git had no configured
+author identity; the commit used command-scoped identity matching recent repository
+commits, without changing global/repository config.
+
+Reviewed historical Parsa operations and current monitor semantics. Added
+`runflare-requirements.md` with an unsent support-question draft, owners, explicit
+dependent/unperformed statuses, required runtime/browser/state/network/secret/log
+settings, cron timezone confirmation assigned to Parsa, overlap/retry/exit policies
+and closure evidence. Linked dependencies/runbook/handoff. No provider capabilities,
+timezone, cron expression, costs or live configuration are asserted as verified.
+
+Double-check against CLI: dry-run default, explicit send opt-in, no `.env` load,
+same-state locking, UTC payloads, bounded per-attempt deadlines, non-global cycle
+deadline, health exit distinct from transport failure, no failed-send replay.
+Actual repeat of all four CLI/loopback tests passed in 7.071s (exit 0); this validates
+the documented local command behavior only. Provider scheduling, live channel and
+production acceptance cannot be validated with a local fixture and remain open.
+Subagent again reviewed supplied text only (no tools/independent execution).
+Its actionable recommendation was incorporated: ask support about forced-kill
+signals/grace, Chromium child cleanup and interrupted-job next-run behavior;
+stale locks still require operator inspection, never automatic deletion.
+
 ## Stage 1
 
 Read README, existing operations documentation, health routes, loader handshake,
