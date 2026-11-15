@@ -50,6 +50,11 @@ The example JSON uses example ports, not production settings. In separate termin
 ```
 
 Those fixture health responses are synthetic; actual widget files are served.
+Run the validation commands below serially on this workstation. A concurrent
+Chrome/unittest double-check produced two failures, while the unchanged serial
+suite passed; the cause and concurrent stability remain unverified. Preserve those
+results rather than treating a later pass as a fix; see the
+[2026-11-15 double-check](double-check-2026-11-15.md).
 For the complete drill with real FastAPI and mock API processes, temporary isolated
 databases and local webhook receiver:
 

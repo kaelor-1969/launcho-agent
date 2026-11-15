@@ -2,6 +2,11 @@
 
 ## Current local follow-up — 2026-11-15
 
+Latest [requested double-check](double-check-2026-11-15.md): two failures during
+concurrent validation are retained; unchanged serial run passed 23 tests, and six
+focused repeat executions passed. Seven browser scenarios passed. Concurrent
+stability/root cause remain unverified; this is not a claim of a resolved defect.
+
 This section supersedes earlier completion/publication wording for the current
 request. Task 1 is local commit `e463888`: four synthetic receiver CLI tests added,
 23 monitor tests and seven real Chrome fixture cases passed. Task 2 prepares

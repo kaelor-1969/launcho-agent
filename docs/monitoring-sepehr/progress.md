@@ -1,5 +1,21 @@
 # Progress
 
+## Requested double-check — 2026-11-15
+
+Rechecked local commits `e463888`/`d864e66`, code/documentation consistency and
+clean tree. Actual concurrent Chrome/unittest validation exposed two test failures;
+both are retained in [double-check evidence](double-check-2026-11-15.md). All seven
+browser cases passed. The unchanged serial monitoring suite passed 23 tests in
+41.167s; three further repetitions of each affected case passed six executions in
+31.907s. No timeouts/assertions were changed. Root cause and concurrent stability
+remain unverified; no claim that the failures were fixed.
+
+Subagent again lacked tools and reviewed supplied excerpts/results only. Its
+recommendation to repeat serially and preserve both failures was implemented.
+Operational dependencies are unchanged; no real channel or cron activated, no
+production storage touched, no push/deployment. This audit changes documentation
+only and is recorded in a local commit.
+
 ## Independent follow-up, 2026-11-15 — task 1: local alert CLI
 
 Inspected current main and prior monitoring handoff; initial tree clean. Added
