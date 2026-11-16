@@ -33,6 +33,7 @@ let followBottom = true;
 let structured = false;
 let demoMode = false;
 let signupAvailable = false;
+let readOnlySignup = false;
 let signupLoading = false;
 let signupSaving = false;
 let editSignup;
@@ -126,7 +127,8 @@ async function initializeSession(refresh = false) {
     recoveryLocked = false;
     let recoveryNotice = session.recoveryExpired
       ? 'جلسهٔ قبلی منقضی شده یا در دسترس نیست؛ جلسهٔ تازه آغاز شد. انتخاب‌ها را دوباره وارد کن.' : '';
-    if (session.mode === 'local_mock' && !signupAvailable) await initializeLocalSignup();
+    readOnlySignup = session.mode === 'live' && session.canCreateDraft === false;
+    if ((session.mode === 'local_mock' || readOnlySignup) && !signupAvailable) await initializeLocalSignup();
     if (session.restored) {
       const state = session.restored;
       if (state.draftState === 'rejected') recoveryNotice = 'درخواست قبلی رد شده است. انتخاب‌ها را بررسی و دوباره مرور کن؛ تأیید تازه‌ای ارسال نشده است.';
@@ -159,6 +161,7 @@ let localOptions;
 async function initializeLocalSignup() {
   signupAvailable = true;
   const form = $('local-signup');
+  if (readOnlySignup) form.querySelector('.signup-hint').textContent = 'ثبت‌نام را در فرم رسمی لانچو ادامه می‌دهید.';
   updateDomainFields = () => {
     const own = form.elements.ownDomain.value.trim();
     form.elements.ownDomain.setCustomValidity(own && !/^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,24}$/.test(own)
@@ -594,14 +597,23 @@ async function requestReview() {
         if (label === 'دامنه') dd.dir = 'ltr';
         rows.append(dt, dd);
       }
-      $('review-summary').replaceChildren(rows);
+      if (readOnlySignup && !review.canConfirm) {
+        const link = document.createElement('a');
+        link.href = await sessionApi.fallbackLink();
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'ادامه در فرم رسمی لانچو';
+        $('review-summary').replaceChildren(rows, link);
+      } else {
+        $('review-summary').replaceChildren(rows);
+      }
       $('local-signup').hidden = true;
       $('edit-signup').hidden = !signupAvailable;
       $('edit-notice').hidden = !signupAvailable;
       $('review-notice').textContent = review.canConfirm
         ? (signupAvailable ? 'ساخت پیش‌نویس آزمایشی فقط با تأیید شما انجام می‌شود؛ فروشگاه واقعی ایجاد نمی‌شود.' : 'با تأیید شما پیش‌نویس ساخته می‌شود. موبایل و پرداخت فقط در فرم رسمی لانچو تکمیل می‌شوند.')
-        : 'اتصال ساخت پیش‌نویس فعلاً آماده نیست؛ از فرم رسمی لانچو استفاده کن.';
-      $('confirm').hidden = false;
+        : (readOnlySignup ? 'انتخاب‌ها را در فرم رسمی بررسی کن.' : 'اتصال ساخت پیش‌نویس فعلاً آماده نیست؛ از فرم رسمی لانچو استفاده کن.');
+      $('confirm').hidden = readOnlySignup;
       $('confirm').textContent = 'تأیید و ساخت پیش‌نویس';
       $('session-review').hidden = false;
     }

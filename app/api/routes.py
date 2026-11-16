@@ -51,9 +51,18 @@ def chat(request: ChatRequest, response: Response, x_session_token: str | None =
 
 @router.get('/api/local-signup-options')
 def local_signup_options(response: Response, kind: str = 'shop'):
+    return signup_options_for_mode(response, kind, 'local_mock')
+
+
+@router.get('/api/signup-options')
+def signup_options(response: Response, kind: str = 'shop'):
+    return signup_options_for_mode(response, kind, 'live')
+
+
+def signup_options_for_mode(response: Response, kind: str, mode: str):
     no_store(response)
     core = get_core()
-    if core.gateway.mode != 'local_mock':
+    if core.gateway.mode != mode or (mode == 'live' and core.gateway.can_create):
         raise HTTPException(404)
     if kind not in {'shop', 'website'}:
         raise HTTPException(422)

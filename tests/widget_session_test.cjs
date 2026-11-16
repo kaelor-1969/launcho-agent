@@ -25,18 +25,36 @@ class Element {
 }
 
 async function widget({sessionFailure = false, canConfirm = true, embedded = false,
-  reply = 'ready <script>bad()</script>', draftUrl = 'https://launcho.ir/start?signup=sd_testdraft'} = {}) {
+  readOnlyKind, reply = 'ready <script>bad()</script>', draftUrl = 'https://launcho.ir/start?signup=sd_testdraft'} = {}) {
   const nodes = new Map();
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
     return nodes.get(id);
   };
+  const form = get('local-signup');
+  if (readOnlyKind) {
+    form.elements = Object.fromEntries(['kind', 'businessName', 'category', 'template', 'planMonths',
+      'label', 'tld', 'ownDomain'].map(name => {
+      const element = new Element();
+      element.replaceChildren = (...options) => {
+        element.options = options;
+        element.value = options[0]?.value ?? '';
+      };
+      element.setCustomValidity = () => {};
+      return [name, element];
+    }));
+    form.elements.kind.value = readOnlyKind;
+    form.querySelector = () => new Element();
+    form.querySelectorAll = () => Object.values(form.elements);
+    form.reportValidity = () => true;
+    get('local-template-preview').removeAttribute = () => {};
+  }
   const calls = [];
   let failSession = sessionFailure, failConfirm = false, rejectConfirm = false, failReview = false;
   let releaseConfirm;
   let chatError;
   let heldStatus;
-  let revision = 0;
+  let revision = 0, preferences;
   const sid = 'session-id-for-testing', token = 'secret-session-token';
   const review = {sessionId: sid, revision: 1, reviewId: 'review-id-for-testing',
     confirmationToken: 'secret-confirmation-token', canConfirm,
@@ -49,6 +67,8 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
   window.parent = embedded ? {postMessage() {}} : window;
   const context = vm.createContext({
     URL, URLSearchParams, AbortController, setTimeout, clearTimeout, location, window,
+    Option: class { constructor(label, value) { this.label = label; this.value = value; } },
+    FormData: function (form) { return Object.entries(form.elements).map(([name, field]) => [name, field.value]); },
     crypto: require('node:crypto').webcrypto,
     matchMedia: () => ({matches: false, addEventListener() {}}),
     ResizeObserver: class {observe() {}},
@@ -62,7 +82,11 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
       let data;
       if (url === '/api/sessions') {
         if (failSession) throw new TypeError('offline');
-        data = {sessionId: sid, sessionToken: token, revision: 0};
+        data = {sessionId: sid, sessionToken: token, revision: 0,
+          ...(readOnlyKind ? {adapterMode: 'live', canCreateDraft: false} : {})};
+      } else if (readOnlyKind && url === '/api/signup-options?kind=' + readOnlyKind) {
+        data = {businessCategories: [{id: 'test-category', label: 'Category'}],
+          templates: [{id: 'test-template', title: 'Template', available: true}], periods: [3], suffixes: ['ir']};
       } else {
         assert.equal(options.headers['X-Session-Token'], token);
         assert.ok(!(JSON.stringify(body) || '').includes(token));
@@ -77,9 +101,19 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
           revision++;
           data = {reply, sessionId: sid, revision,
             nextAction: 'review'};
+        } else if (readOnlyKind && url.endsWith('/preferences')) {
+          assert.equal(options.method, 'PATCH');
+          assert.equal(body.revision, revision);
+          preferences = body.preferences;
+          data = {sessionId: sid, revision: ++revision};
+        } else if (readOnlyKind && url.endsWith('/fallback-link')) {
+          const query = new URLSearchParams({name: preferences.businessName, cat: preferences.category,
+            template: preferences.template, plan: preferences.planMonths, ...preferences.domain});
+          if (readOnlyKind === 'website') query.set('kind', 'website');
+          data = {isDraft: false, url: 'https://launcho.ir/start?' + query};
         } else if (url.endsWith('/review')) {
           if (failReview) throw new TypeError('review response lost after server invalidated previous review');
-          data = {...review, revision};
+          data = {...review, revision, ...(readOnlyKind ? {summary: preferences, canConfirm: false} : {})};
         } else if (url.endsWith('/draft-status')) {
           if (heldStatus) await new Promise(resolve => { heldStatus.resolve = resolve; });
           data = {status: heldStatus ? 'expired' : 'paid'};
@@ -142,6 +176,23 @@ async function widget({sessionFailure = false, canConfirm = true, embedded = fal
 
 (async () => {
   const auditOnly = process.argv.includes('--audit');
+  for (const kind of ['shop', 'website']) {
+    const w = await widget({readOnlyKind: kind});
+    const form = w.get('local-signup');
+    assert.equal(form.hidden, false);
+    form.elements.businessName.value = 'Test & Example';
+    form.elements.label.value = 'example';
+    await form.onsubmit({preventDefault() {}});
+    const link = new URL(w.get('review-summary').children[1].href);
+    assert.equal(link.origin + link.pathname, 'https://launcho.ir/start');
+    assert.deepEqual(Object.fromEntries(link.searchParams), {
+      name: 'Test & Example', cat: 'test-category', template: 'test-template',
+      plan: '3', label: 'example', tld: 'ir', ...(kind === 'website' ? {kind} : {}),
+    });
+    assert.equal(w.get('confirm').hidden, true);
+    assert.equal(w.calls.filter(call => call.url.endsWith('/confirm')).length, 0);
+    console.log('PASS: read-only widget signup and handoff for ' + kind);
+  }
   {
     const failures = [];
     const check = async (name, action) => {

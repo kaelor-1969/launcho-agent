@@ -318,6 +318,35 @@ class CoreTests(unittest.TestCase):
         self.assert_core_error('draft_adapter_unavailable',lambda:self.core.confirm(self.sid,self.token,self.request(review)))
 
 
+class ReadOnlyHandoffTests(unittest.TestCase):
+    def test_link_prefills_new_domain_only_in_live_read_only_mode(self):
+        from urllib.parse import parse_qs, urlsplit
+
+        gateway = FakeGateway()
+        gateway.mode = 'live'
+        gateway.can_create = False
+        preferences = {**CHOICES, 'domain': {'label': 'example', 'tld': 'ir'}}
+        store = NS(get=lambda *_: {'prefs': json.dumps(preferences)})
+        core = ConversationCore(store, gateway)
+
+        result = core.fallback('id', 'token', '/')
+        link = urlsplit(result['url'])
+        self.assertEqual((link.netloc, link.path), ('launcho.ir', '/start'))
+        self.assertEqual(parse_qs(link.query), {
+            'name': [CHOICES['businessName']], 'cat': ['fashion'], 'template': ['classic'],
+            'plan': ['3'], 'label': ['example'], 'tld': ['ir'],
+        })
+        self.assertFalse(result['isDraft'])
+        with self.assertRaises(CoreError):
+            core.fallback('id', 'token', '/start')
+
+        gateway.can_create = True
+        self.assertNotIn('label=', core.fallback('id', 'token', '/')['url'])
+        gateway.can_create = False
+        preferences['domain'] = {'ownDomain': 'example.ir'}
+        self.assertNotIn('example.ir', core.fallback('id', 'token', '/')['url'])
+
+
 class PrivacyAndModelTests(unittest.TestCase):
     def test_text_only_widget_redirects_attachment_requests(self):
         for answer in ('یک عکس از محصولت بفرست.', 'لطفاً ارسال کنید\nتصویر محصول را.'):
