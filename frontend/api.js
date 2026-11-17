@@ -85,6 +85,7 @@ export function createSessionApi() {
         (data.draftState === 'completed' && !data.draft)) throw invalid();
     session.revision = data.revision;
     session.mode = data.adapterMode;
+    session.canCreateDraft = data.canCreateDraft;
     session.restored = data;
     if (['creating', 'unknown'].includes(data.draftState)) session.confirmationUnresolved = true;
     if (['completed', 'rejected'].includes(data.draftState)) session.confirmationUnresolved = false;
@@ -117,7 +118,7 @@ export function createSessionApi() {
         const data = await post('/api/sessions', {});
         if (typeof data.sessionId !== 'string' || !data.sessionId ||
             typeof data.sessionToken !== 'string' || !data.sessionToken || !validRevision(data.revision)) throw invalid();
-        session = { id: data.sessionId, token: data.sessionToken, revision: data.revision, mode: data.adapterMode, recoveryExpired };
+        session = { id: data.sessionId, token: data.sessionToken, revision: data.revision, mode: data.adapterMode, canCreateDraft: data.canCreateDraft, recoveryExpired };
         remember();
         return session;
       })().finally(() => { initializing = null; });
@@ -160,16 +161,19 @@ export function createSessionApi() {
       return result;
     },
     async localOptions(kind) {
-      const data = await post('/api/local-signup-options?kind=' + encodeURIComponent(kind));
+      const route = session?.mode === 'live' ? '/api/signup-options' : '/api/local-signup-options';
+      const data = await post(route + '?kind=' + encodeURIComponent(kind));
       const choices = items => Array.isArray(items) && items.length > 0 && items.every(item =>
         item && typeof item.id === 'string' && item.id && typeof item.label === 'string' && item.label);
-      if (!choices(data.businessCategories) || !choices(data.templates) ||
-          !data.templates.some(item => item.available === true) ||
+      const templates = Array.isArray(data.templates) ? data.templates.map(item =>
+        item && {...item, label: item.label || item.title}) : data.templates;
+      if (!choices(data.businessCategories) || !choices(templates) ||
+          !templates.some(item => item.available === true) ||
           !Array.isArray(data.periods) || !data.periods.length ||
           !data.periods.every(value => Number.isSafeInteger(value) && value > 0 && value <= 120) ||
           !Array.isArray(data.suffixes) || !data.suffixes.length ||
           !data.suffixes.every(value => typeof value === 'string' && /^[a-z0-9]+(?:\.[a-z0-9]+)*$/.test(value))) throw invalid();
-      return data;
+      return {...data, templates};
     },
     async savePreferences(preferences) {
       await start();
@@ -186,6 +190,18 @@ export function createSessionApi() {
       if (!data.draft && (!data.summary || typeof data.summary !== 'object' || Array.isArray(data.summary) ||
           typeof data.reviewId !== 'string' || typeof data.confirmationToken !== 'string')) throw invalid();
       return data;
+    },
+    async fallbackLink() {
+      await start();
+      const data = await post(endpoint('fallback-link'), undefined, session.token);
+      if (data.isDraft !== false || typeof data.url !== 'string') throw invalid();
+      const url = new URL(data.url);
+      if (url.origin !== 'https://launcho.ir' || url.pathname !== '/start' ||
+          url.username || url.password || url.hash ||
+          [...url.searchParams.keys()].some(key => !['kind', 'name', 'cat', 'plan', 'template', 'label', 'tld'].includes(key))) {
+        throw invalid();
+      }
+      return url.href;
     },
     async draftStatus() {
       await start();

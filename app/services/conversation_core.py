@@ -418,6 +418,9 @@ class ConversationCore:
             if source in {'category', 'template'} and self.gateway.mode == 'local_mock':
                 continue
             if source in prefs: query[target]=prefs[source]
+        domain = prefs.get('domain', {})
+        if self.gateway.mode == 'live' and not self.gateway.can_create and 'label' in domain:
+            query.update(label=domain['label'], tld=domain['tld'])
         return {'url':'https://launcho.ir/start'+('?' + urlencode(query) if query else ''),
                 'isDraft':False,'notice':'این لینک عمومی است؛ پیش‌نویسی در لانچو ساخته نشده است.'}
 
