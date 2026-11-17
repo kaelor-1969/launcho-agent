@@ -103,14 +103,11 @@ _FEATURES_URL = 'https://launcho.ir/features'
 
 
 def features_reply(options, question=''):
-    website = ('سایت' in question or 'فروشگاه' not in question)
-    shop = ('فروشگاه' in question or 'سایت' not in question)
-    if website:
-        site = 'سایت‌ساز: قالب آماده، صفحه‌ساز بلوکی، میزبانی، SSL و پشتیبان‌گیری.'
-        if shop:
-            return (site + '\nفروشگاه‌ساز: کاتالوگ، سبد خرید، مدیریت سفارش و موجودی، کوپن و حراج.' +
-                    f'\n{_FEATURES_URL}')
-        return f'{site}\n{_FEATURES_URL}'
+    website = 'سایت' in question
+    shop = 'فروشگاه' in question
+    site_summary = 'سایت‌ساز: قالب آماده، صفحه‌ساز و میزبانی.'
+    if website and not shop:
+        return f'{site_summary}\n{_FEATURES_URL}'
     features = (options or {}).get('serviceInfo', {}).get('featureSummary')
     if not isinstance(features, list) or not features or not all(
         isinstance(feature, str) and 0 < len(feature.strip()) <= 70
@@ -121,7 +118,9 @@ def features_reply(options, question=''):
     if not features:
         return f'امکانات فروشگاه‌ساز لانچو را اینجا ببینید. {_FEATURES_URL}'
     summary = '، '.join(feature.strip() for feature in features[:3])
-    return redact(f'امکانات فروشگاه لانچو شامل {summary} است.\n{_FEATURES_URL}')
+    if shop and not website:
+        return redact(f'فروشگاه‌ساز: {summary}.\n{_FEATURES_URL}')
+    return redact(f'{site_summary}\nفروشگاه‌ساز: مدیریت سفارش، {summary}.\n{_FEATURES_URL}')
 
 
 def is_price_question(message):
@@ -189,7 +188,7 @@ def price_guidance(message, options, history, pricing=None):
     if re.search(r'جشنواره|تخفیف', message):
         reply = 'جشنواره یا کد تخفیف فعالی برای تأیید در دسترسم نیست. ' + reply
     if re.search(r'اقساط|قسط|پیش[\s‌]*پرداخت', message) and not context['rejected']:
-        reply = 'شرایط فعلی اقساط راه‌اندازی را در صفحهٔ رسمی بررسی کنید؛ مبلغ یا تأیید صلاحیت پرداخت در دسترسم نیست. https://launcho.ir/installments'
+        reply = 'شرایط فعلی اقساط راه‌اندازی را در صفحهٔ رسمی بررسی کنید؛ مبلغ یا تأیید صلاحیت پرداخت در دسترسم نیست. https://launcho.ir/installments\nhttps://launcho.ir/pricing'
     elif context['objections']:
         reply = 'می‌فهمم هزینه برایتان مهم است. ' + reply
     if (context['discountAlreadyShown'] or context['rejected'] or not context['objections']):
@@ -457,7 +456,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         lambda match: match[0] if match[0].rstrip('.,،؛') in _OFFICIAL_URLS else '[پیوند تأییدنشده حذف شد]',
         text,
     )
-    text = concise_reply(redact(text), limit=480) or empty_guidance_reply(message, safe_history)
+    text = concise_reply(redact(text)) or empty_guidance_reply(message, safe_history)
     if price_query and (pricing or 'https://launcho.ir/pricing' not in text
                         or price_reply.startswith((_DEMO_OFFER_LABEL, CHECKOUT_OFFER_LABEL))):
         text = f'{concise_reply(text, limit=140)}\n\n{price_reply}'
