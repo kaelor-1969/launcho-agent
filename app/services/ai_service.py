@@ -201,12 +201,24 @@ def price_guidance(message, options, history, pricing=None):
     return reply
 
 
+def service_choice_reply(question):
+    if not re.search(r'سایت(?: ساز)?.{0,18}(?:یا|بهتره یا) فروشگاه|فروشگاه(?: ساز)?.{0,18}یا سایت', question):
+        return None
+    informational = re.search(r'نمونه کار|معرفی|راه تماس|رزومه|گالری', question)
+    purchase = re.search(r'سبد خرید|درگاه(?: پرداخت)?|سفارش آنلاین|خرید آنلاین|فروش آنلاین|بفروشم', question)
+    if informational and not purchase and re.search(r'فقط|صرفا|تنها', question):
+        return 'سایت‌ساز برای شما مناسب است. برای نمایش نمونه‌کار، معرفی خدمات و اطلاعات تماس به سبد خرید یا مدیریت سفارش نیاز ندارید.'
+    if purchase and not re.search(r'نمی خوا(?:هم|م)|بدون|نیاز ندار', question):
+        return 'فروشگاه‌ساز مناسب است. برای فروش آنلاین، سبد خرید و مدیریت سفارش دارد.'
+    return 'سایت‌ساز برای معرفی و نمایش نمونه‌کار است. فروشگاه‌ساز برای فروش آنلاین و مدیریت سفارش است. مشتری باید بتواند آنلاین سفارش بدهد؟'
+
+
 def empty_guidance_reply(message, history):
     if any(item['role'] == 'assistant' and item['content'] == _STORE_START_REPLY for item in history):
         if re.search(r'لباس|پوشاک', message):
             return 'برای شروع با چند مدل پرفروش، عکس، رنگ و سایزها را آماده کنید.'
         return 'برای شروع، برای چند محصول اصلی عکس و توضیح کوتاه آماده کنید.'
-    return 'کدام بخش راه‌اندازی فروشگاه را می‌خواهید بررسی کنیم؟'
+    return 'برای این سؤال پاسخ قابل اتکایی آماده نشد. لطفاً دوباره بپرسید یا از کارشناس لانچو کمک بگیرید. https://launcho.ir/contact'
 _ACTION_CLAIM = re.compile(
     r'(?:ثبت\s*نام|حساب|پیش\s*نویس|پرداخت).{0,45}با\s*موفقیت.{0,25}(?:شد|کردم)'
     r'|(?:برایتان|برای\s*شما).{0,35}(?:حساب|پیش\s*نویس).{0,20}(?:ساختم|ایجاد کردم)'
@@ -352,7 +364,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         return 'می‌توانم دربارهٔ لانچو و راه‌اندازی سایت یا فروشگاه راهنمایی کنم.', {}
     if not allow_preferences:
         if not is_price_question(message) and '[پوشانده شد]' not in message:
-            guidance = signup_guidance(question, history)
+            guidance = service_choice_reply(question) or signup_guidance(question, history)
             if guidance:
                 return guidance, {}
         if re.fullmatch(r'(?:لانچو چه امکاناتی (?:دارد|داره)|امکانات(?: لانچو| سایت(?: ساز)?| فروشگاه(?: ساز)?)?(?: چیه| چیست)?|(?:سایت|فروشگاه)(?: ساز)? چه امکاناتی (?:دارد|داره))', question):
@@ -399,6 +411,12 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         kwargs['temperature'] = settings.AI_TEMPERATURE
     try:
         response = client.chat.completions.create(**kwargs)
+        if not allow_preferences and response.choices:
+            choice = response.choices[0]
+            if (getattr(choice, 'finish_reason', None) == 'length'
+                    and not (getattr(choice.message, 'content', None) or '').strip()
+                    and kwargs['max_tokens'] < 512):
+                response = client.chat.completions.create(**{**kwargs, 'max_tokens': 512})
     except APIError as error:
         fallback = None if allow_preferences else guidance_during_outage(message)
         if fallback is None:
