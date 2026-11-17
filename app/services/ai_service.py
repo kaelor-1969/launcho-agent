@@ -414,7 +414,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         if not allow_preferences and response.choices:
             choice = response.choices[0]
             if (getattr(choice, 'finish_reason', None) == 'length'
-                    and not (getattr(choice.message, 'content', None) or '').strip()
+                    and not getattr(choice.message, 'tool_calls', None)
                     and kwargs['max_tokens'] < 512):
                 response = client.chat.completions.create(**{**kwargs, 'max_tokens': 512})
     except APIError as error:
