@@ -40,7 +40,7 @@ def get_launcho_knowledge():
 
 
 
-_PRICE_QUERY = re.compile(r'قیمت|هزینه|تعرفه|تخفیف|قسط|اقساط|جشنواره|گران|گرون|بودجه|چند\s*تومن|چقدر\s*باید\s*پرداخت')
+_PRICE_QUERY = re.compile(r'قیمت|هزینه|تعرفه|اشتراک|تخفیف|قسط|اقساط|جشنواره|گران|گرون|بودجه|چند\s*تومن|چقدر\s*باید\s*پرداخت')
 
 
 def is_financial_objection(message):
@@ -102,7 +102,15 @@ _STORE_TEMPLATES_URL = 'https://launcho.ir/#templates'
 _FEATURES_URL = 'https://launcho.ir/features'
 
 
-def features_reply(options):
+def features_reply(options, question=''):
+    website = ('سایت' in question or 'فروشگاه' not in question)
+    shop = ('فروشگاه' in question or 'سایت' not in question)
+    if website:
+        site = 'سایت‌ساز: قالب آماده، صفحه‌ساز بلوکی، میزبانی، SSL و پشتیبان‌گیری.'
+        if shop:
+            return (site + '\nفروشگاه‌ساز: کاتالوگ، سبد خرید، مدیریت سفارش و موجودی، کوپن و حراج.' +
+                    f'\n{_FEATURES_URL}')
+        return f'{site}\n{_FEATURES_URL}'
     features = (options or {}).get('serviceInfo', {}).get('featureSummary')
     if not isinstance(features, list) or not features or not all(
         isinstance(feature, str) and 0 < len(feature.strip()) <= 70
@@ -124,10 +132,59 @@ def is_price_question(message):
             or bool(financial_context(message)['objections']))
 
 
-def price_guidance(message, options, history):
+def live_tariff_reply(message, pricing):
+    if not isinstance(pricing, dict) or pricing.get('currency') != 'toman':
+        return None
+    fees, plans = pricing.get('setupFees'), pricing.get('plans')
+    if not isinstance(fees, dict) or not isinstance(plans, list):
+        return None
+    question = message.translate(str.maketrans('يك', 'یک')).replace('‌', ' ')
+    kinds = {'shop': 'فروشگاه', 'website': 'سایت'}
+    if 'سایت' in question and 'فروشگاه' not in question:
+        kinds = {'website': 'سایت'}
+    elif 'فروشگاه' in question and 'سایت' not in question:
+        kinds = {'shop': 'فروشگاه'}
+    if any(type(fees.get(kind)) is not int or fees[kind] < 0 for kind in kinds):
+        return None
+    prices = {plan['months']: plan['price'] for plan in plans if isinstance(plan, dict)
+              and type(plan.get('months')) is int and plan['months'] > 0
+              and type(plan.get('price')) is int and plan['price'] >= 0}
+    if not prices:
+        return None
+
+    def amount(value):
+        return f'{value:,}'.replace(',', '٬').translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
+
+    lines = ['راه‌اندازی یک‌باره: ' + '، '.join(
+        f'{label} {amount(fees[kind])} تومان' for kind, label in kinds.items()) + '.']
+    lines.append('اشتراک: ' + '، '.join(
+        f'{amount(months)} ماهه {amount(price)} تومان' for months, price in sorted(prices.items())) + '.')
+    details = pricing.get('serviceDetails')
+    installments = []
+    for kind, label in kinds.items():
+        service = details.get(kind) if isinstance(details, dict) else None
+        installment = service.get('installment') if isinstance(service, dict) else None
+        if not isinstance(installment, dict) or installment.get('scope') != 'setup_only':
+            continue
+        count, part = installment.get('count'), installment.get('monthlyPart')
+        if type(count) is int and count > 1 and type(part) is int and part > 0:
+            installments.append(f'{label}: {amount(count)} قسط {amount(part)} تومانی')
+    if installments:
+        lines.append('اقساطِ راه‌اندازی — ' + '، '.join(installments) +
+                     '. اشتراک و هزینهٔ دامنه در پرداخت اول تسویه می‌شوند.')
+    lines.append('https://launcho.ir/pricing')
+    return '\n'.join(lines)
+
+
+def price_guidance(message, options, history, pricing=None):
     # The core currently supplies only a string, without source or eligibility evidence.
     # Do not turn that string into a verified live offer.
     context = financial_context(message, history)
+    tariff = live_tariff_reply(message, pricing)
+    if tariff:
+        if re.search(r'جشنواره|کد تخفیف', message):
+            return 'جشنواره یا کد تخفیف فعالی برای تأیید در دسترسم نیست.\n' + tariff
+        return tariff
     reply = _PRICE_REPLY
     if re.search(r'جشنواره|تخفیف', message):
         reply = 'جشنواره یا کد تخفیف فعالی برای تأیید در دسترسم نیست. ' + reply
@@ -172,19 +229,6 @@ _UNRELATED_CREATIVE_REQUEST = re.compile(
     r'|(?:بگو|بنویس|بساز|بخون).{0,30}(?:شعر|لطیفه|جوک|داستان|ترانه)'
     r'|\b(?:write|tell|compose)\b.{0,50}\b(?:poem|joke|story|song)\b', re.I | re.S
 )
-
-
-def relevant_knowledge(knowledge, message):
-    """Keep the introduction and rank optional sections by matching Persian terms."""
-    intro, *sections = re.split(r'(?m)(?=^## )', knowledge)
-    def terms(value):
-        value = value.translate(str.maketrans('يك', 'یک')).replace('\u200c', ' ')
-        return {word for word in re.findall(r'\w+', value) if len(word) >= 3}
-
-    query = terms(message)
-    ranked = sorted(sections, key=lambda section: len(query & terms(section)), reverse=True)
-    relevant = [section for section in ranked if query & terms(section)][:2]
-    return '\n'.join([intro, *relevant])
 
 
 def guidance_during_outage(message):
@@ -267,11 +311,13 @@ def starter_guidance(question):
     topics = {
         'برای ساخت سایت شرکتی، شخصی یا خدماتی با لانچو از کجا شروع کنم':
             ('سایت شرکتی شخصی خدماتی بدون فروشگاه تفاوت بسته ارتقا', 'https://launcho.ir/site-builder'),
-        'قالب های لانچو را از کجا ببینم و چطور انتخاب کنم':
-            ('قالب فروشگاه کیف و کفش پوشاک دسته‌بندی و موجودی', 'https://launcho.ir/#templates'),
         'ثبت دامنه یا اتصال دامنهٔ موجود در لانچو چطور انجام می شود':
             ('مالکیت دامنه استخراج خروجی انتقال محصولات سفارش مشتریان', 'https://launcho.ir/contact'),
     }
+    if question == 'قالب های لانچو را از کجا ببینم و چطور انتخاب کنم':
+        return (f'نمونهٔ قالب‌ها را اینجا ببینید: {_STORE_TEMPLATES_URL}\n'
+                'در فرم ویجت، اول «سایت‌ساز» یا «فروشگاه» را انتخاب کنید. '
+                'بعد پیش‌نمایش قالب را ببینید و قالبی را انتخاب کنید که نمایش محتوا یا محصولاتتان در آن روشن‌تر است.')
     if question != 'لانچو چیست' and question not in topics:
         return None
     public = get_public_knowledge()
@@ -310,11 +356,11 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
             guidance = signup_guidance(question, history)
             if guidance:
                 return guidance, {}
-        if re.fullmatch(r'(?:لانچو چه امکاناتی (?:دارد|داره)|امکانات لانچو(?: چیه| چیست)?|امکانات)', question):
-            return features_reply(options), {}
+        if re.fullmatch(r'(?:لانچو چه امکاناتی (?:دارد|داره)|امکانات(?: لانچو| سایت(?: ساز)?| فروشگاه(?: ساز)?)?(?: چیه| چیست)?|(?:سایت|فروشگاه)(?: ساز)? چه امکاناتی (?:دارد|داره))', question):
+            return features_reply(options, question), {}
     clauses = [part.strip() for part in re.split(r'[؟?؛\n]+|\s+و\s+', message) if part.strip()]
     price_query = is_price_question(message)
-    price_reply = price_guidance(message, options, history) if price_query else _PRICE_REPLY
+    price_reply = price_guidance(message, options, history, pricing) if price_query else _PRICE_REPLY
     if price_query and all(is_price_question(part) for part in clauses):
         return price_reply, {}
     if not settings.AI_API_KEY or not settings.AI_MODEL_NAME:
@@ -326,7 +372,7 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
     if allow_preferences:
         context['planMonths'] = [plan['months'] for plan in (pricing or {}).get('plans', []) if type(plan.get('months')) is int]
         context['domainSuffixes'] = [domain['tld'] for domain in (pricing or {}).get('domains', []) if isinstance(domain.get('tld'), str)]
-    knowledge = relevant_knowledge(get_launcho_knowledge(), message)
+    knowledge = get_launcho_knowledge()
     policy = (
         '\nفقط وقتی کاربر ساخت فروشگاه را شروع کرده، اطلاعات ناقص را یکی‌یکی بپرس. '
         'هر نوبت انتخاب صریح را با ابزار ثبت کن. بعد از ثبت، مرحلهٔ بعد را بر اساس اطلاعات جلسه انتخاب کن.'
@@ -336,7 +382,8 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
             'پس از انتخاب قالب، دورهٔ اشتراک را بپرس و کاربر را به مرور پیش‌نویس هدایت کن.'
         if allow_preferences else
         '\nحالت فقط راهنمایی است. هیچ اطلاعاتی برای ثبت‌نام جمع نکن. '
-        'در یک یا دو جمله فقط درخواست فعلی را پاسخ بده. امکاناتی مثل موجودی را فقط وقتی مطرح کن که کاربر درباره‌شان پرسیده باشد. '
+        'مستقیم به درخواست فعلی جواب بده و از تاریخچه فقط برای فهم ادامهٔ سؤال استفاده کن. '
+        'در سؤال چندبخشی، برای هر بخش یک پاسخ کوتاه بده. '
         'مبلغ، جشنواره، تخفیف، اقساط یا رایگان‌بودن را تأیید نکن. '
         'اگر بخش مشخصی از سؤال بی‌پاسخ است، فقط همان بخش را کوتاه روشن کن. '
         'ادعای ساخت حساب یا فروشگاه، ارسال کد، پذیرش قوانین، پرداخت، یا صدور تخفیف نکن. '
@@ -410,8 +457,8 @@ def generate_turn(message, history=None, preferences=None, options=None, pricing
         lambda match: match[0] if match[0].rstrip('.,،؛') in _OFFICIAL_URLS else '[پیوند تأییدنشده حذف شد]',
         text,
     )
-    text = concise_reply(redact(text)) or empty_guidance_reply(message, safe_history)
-    if price_query and ('https://launcho.ir/pricing' not in text
+    text = concise_reply(redact(text), limit=480) or empty_guidance_reply(message, safe_history)
+    if price_query and (pricing or 'https://launcho.ir/pricing' not in text
                         or price_reply.startswith((_DEMO_OFFER_LABEL, CHECKOUT_OFFER_LABEL))):
         text = f'{concise_reply(text, limit=140)}\n\n{price_reply}'
     return text, {}
