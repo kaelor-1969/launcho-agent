@@ -44,7 +44,9 @@
   if (script.dataset.apiUrl) options.apiUrl = relativeApi(script.dataset.apiUrl) || options.apiUrl;
   if (script.dataset.workflowUrl) options.workflowUrl = relativeApi(script.dataset.workflowUrl);
   for (const key of ['offset', 'mobileOffset']) if (script.dataset[key] && Number.isFinite(Number(script.dataset[key]))) options[key] = Math.max(0, Math.min(240, Number(script.dataset[key])));
-  let host, shadow, button, resizeButton, panel, frame, feedback, ready = false, opened = script.dataset.autoOpen !== 'false';
+  const mobileLayout = '(max-width:600px),(max-width:960px) and (max-height:480px)';
+  let opened = script.dataset.autoOpen !== 'false' && !matchMedia(mobileLayout).matches;
+  let host, shadow, button, resizeButton, panel, frame, feedback, ready = false;
   let expanded = false;
   let askButton, templateHint, templateHintTimer;
   const systemTheme = matchMedia('(prefers-color-scheme: dark)');
@@ -205,7 +207,7 @@
         :host([data-interface=workspace]) .panel{width:var(--panel-width,580px);height:var(--panel-height,580px);bottom:calc(var(--offset) + env(safe-area-inset-bottom) + var(--viewport-lift));max-width:calc(100vw - var(--offset) - var(--offset) - env(safe-area-inset-left) - env(safe-area-inset-right));max-height:calc(var(--viewport-height) - var(--offset) - var(--offset) - env(safe-area-inset-top) - env(safe-area-inset-bottom));background:var(--line)}
         :host([data-interface=workspace]) .panel::before{display:none}
         :host([data-interface=workspace]) .launcher[data-open=true]{display:none}
-        @media(max-width:600px),(max-width:960px) and (max-height:480px){
+        @media ${mobileLayout}{
           :host([data-interface=workspace]) .panel{top:auto;bottom:var(--viewport-lift);right:0;left:0;width:100vw;max-width:none;height:var(--viewport-height);max-height:none;border-radius:0;padding:0}
           :host([data-interface=workspace]) iframe{border-radius:0}
           :host([data-interface=workspace]) .launcher[data-open=true],:host([data-interface=workspace]) .resize{display:none}
